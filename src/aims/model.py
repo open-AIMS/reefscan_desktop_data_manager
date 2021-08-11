@@ -6,52 +6,54 @@ import shortuuid
 
 from aims.surveys_model import SurveysModel
 from aims.sites_model import SitesModel
-from aims.utils import readJsonFile, writeJsonFile
+from aims.json_utils import read_json_file, write_json_file
 
 
 class Model(object):
-    datafolder = ""
+    data_folder = ""
     trip = {}
     surveysModel = SurveysModel()
     sitesModel = SitesModel()
+    default_project = ""
 
-    def setDataFolder(self, datafolder):
-        if os.path.isdir(datafolder):
-            self.datafolder = datafolder
-            print(datafolder)
-            self.readFromFiles()
+    def set_data_folder(self, data_folder):
+        if os.path.isdir(data_folder):
+            self.data_folder = data_folder
+            print(data_folder)
+            self.read_from_files()
 
-    def readFromFiles(self):
+    def read_from_files(self):
         self.readTrip()
         self.read_projects()
 
         try:
-            self.surveysModel.readData(self.datafolder)
+            self.surveysModel.read_data(self.data_folder)
         except Exception as e:
             self.surveysModel.data = []
             print(e)
 
-        self.readSites()
+        self.read_sites()
 
     def read_projects(self):
         try:
-            projects = readJsonFile(f"{self.datafolder}/projects.json")
+            projects = read_json_file(f"{self.data_folder}/projects.json")
             self.surveysModel.projects_lookup = {project["id"]: project["name"] for project in projects}
             print (self.surveysModel.projects_lookup)
+            self.default_project = projects[0]["id"]
         except:
             traceback.print_exc()
             self.surveysModel.projects_lookup = {}
 
-    def readSites(self):
+    def read_sites(self):
         try:
-            self.sitesModel.readData(self.datafolder)
+            self.sitesModel.read_data(self.data_folder)
         except Exception as e:
             self.sitesModel.data = []
-            print(e)git init
-        self.makeSitesLookup()
+            print(e)
+        self.make_sites_lookup()
 
-    def makeSitesLookup(self):
-        self.surveysModel.sites_lookup = {site["uuid"]: site["name"] for site in self.sitesModel.data}
+    def make_sites_lookup(self):
+        self.surveysModel.sites_lookup = {site["uuid"]: site["name"] for site in self.sitesModel.data_array}
 
     def makeTripsLookup(self):
         self.surveysModel.trips_lookup = {self.trip["uuid"]: self.trip["name"]}
@@ -63,10 +65,10 @@ class Model(object):
         trip["start_date"] = datetime.date.strftime(self.trip["start_date"], "%Y-%m-%d")
         trip["finish_date"] = datetime.date.strftime(self.trip["finish_date"], "%Y-%m-%d")
 
-        writeJsonFile(f'{folder}/trip.json', trip)
+        write_json_file(folder, 'trip.json', trip)
 
     def readTrip(self):
-        tripsFolder = f'{self.datafolder}/trips'
+        tripsFolder = f'{self.data_folder}/trips'
         if not os.path.isdir(tripsFolder):
             os.mkdir(tripsFolder)
 
@@ -81,7 +83,7 @@ class Model(object):
 
 
         if os.path.exists(tripFileName):
-            self.trip = readJsonFile(tripFileName)
+            self.trip = read_json_file(tripFileName)
             self.trip["start_date"] = datetime.datetime.strptime(self.trip["start_date"], "%Y-%m-%d").date()
             self.trip["finish_date"] = datetime.datetime.strptime(self.trip["finish_date"], "%Y-%m-%d").date()
             new_trip = False

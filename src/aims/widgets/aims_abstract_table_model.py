@@ -6,19 +6,18 @@ from abc import abstractmethod
 
 
 class AimsAbstractTableModel(QtCore.QAbstractTableModel):
-
-    data=[]
+    data_array = []
     columns = []
     editable = []
 
-    datafolder = ""
+    data_folder = ""
 
     def data(self, index, role):
-        if role == Qt.DisplayRole :
+        if role == Qt.DisplayRole:
             try:
-                rawValue = self.data[index.row()][self.columns[index.column()]]
+                rawValue = self.data_array[index.row()][self.columns[index.column()]]
                 lookup = self.lookup(index.column())
-                if lookup is None:
+                if lookup is None or rawValue == "":
                     value = rawValue
                 else:
                     value = lookup[rawValue]
@@ -28,9 +27,9 @@ class AimsAbstractTableModel(QtCore.QAbstractTableModel):
                 traceback.print_exc()
             return str(value)
 
-        if role == Qt.EditRole :
+        if role == Qt.EditRole:
             try:
-                rawValue = self.data[index.row()][self.columns[index.column()]]
+                rawValue = self.data_array[index.row()][self.columns[index.column()]]
                 value = rawValue
             except Exception as e:
                 value = ""
@@ -39,12 +38,12 @@ class AimsAbstractTableModel(QtCore.QAbstractTableModel):
 
     def setData(self, index, value, role):
         if role == Qt.EditRole:
-            self.data[index.row()][self.columns[index.column()]] = value
-            self.saveData(index.row())
+            self.data_array[index.row()][self.columns[index.column()]] = value
+            self.save_data(index.row())
             return True
 
     def rowCount(self, index):
-        return len(self.data)
+        return len(self.data_array)
 
     def columnCount(self, index):
         return len(self.columns)
@@ -57,17 +56,23 @@ class AimsAbstractTableModel(QtCore.QAbstractTableModel):
 
             if orientation == Qt.Vertical:
                 return ""
+
     def flags(self, index):
-        if (self.editable[index.column()]):
-            return  Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsEditable
+        if self.is_editable(index):
+            return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
         else:
-            return  Qt.ItemIsSelectable|Qt.ItemIsEnabled
+            return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
+    def is_editable(self, index):
+        try:
+            return self.editable[index.column()]
+        except:
+            return False
 
-    def readData(self, datafolder):
+    def read_data(self, datafolder):
         pass
 
-    def saveData(self, row):
+    def save_data(self, row):
         pass
 
     def lookup(self, column):

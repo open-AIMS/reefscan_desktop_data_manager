@@ -1,4 +1,6 @@
 from PyQt5 import uic
+from PyQt5.QtCore import Qt
+
 from PyQt5.QtWidgets import QDialog, QMainWindow
 
 
@@ -21,3 +23,6 @@ class Sites(QDialog):
         self.model=model
         self.ui=uic.loadUi(ui, baseinstance=self)
         self.ui.tblSites.setModel(self.model.sitesModel)
+        self.ui.setWindowState(self.ui.windowState() | Qt.WindowMaximized)
+        self.ui.tblSites.resizeColumnsToContents()
+

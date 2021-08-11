@@ -3,7 +3,7 @@ import shutil
 from datetime import datetime
 
 reefscan_folder= "c:/aims/reef-scanner/SERVER"
-def sync_to_reefscan(local_folder):
+def sync_to_reefscan_server(local_folder):
     if not os.path.isdir(reefscan_folder):
         raise Exception (f"Server not found at {reefscan_folder}")
 

@@ -1,14 +1,15 @@
 #Initialise
 install anaconda   
-`conda create --name reef-scanner-data-entry --file conda_requirements.txt python=3.9`  
-`conda activate --name reef-scanner-data-entry`
+Add the anaconda to the path in pycharm terminal  
+`conda create --name reef-scanner-data-entry --file conda_requirements.txt python=3.9 -c conda-forge`  
+`conda activate reef-scanner-data-entry`
 
 #Add dependencies  
 `conda install <dependency name>`  
 `conda list --export > conda_requirements.txt`
 
 # Get all dependencies*  
-`designerconda install --file conda_requirements.txt`    
+`conda install --file conda_requirements.txt -c conda-forge`    
 
 # GUI designer  
 QT designer is installed as part of the PyQT depenency  
@@ -27,4 +28,4 @@ These are the values for the three edit boxes
 1. $ProjectFileDir$    
 
 #Create executable  
-pyinstaller -p src --noconsole --add-data src\aims\app.ui;aims --add-data src\aims\sites.ui;aims --onefile src\main.py
+pyinstaller -p src --noconsole --add-data src\aims\*.ui;aims --onefile src\main.py

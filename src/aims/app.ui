@@ -65,6 +65,7 @@
      <string>Sync</string>
     </property>
     <addaction name="actionTo_Reefscan"/>
+    <addaction name="actionFrom_Aquisition_Hardware"/>
     <addaction name="actionShow_Archives"/>
    </widget>
    <addaction name="menuEdit"/>
@@ -78,7 +79,7 @@
   </action>
   <action name="actionTo_Reefscan">
    <property name="text">
-    <string>To Reefscan</string>
+    <string>To Reefscan Server</string>
    </property>
   </action>
   <action name="actionShow_Archives">
@@ -89,6 +90,11 @@
   <action name="actionTrip">
    <property name="text">
     <string>Trip</string>
+   </property>
+  </action>
+  <action name="actionFrom_Aquisition_Hardware">
+   <property name="text">
+    <string>From Aquisition Hardware</string>
    </property>
   </action>
  </widget>
