@@ -1,3 +1,5 @@
+import os
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog
 from PyQt5 import QtWidgets, uic
@@ -27,11 +29,13 @@ class OnboardSyncDlg(QDialog):
         self.ui.tableView.clicked.connect(self.table_clicked)
 
     def table_clicked(self, index):
+        if index.column() == 9:
+            path = self.model.data_array[index.row()]["folder"]
+            os.startfile(path)
         if index.column() == 3:
             self.make_site(index)
 
     def make_site(self, index):
-        print("make site")
         input_box = QtWidgets.QInputDialog()
         input_box.setLabelText("Site Name")
         result = input_box.exec_()

@@ -27,7 +27,7 @@ class TripDlg(QDialog):
 
         self.buttonBox.accepted.connect(self.ok)
 
-        # self.ui.tblSites.setModel(self.model.sitesModel)
+        # self.ui.tblSites.setModel(self.basic_model.sitesModel)
     def ok(self):
         self.trip["name"] = self.ui.edName.text()
         self.trip["vessel"] = self.ui.edVessel.text()

@@ -4,8 +4,8 @@ import shortuuid
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 
-from aims.exif_utils import get_exif_data
-from aims.widgets.aims_abstract_table_model import AimsAbstractTableModel
+from reefscanner.basic_model.exif_utils import get_exif_data
+from aims.gui_model.aims_abstract_table_model import AimsAbstractTableModel
 
 
 class OnboardSyncModel(AimsAbstractTableModel):
@@ -35,16 +35,17 @@ class OnboardSyncModel(AimsAbstractTableModel):
         return super().data(index, role)
 
 
-    def set_data_folder(self, data_folder):
+    def set_hardware_data_folder(self, data_folder):
         if os.path.isdir(data_folder):
-            self.data_folder = data_folder
-            print(data_folder)
+            self.hardware_data_folder = data_folder
             self.read_from_files()
 
-    def read_from_files(self):
-        surveys_folder = f'{self.data_folder}/surveys'
-        survey_folders = os.listdir(surveys_folder)
+    def clear_data(self):
         self.data_array = []
+
+    def read_from_hardware_files(self):
+        surveys_folder = f'{self.hardware_data_folder}/surveys'
+        survey_folders = os.listdir(surveys_folder)
         for survey_folder in survey_folders:
             full_path = f'{surveys_folder}/{survey_folder}'
             survey_id = survey_folder
@@ -61,7 +62,6 @@ class OnboardSyncModel(AimsAbstractTableModel):
                           "finish_date": finish_date, "finish_lat": finish_lat, "finish_lon": finish_lon,
                           "site": "", "project": self.default_project, "operator": self.default_operator,
                           "vessel": self.default_vessel}
-                print(survey)
                 self.data_array.append(survey)
 
     def new_site_for_survey(self, row, site_name):

@@ -9,18 +9,24 @@ class AimsAbstractTableModel(QtCore.QAbstractTableModel):
     data_array = []
     columns = []
     editable = []
+    auto_save = True
 
     data_folder = ""
 
     def data(self, index, role):
+        row_ = self.data_array[index.row()]
+        column_name = self.columns[index.column()]
         if role == Qt.DisplayRole:
             try:
-                rawValue = self.data_array[index.row()][self.columns[index.column()]]
-                lookup = self.lookup(index.column())
-                if lookup is None or rawValue == "":
-                    value = rawValue
+                if column_name in row_:
+                    rawValue = row_[column_name]
+                    lookup = self.lookup(index.column())
+                    if lookup is None or rawValue == "":
+                        value = rawValue
+                    else:
+                        value = lookup[rawValue]
                 else:
-                    value = lookup[rawValue]
+                    value = ""
 
             except Exception as e:
                 value = ""
@@ -29,7 +35,7 @@ class AimsAbstractTableModel(QtCore.QAbstractTableModel):
 
         if role == Qt.EditRole:
             try:
-                rawValue = self.data_array[index.row()][self.columns[index.column()]]
+                rawValue = row_[column_name]
                 value = rawValue
             except Exception as e:
                 value = ""
@@ -39,7 +45,8 @@ class AimsAbstractTableModel(QtCore.QAbstractTableModel):
     def setData(self, index, value, role):
         if role == Qt.EditRole:
             self.data_array[index.row()][self.columns[index.column()]] = value
-            self.save_data(index.row())
+            if self.auto_save:
+                self.save_data(index.row())
             return True
 
     def rowCount(self, index):

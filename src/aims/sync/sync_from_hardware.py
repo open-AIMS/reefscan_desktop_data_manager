@@ -28,7 +28,15 @@ def sync_from_hardware(hardware_folder, local_folder):
 
     #   Copy all surveys from hardware to local. Then Archive
     shutil.copytree(h_surveys_folder, l_surveys_folder, dirs_exist_ok=True)
-    shutil.move(h_surveys_folder, archive_folder)
+    try:
+        shutil.move(h_surveys_folder, archive_folder)
+    except Exception as e:
+        print (f"error moving {h_surveys_folder}")
+        print (e)
+        print ("retry")
+
+        shutil.move(h_surveys_folder, f"{archive_folder}/take2")
+
 
     message = f"Your data has been synchronised to the local storage. Data before sync is available here: {archive_folder}"
     detailed_message = """

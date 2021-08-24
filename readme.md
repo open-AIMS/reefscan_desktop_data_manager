@@ -2,7 +2,9 @@
 install anaconda   
 Add the anaconda to the path in pycharm terminal  
 `conda create --name reef-scanner-data-entry --file conda_requirements.txt python=3.9 -c conda-forge`  
-`conda activate reef-scanner-data-entry`
+`conda install aims_reef_scanner_data_model --use-local`
+`conda activate reef-scanner-data-entry`  
+`pip install ..\reef_scanner_data_model\dist\reefscanner-0.1.5-py3-none-any.whl`
 
 #Add dependencies  
 `conda install <dependency name>`  
