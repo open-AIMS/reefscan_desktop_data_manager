@@ -1,9 +1,12 @@
 #Initialise
 install anaconda   
 Add the anaconda to the path in pycharm terminal  
-`conda create --name reef-scanner-data-entry --file conda_requirements.txt python=3.9 -c conda-forge`  
+`conda create --name reef-scanner-data-entry --file conda_requirements.txt python=3.9 -c conda-forge`    
 `conda activate reef-scanner-data-entry`  
-`pip install ..\reef_scanner_data_model\dist\reefscanner-0.1.11-py3-none-any.whl`
+
+`pip install ..\reef_scanner_data_model\dist\reefscanner-0.1.11-py3-none-any.whl`  
+or  
+`pip install reefscanner @ git+git://github.com/AIMS/reefscan-data-model`
 
 #Add dependencies  
 `conda install <dependency name>`  
@@ -29,4 +32,4 @@ These are the values for the three edit boxes
 1. $ProjectFileDir$    
 
 #Create executable  
-pyinstaller -p src --noconsole --add-data src\aims\*.ui;aims --onefile src\main.py
+pyinstaller -p src --noconsole --add-data src\aims\ui\*.ui;aims\ui --onefile src\main.py

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Wizard</class>
+ <widget class="QWizard" name="Wizard">
+  <property name="windowModality">
+   <enum>Qt::WindowModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>649</width>
+    <height>380</height>
+   </rect>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>8</pointsize>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>Wizard</string>
+  </property>
+  <property name="wizardStyle">
+   <enum>QWizard::ModernStyle</enum>
+  </property>
+  <widget class="QWizardPage" name="wizardPageStart">
+   <property name="font">
+    <font>
+     <pointsize>8</pointsize>
+    </font>
+   </property>
+   <property name="title">
+    <string>Before trip downloads</string>
+   </property>
+   <property name="subTitle">
+    <string>This will download sites and projects from the reefscan server</string>
+   </property>
+  </widget>
+  <widget class="QWizardPage" name="wizardPageFinished">
+   <property name="title">
+    <string>Download finished</string>
+   </property>
+   <property name="subTitle">
+    <string>Next: Edit Trip</string>
+   </property>
+  </widget>
+  <widget class="QWizardPage" name="wizardEditTrip">
+   <layout class="QGridLayout" name="gridLayout_3">
+    <item row="0" column="0">
+     <widget class="QGroupBox" name="tripGroupBox">
+      <property name="title">
+       <string/>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWizardPage" name="wizardPageSites">
+   <property name="title">
+    <string>A table of sites</string>
+   </property>
+   <property name="subTitle">
+    <string>Next: see projects</string>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QTableView" name="tblSites"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWizardPage" name="wizardPageProjects">
+   <property name="title">
+    <string>A table of projects</string>
+   </property>
+   <property name="subTitle">
+    <string>All finished</string>
+   </property>
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="0" column="0">
+     <widget class="QTableView" name="tblProjects"/>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

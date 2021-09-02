@@ -23,18 +23,18 @@ class SurveysModel(AimsAbstractTableModel):
 
 
     def data(self, index, role):
-        if role == Qt.FontRole and index.column() in [3, 9]:
+        if role == Qt.FontRole and index.column() in [3, 11]:
             font = QtGui.QFont()
             font.setUnderline(True)
             return font
 
-        if role == Qt.ForegroundRole and index.column() in [3, 9]:
+        if role == Qt.ForegroundRole and index.column() in [3, 11]:
             return QtGui.QColor("blue")
 
         if role == Qt.DisplayRole and index.column() == 3:
             return "Make New Site"
 
-        if role == Qt.DisplayRole and index.column() == 9:
+        if role == Qt.DisplayRole and index.column() == 11:
             return "Open survey folder"
 
         return super().data(index, role)

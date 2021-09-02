@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Wizard</class>
+ <widget class="QWizard" name="Wizard">
+  <property name="windowModality">
+   <enum>Qt::WindowModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>649</width>
+    <height>380</height>
+   </rect>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>8</pointsize>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>Wizard</string>
+  </property>
+  <property name="wizardStyle">
+   <enum>QWizard::ModernStyle</enum>
+  </property>
+  <widget class="QWizardPage" name="wizardPageStart">
+   <property name="font">
+    <font>
+     <pointsize>8</pointsize>
+    </font>
+   </property>
+   <property name="title">
+    <string>End of trip synchronise</string>
+   </property>
+   <property name="subTitle">
+    <string>This uploads new sites, surveys and photos to the reefcloud server. Then it downloads all sites and projects from the reefcloud server. Please ensure this computer is on the AIMS network.</string>
+   </property>
+  </widget>
+  <widget class="QWizardPage" name="wizardPageFinished">
+   <property name="title">
+    <string>Synchronise finished</string>
+   </property>
+   <property name="subTitle">
+    <string>All finished</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

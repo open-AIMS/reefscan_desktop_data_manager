@@ -40,15 +40,15 @@ class SyncFromHardware(Synchroniser):
         self.copytree_parallel(h_surveys_folder, l_surveys_folder)
         logger.info("surveys copied")
 
-        # try:
-        #     shutil.move(h_surveys_folder, archive_folder)
-        # except Exception as e:
-        #     logger.info(f"error moving {h_surveys_folder}")
-        #     logger.info(e)
-        #     logger.info("retry")
-        #     shutil.move(h_surveys_folder, f"{archive_folder}/take2")
-        #
-        # logger.info("surveys moved")
+        try:
+            shutil.move(h_surveys_folder, archive_folder)
+        except Exception as e:
+            logger.info(f"error moving {h_surveys_folder}")
+            logger.info(e)
+            logger.info("retry")
+            shutil.move(h_surveys_folder, f"{archive_folder}/take2")
+
+        logger.info("surveys moved")
 
         message = f"Your data has been synchronised to the local storage. Data before sync is available here: {archive_folder}"
         detailed_message = """

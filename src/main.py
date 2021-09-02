@@ -4,12 +4,12 @@ import traceback
 from PyQt5 import QtWidgets
 # from fbs_runtime.excepthook import ExceptionHandler
 
-from aims.app import App
 # from fbs_runtime.application_context.PyQt5 import ApplicationContext, cached_property
 import sys
+import glob
 
 # from uncaught_hook import UncaughtHook
-from aims.start import Start
+from aims.ui.start import Start
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -53,6 +53,9 @@ if __name__ == "__main__":
     except:
         meipass=""
     print(meipass)
+    files = glob.glob(meipass + '**/*', recursive=True)
+    print (files)
+
 
     # app= App(meipass)
     try:
