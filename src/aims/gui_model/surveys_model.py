@@ -3,20 +3,23 @@ from PyQt5.QtCore import Qt
 import shortuuid
 import os
 
-from reefscanner.basic_model.reader_writer import save_survey
+from reefscanner.basic_model.reader_writer import save_survey, save_site
 from aims.gui_model.aims_abstract_table_model import AimsAbstractTableModel
 
 
 class SurveysModel(AimsAbstractTableModel):
-    columns = ["id", "project", "site", "", "transect", "depth", "trip", "start_date", "finish_date", "operator", "vessel", "folder",
-               "photos", "start_lat", "start_lon",
-               "finish_lat", "finish_lon"]
-    editable = [False, True, True, False, True, True, False, False, False, True, True, False,
-                False, False, False, False, False]
-    sites_lookup = {}
-    trips_lookup = {}
-    projects_lookup = {}
-    new_sites = []
+
+    def __init__(self):
+        super().__init__()
+        self.columns = ["id", "project", "site", "", "transect", "depth", "trip", "start_date", "finish_date", "operator", "vessel", "folder",
+                   "photos", "start_lat", "start_lon",
+                   "finish_lat", "finish_lon"]
+        self.editable = [False, True, True, False, True, True, False, False, False, True, True, False,
+                    False, False, False, False, False]
+        self.sites_lookup = {}
+        self.trips_lookup = {}
+        self.projects_lookup = {}
+        self.new_sites = []
 
 
     def data(self, index, role):

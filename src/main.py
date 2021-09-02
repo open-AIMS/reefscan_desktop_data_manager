@@ -1,3 +1,4 @@
+import logging
 import traceback
 
 from PyQt5 import QtWidgets
@@ -7,9 +8,15 @@ from aims.app import App
 # from fbs_runtime.application_context.PyQt5 import ApplicationContext, cached_property
 import sys
 
+# from uncaught_hook import UncaughtHook
+from aims.start import Start
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def gui_except_hook(exc_class, exc_value, tb):
+    logger.info("except hook")
     traceback1 = ''.join(traceback.format_tb(tb))
     error_message = str(exc_value)
 
@@ -21,8 +28,24 @@ def gui_except_hook(exc_class, exc_value, tb):
     errorbox.setDetailedText(traceback1)
     errorbox.exec_()
 
+
 sys.excepthook = gui_except_hook
 
+# sys._excepthook = sys.excepthook
+
+
+# def exception_hook(exctype, value, traceback):
+#     print(exctype, value, traceback)
+#     sys._excepthook(exctype, value, traceback)
+#     sys.exit(1)
+
+
+# sys.excepthook = exception_hook
+
+# qt_exception_hook = UncaughtHook()
+
+# import cgitb
+# cgitb.enable(format='text')
 
 if __name__ == "__main__":
     try:
@@ -31,6 +54,12 @@ if __name__ == "__main__":
         meipass=""
     print(meipass)
 
-    app= App(meipass)
+    # app= App(meipass)
+    try:
+        start = Start(meipass)
+    except Exception:
+        logger.exception("Error")
+
+    print("main done")
 
 

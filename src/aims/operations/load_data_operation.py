@@ -1,24 +1,23 @@
-from PyQt5.QtCore import QRunnable, QMetaObject, Qt, Q_ARG, QThread
-from PyQt5.QtWidgets import QProgressDialog
+import logging
 
-from reefscanner.basic_model.basic_model import BasicModel
+from aims.gui_model.model import GuiModel
+from aims.operations.abstract_operation import AbstractOperation
+
+logger = logging.getLogger(__name__)
 
 
-class LoadDataOperation(QRunnable):
+class LoadDataOperation(AbstractOperation):
 
-    def __init__(self, model:BasicModel, progress: QProgressDialog, execute_after):
-        QRunnable.__init__(self)
-        self.progress = progress
+    def __init__(self, model: GuiModel):
+        super().__init__()
         self.model = model
-        self.execute_after = execute_after
 
-    def __del__(self):
-        self.execute_after()
+    def _run(self):
+        logger.info("start load data")
+        self.model.read_from_files(self.progress_queue)
+        logger.info("finish load data")
+        return None
 
-    def run(self):
-        print("start")
-        self.model.read_from_files(self.set_progress_status)
+    def cancel(self):
+        pass
 
-    def set_progress_status(self, function, i):
-        QMetaObject.invokeMethod(self.progress, function,
-                                 Qt.QueuedConnection, Q_ARG(int, i))

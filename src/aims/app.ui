@@ -57,7 +57,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuEdit">
@@ -73,10 +73,25 @@
     </property>
     <addaction name="actionTo_Reefscan"/>
     <addaction name="actionFrom_Aquisition_Hardware"/>
+   </widget>
+   <widget class="QMenu" name="menuConfig">
+    <property name="title">
+     <string>Config</string>
+    </property>
+    <addaction name="actionHardware_folder"/>
+    <addaction name="actionServer_Folder"/>
+   </widget>
+   <widget class="QMenu" name="menuArchives">
+    <property name="title">
+     <string>Archives</string>
+    </property>
     <addaction name="actionShow_Archives"/>
+    <addaction name="actionHardware_Archives"/>
    </widget>
    <addaction name="menuEdit"/>
    <addaction name="menuSync"/>
+   <addaction name="menuConfig"/>
+   <addaction name="menuArchives"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionSites">
@@ -91,7 +106,7 @@
   </action>
   <action name="actionShow_Archives">
    <property name="text">
-    <string>Show Archives</string>
+    <string>Local Archives</string>
    </property>
   </action>
   <action name="actionTrip">
@@ -102,6 +117,21 @@
   <action name="actionFrom_Aquisition_Hardware">
    <property name="text">
     <string>From Aquisition Hardware</string>
+   </property>
+  </action>
+  <action name="actionHardware_Archives">
+   <property name="text">
+    <string>Hardware Archives</string>
+   </property>
+  </action>
+  <action name="actionHardware_folder">
+   <property name="text">
+    <string>Hardware folder</string>
+   </property>
+  </action>
+  <action name="actionServer_Folder">
+   <property name="text">
+    <string>Server Folder</string>
    </property>
   </action>
  </widget>

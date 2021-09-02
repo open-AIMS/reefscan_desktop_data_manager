@@ -4,17 +4,15 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog
 from PyQt5 import QtWidgets, uic
 
-from aims.onbard_sync_model import OnboardSyncModel
+from aims.gui_model.hardware_sync_model import HardwareSyncModel
 from aims.widgets.combo_box_delegate import ComboBoxDelegate
 
 
 class OnboardSyncDlg(QDialog):
 
-    model: OnboardSyncModel
-
     def __init__(self, ui, model):
         super().__init__()
-        self.model = model
+        self.model: HardwareSyncModel = model
         self.ui = uic.loadUi(ui, baseinstance=self)
         self.ui.tableView.setModel(self.model)
         self.projectsComboBox = ComboBoxDelegate(self.model.projects_lookup)

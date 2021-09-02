@@ -6,12 +6,14 @@ from abc import abstractmethod
 
 
 class AimsAbstractTableModel(QtCore.QAbstractTableModel):
-    data_array = []
-    columns = []
-    editable = []
-    auto_save = True
+    def __init__(self):
+        super().__init__()
+        self.data_array = []
+        self.columns = []
+        self.editable = []
+        self.auto_save = True
 
-    data_folder = ""
+        self.data_folder = ""
 
     def data(self, index, role):
         row_ = self.data_array[index.row()]
@@ -30,7 +32,7 @@ class AimsAbstractTableModel(QtCore.QAbstractTableModel):
 
             except Exception as e:
                 value = ""
-                traceback.print_exc()
+                # traceback.print_exc()
             return str(value)
 
         if role == Qt.EditRole:

@@ -4,8 +4,10 @@ from aims.gui_model.aims_abstract_table_model import AimsAbstractTableModel
 
 class SitesModel(AimsAbstractTableModel):
 
-    columns = ["name", "latitude", "longitude", "folder"]
-    editable = [True,True,True, False ]
+    def __init__(self):
+        super().__init__()
+        self.columns = ["name", "latitude", "longitude", "folder"]
+        self.editable = [True,True,True, False ]
 
     def save_data(self, row):
         site = self.data_array[row]

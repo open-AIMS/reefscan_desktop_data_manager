@@ -20,8 +20,8 @@ class Sites(QDialog):
 
     def __init__(self, ui, model):
         super().__init__()
-        self.model=model
-        self.ui=uic.loadUi(ui, baseinstance=self)
+        self.model = model
+        self.ui = uic.loadUi(ui, baseinstance=self)
         self.ui.tblSites.setModel(self.model.sitesModel)
         self.ui.setWindowState(self.ui.windowState() | Qt.WindowMaximized)
         self.ui.tblSites.resizeColumnsToContents()
