@@ -32,4 +32,4 @@ These are the values for the three edit boxes
 1. $ProjectFileDir$    
 
 #Create executable  
-pyinstaller -p src --noconsole --add-data src\aims\ui\*.ui;aims\ui --onefile src\main.py
+pyinstaller -p src --noconsole --add-data src\resources\*;resources --onefile src\main.py
