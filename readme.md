@@ -1,19 +1,14 @@
 #Initialise
-install anaconda   
-Add the anaconda to the path in pycharm terminal  
-`conda create --name reef-scanner-data-entry --file conda_requirements.txt python=3.9 -c conda-forge`    
-`conda activate reef-scanner-data-entry`  
+`virtualenv venv`
+`source venv/bin/activate`
+or on windows
+`venv\Scripts\Activate`
+`python -m ensurepip`
+`python -m pip install -r requirements.txt`
 
-`pip install ..\reef_scanner_data_model\dist\reefscanner-0.1.11-py3-none-any.whl`  
-or  
-`pip install reefscanner @ git+git://github.com/AIMS/reefscan-data-model`
 
-#Add dependencies  
-`conda install <dependency name>`  
-`conda list --export > conda_requirements.txt`
-
-# Get all dependencies*  
-`conda install --file conda_requirements.txt -c conda-forge`    
+#Add dependencies
+add dependencies to requirements.txt
 
 # GUI designer  
 QT designer is installed as part of the PyQT depenency  

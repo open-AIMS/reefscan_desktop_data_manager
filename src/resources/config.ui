@@ -21,7 +21,7 @@
     <string>Local data folder</string>
    </property>
    <property name="subTitle">
-    <string>The folder on this computer where the data files will be stores</string>
+    <string>The folder on this computer where the data files will be stored</string>
    </property>
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">

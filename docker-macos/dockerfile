@@ -1,0 +1,4 @@
+from sickcodes/docker-osx:latest
+COPY buildreefscan.sh ./
+CMD chmod 777 buildreefscan.sh
+CMD ./buildreefscan.sh

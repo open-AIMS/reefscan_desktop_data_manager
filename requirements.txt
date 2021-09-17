@@ -1,0 +1,7 @@
+joblib
+pillow
+piexif
+pyinstaller
+PyQt5
+shortuuid
+reefscanner @ git+git://github.com/AIMS/reefscan-data-model
