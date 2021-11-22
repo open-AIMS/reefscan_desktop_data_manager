@@ -1,9 +1,3 @@
-#Initialise
-`python -m venv venv`
-`source venv/bin/activate`
-or on windows
-`venv\Scripts\Activate`
-`python -m ensurepip`
 # Initialise
 `virtualenv venv`  
 
