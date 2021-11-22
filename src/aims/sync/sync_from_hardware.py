@@ -22,9 +22,9 @@ class SyncFromHardware(Synchroniser):
 
         dt_string = datetime.now().strftime("%Y-%m-%dT%H%M%S")
 
-        h_surveys_folder = f'{hardware_folder}/surveys'
+        h_surveys_folder = f'{hardware_folder}/images'
 
-        l_surveys_folder = f'{local_folder}/surveys'
+        l_surveys_folder = f'{local_folder}/images'
 
         if not os.path.isdir(h_surveys_folder):
             raise Exception(f"Hardware surveys not found at {h_surveys_folder}")

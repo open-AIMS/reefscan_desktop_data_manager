@@ -67,7 +67,6 @@ class Start(object):
         path = f"{self.model.hardware_data_folder}/archive"
         os.startfile(path)
 
-
     def before_trip(self):
         print("before trip")
         before_trip_wizard = BeforeTripWizard(self.meipass)

@@ -76,11 +76,11 @@ class SyncToReefScanServer(Synchroniser):
         dt_string = datetime.now().strftime("%Y-%m-%dT%H%M%S")
         self.s_project_file = f'{self.reefscan_folder}/projects.json'
         self.s_sites_folder = f'{self.reefscan_folder}/sites'
-        self.s_surveys_folder = f'{self.reefscan_folder}/surveys'
+        self.s_surveys_folder = f'{self.reefscan_folder}/images'
         self.s_trips_folder = f'{self.reefscan_folder}/trips'
         self.l_project_file = f'{self.local_folder}/projects.json'
         self.l_sites_folder = f'{self.local_folder}/sites'
-        self.l_surveys_folder = f'{self.local_folder}/surveys'
+        self.l_surveys_folder = f'{self.local_folder}/images'
         self.l_trips_folder = f'{self.local_folder}/trips'
         # if not os.path.exists(s_project_file):
         #     raise Exception (f"Project file does not exist on reefscan server. {s_project_file}")

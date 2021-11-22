@@ -1,5 +1,5 @@
 #Initialise
-`virtualenv venv`
+`python -m venv venv`
 `source venv/bin/activate`
 or on windows
 `venv\Scripts\Activate`

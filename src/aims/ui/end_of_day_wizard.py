@@ -68,7 +68,7 @@ class EndOfDayWizard(object):
 
     def upload_from_hardware(self):
         self.model.add_new_sites(self.hardware_sync_model.new_sites)
-        surveys_folder = f"{self.model.data_folder}/surveys"
+        surveys_folder = f"{self.model.data_folder}/images"
         os.makedirs(surveys_folder, exist_ok=True)
         for survey in self.hardware_sync_model.data_array:
             survey_id = survey["id"]
