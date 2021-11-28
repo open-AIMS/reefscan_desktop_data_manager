@@ -25,7 +25,7 @@ class GuiModel(BasicModel):
 
     def read_surveys(self, progress_queue):
         super().read_surveys(progress_queue)
-        self.surveysModel.data_array = self.surveys_data_array
+        self.surveysModel.data_dict = self.surveys_data
 
     def read_trip(self):
         super().read_trip()

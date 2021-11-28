@@ -9,7 +9,8 @@ import sys
 import glob
 
 # from uncaught_hook import UncaughtHook
-from aims.ui.start import Start
+from aims.ui.surveys_tree import SurveysTree
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ if __name__ == "__main__":
 
     # app= App(meipass)
     try:
-        start = Start(meipass)
+        start = SurveysTree(meipass)
     except Exception:
         logger.exception("Error")
 

@@ -31,7 +31,7 @@ class Start(object):
         self.ui = uic.loadUi(self.start_ui)
 
         self.model = GuiModel()
-        self.config = Config(self.model)
+        self.config = Config()
         self.aims_status_dialog = AimsStatusDialog(self.ui)
 
         background_image = f'{meipass}resources/Coraldiseasea.jpg'

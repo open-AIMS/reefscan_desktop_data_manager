@@ -34,3 +34,7 @@ On Windows:
 `pyinstaller -p src --noconsole --add-data src\resources\*;resources --onefile src\main.py`  
 On Linux:  
 `pyinstaller -p src --noconsole --add-data src/resources/*:resources --onefile src/main.py`
+
+
+
+pip install ..\reef_scanner_data_model\dist\reefscanner-0.2.0-py3-none-any.whl

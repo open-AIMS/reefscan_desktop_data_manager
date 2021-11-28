@@ -20,6 +20,7 @@ class SurveysModel(AimsAbstractTableModel):
         self.trips_lookup = {}
         self.projects_lookup = {}
         self.new_sites = []
+        self.data_dict={}
 
 
     def data(self, index, role):
