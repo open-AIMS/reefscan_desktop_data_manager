@@ -9,10 +9,13 @@ import sys
 import glob
 
 # from uncaught_hook import UncaughtHook
+from aims import state
+from aims.config import Config
+from aims.ui.config_ui import ConfigUi
 from aims.ui.surveys_tree import SurveysTree
+from aims.ui.trip import TripDlg
 
-
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
@@ -48,19 +51,26 @@ sys.excepthook = gui_except_hook
 # import cgitb
 # cgitb.enable(format='text')
 
+
 if __name__ == "__main__":
     try:
-        meipass = sys._MEIPASS + "/"
+        state.meipass = sys._MEIPASS + "/"
     except:
-        meipass=""
-    print(meipass)
-    files = glob.glob(meipass + '**/*', recursive=True)
-    print (files)
+        state.meipass=""
+    print(state.meipass)
+    files = glob.glob(state.meipass + '**/*', recursive=True)
+    print(files)
 
+    app = QtWidgets.QApplication(sys.argv)
 
-    # app= App(meipass)
     try:
-        start = SurveysTree(meipass)
+        state.trip_dlg = TripDlg()
+        config_ui = ConfigUi()
+        state.surveys_tree = SurveysTree()
+
+        config_ui.show()
+        app.exec()
+
     except Exception:
         logger.exception("Error")
 

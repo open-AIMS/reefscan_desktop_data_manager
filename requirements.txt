@@ -4,4 +4,8 @@ piexif
 pyinstaller
 PyQt5
 shortuuid
+PyQtWebEngine
 # reefscanner @ git+git://github.com/AIMS/reefscan-data-model
+reefscanner @ file:///C:/aa_git_root/techdev/reef_scanner_data_model/dist/reefscanner-0.2.10o-py3-none-any.whl
+pandas
+smbprotocol

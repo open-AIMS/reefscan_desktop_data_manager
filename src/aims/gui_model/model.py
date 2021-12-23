@@ -20,12 +20,16 @@ class GuiModel(BasicModel):
 
     def add_new_sites(self, new_sites):
         for site in new_sites:
-            site["folder"] = f"{self.data_folder}/sites/{site['uuid']}"
-            save_site(site, self.sites_data_array)
+            self.add_new_site(site)
 
-    def read_surveys(self, progress_queue):
-        super().read_surveys(progress_queue)
-        self.surveysModel.data_dict = self.surveys_data
+    def add_new_site(self, site):
+        site["folder"] = f"{self.data_folder}/sites/{site['uuid']}"
+        save_site(site, self.sites_data_array)
+
+    def read_surveys(self, progress_queue, image_folder, json_folder, samba):
+        surveys_data = super().read_surveys(progress_queue, image_folder, json_folder, samba)
+        self.surveysModel.data_dict = surveys_data
+        return surveys_data
 
     def read_trip(self):
         super().read_trip()

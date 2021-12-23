@@ -20,8 +20,6 @@ class Surveys(object):
         # self.ui.actionShow_Archives.triggered.connect(self.show_archives)
         # self.ui.actionHardware_Archives.triggered.connect(self.hardware_archives)
 
-
-
         self.surveys_table = SurveysTable(self.ui.tableView, self.model.surveysModel,self.model)
         self.ui.showMaximized()
 

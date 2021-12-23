@@ -24,6 +24,7 @@ class AbstractOperation(QObject):
         self.progress_value = 0
         self.progress_max = 0
         self.progress_label = ""
+        self.update_interval = 100
         logger.info("done set up sync")
 
     def cancel(self):
@@ -38,7 +39,7 @@ class AbstractOperation(QObject):
                 logger.debug(f"{operation} {value}")
                 if operation == "value":
                     self.progress_value += 1
-                    if self.progress_value % 100 == 0:
+                    if self.progress_value % self.update_interval == 0:
                         self.set_progress_value(self.progress_value)
                 elif operation == "max":
                     self.progress_max = value

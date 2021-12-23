@@ -8,11 +8,10 @@ logger = logging.getLogger(__name__)
 
 class SyncFromHardwareOperation(AbstractOperation):
 
-    def __init__(self, hardware_folder, local_folder):
+    def __init__(self, hardware_folder, local_folder, backup_data_folder, surveys):
         super().__init__()
-        self.hardware_folder = hardware_folder
-        self.local_folder = local_folder
-        self.sync = SyncFromHardware(self.progress_queue)
+        self.sync = SyncFromHardware(self.progress_queue, hardware_folder, local_folder, backup_data_folder)
+        self.surveys = surveys
 
     def _run(self):
-        return self.sync.sync(self.hardware_folder, self.local_folder)
+        return self.sync.sync(survey_ids=self.surveys)
