@@ -19,6 +19,7 @@ class SurveysModel(AimsAbstractTableModel):
         self.sites_lookup = {}
         self.trips_lookup = {}
         self.projects_lookup = {}
+        self.method_lookup = {}
         self.new_sites = []
         self.data_dict={}
 

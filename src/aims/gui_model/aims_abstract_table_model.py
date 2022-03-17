@@ -1,8 +1,11 @@
+import logging
 import traceback
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QModelIndex
 from abc import abstractmethod
+
+logger = logging.getLogger(__name__)
 
 
 class AimsAbstractTableModel(QtCore.QAbstractTableModel):
@@ -15,7 +18,7 @@ class AimsAbstractTableModel(QtCore.QAbstractTableModel):
 
         self.data_folder = ""
 
-    def data(self, index, role):
+    def data(self, index: QModelIndex, role: int) -> any:
         row_ = self.data_array[index.row()]
         column_name = self.columns[index.column()]
         if role == Qt.DisplayRole:
@@ -52,7 +55,8 @@ class AimsAbstractTableModel(QtCore.QAbstractTableModel):
             return True
 
     def rowCount(self, index):
-        return len(self.data_array)
+        i = len(self.data_array)
+        return i
 
     def columnCount(self, index):
         return len(self.columns)

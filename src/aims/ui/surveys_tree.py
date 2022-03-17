@@ -13,7 +13,7 @@ from PyQt5.QtCore import QItemSelection, Qt, QModelIndex, QAbstractItemModel, QI
 from PyQt5.QtGui import QStandardItemModel, QIcon
 from PyQt5.QtQuick import QQuickView
 from PyQt5.QtWidgets import QTreeView, QWidget, QComboBox, QApplication, QListWidget, QListWidgetItem, QListView, \
-    QMessageBox
+    QMessageBox, QTextEdit, QPlainTextEdit
 from reefscanner.basic_model.reader_writer import save_survey, save_site
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
@@ -47,7 +47,9 @@ class SurveysTree(object):
         super().__init__()
         self.app = QtWidgets.QApplication(sys.argv)
         self.start_ui = f'{state.meipass}resources/surveys-tree.ui'
+
         self.ui = uic.loadUi(self.start_ui)
+        self.ui.setWindowState(self.ui.windowState() | Qt.WindowMaximized)
         self.aims_status_dialog = AimsStatusDialog(self.ui)
         self.all_surveys = {}
         self.survey_id = None
@@ -68,6 +70,7 @@ class SurveysTree(object):
         self.ui.cb_site.currentIndexChanged.connect(self.site_changed)
         self.has_site_changed = False
         self.thumbnail_model = None
+        self.ed_comments: QTextEdit = self.ui.ed_comments
         lv_thumbnails:QListView = self.ui.lv_thumbnails
         lv_thumbnails.doubleClicked.connect(self.click_photo)
 
@@ -97,6 +100,18 @@ class SurveysTree(object):
         self.lookups()
 
         self.data_to_ui()
+        self.show_messages()
+
+    def show_messages(self):
+        txt_messages: QTextEdit = self.ui.txtMessages
+        txt_messages.setVisible(len(state.model.messages) > 0)
+        txt_messages.clear()
+        txt_messages.append('Messages:')
+        for message in state.model.messages:
+            txt_messages.append("    " + message)
+
+        size: QSize = txt_messages.document().size().toSize()
+        txt_messages.setFixedHeight(size.height() + 3)
 
     def survey(self):
         return self.all_surveys[self.survey_id]
@@ -132,8 +147,8 @@ class SurveysTree(object):
             if self.survey()["cloud"] == "":
                 self.survey()["cloud"] = self.clipboard["cloud"]
 
-            if self.survey()["vis"] == "":
-                self.survey()["vis"] = self.clipboard["vis"]
+            if self.survey()["visibility"] == "":
+                self.survey()["visibility"] = self.clipboard["visibility"]
 
             self.data_to_ui()
             save_survey(self.survey())
@@ -152,7 +167,7 @@ class SurveysTree(object):
         #     survey["trip"] = state.model.trip["uuid"]
         #     save_survey(survey)
         #
-        operation = SyncFromHardwareOperation(state.config.hardware_data_folder, state.config.data_folder, state.config.backup_data_folder, surveys)
+        operation = SyncFromHardwareOperation(state.config.hardware_data_folder, state.config.data_folder, state.config.backup_data_folder, surveys, state.config.camera_samba)
         operation.update_interval = 1
         self.aims_status_dialog.set_operation_connections(operation)
         # # operation.after_run.connect(self.after_sync)
@@ -169,38 +184,45 @@ class SurveysTree(object):
     def lookups(self):
         self.site_lookup()
 
+        self.ui.cb_tide.addItem("")
+        self.ui.cb_tide.addItem("Falling")
+        self.ui.cb_tide.addItem("High")
+        self.ui.cb_tide.addItem("Low")
+        self.ui.cb_tide.addItem("Rising")
+
         self.ui.cb_sea.addItem("")
-        self.ui.cb_sea.addItem("Calm")
-        self.ui.cb_sea.addItem("Medium")
-        self.ui.cb_sea.addItem("Rough")
+        self.ui.cb_sea.addItem("calm")
+        self.ui.cb_sea.addItem("slight")
+        self.ui.cb_sea.addItem("moderate")
+        self.ui.cb_sea.addItem("rough")
 
         self.ui.cb_wind.addItem("")
-        self.ui.cb_wind.addItem("<5 kn")
-        self.ui.cb_wind.addItem("5-10 kn")
-        self.ui.cb_wind.addItem("10-15 kn")
-        self.ui.cb_wind.addItem("15-20 kn")
-        self.ui.cb_wind.addItem("20-25 kn")
-        self.ui.cb_wind.addItem("25-30 kn")
-        self.ui.cb_wind.addItem(">30 kn")
+        self.ui.cb_wind.addItem("<5")
+        self.ui.cb_wind.addItem("5-10")
+        self.ui.cb_wind.addItem("10-15")
+        self.ui.cb_wind.addItem("15-20")
+        self.ui.cb_wind.addItem("20-25")
+        self.ui.cb_wind.addItem("25-30")
+        self.ui.cb_wind.addItem(">30")
 
         self.ui.cb_cloud.addItem("")
-        self.ui.cb_cloud.addItem("1 oktas")
-        self.ui.cb_cloud.addItem("2 oktas")
-        self.ui.cb_cloud.addItem("3 oktas")
-        self.ui.cb_cloud.addItem("4 oktas")
-        self.ui.cb_cloud.addItem("5 oktas")
-        self.ui.cb_cloud.addItem("6 oktas")
-        self.ui.cb_cloud.addItem("7 oktas")
-        self.ui.cb_cloud.addItem("8 oktas")
+        self.ui.cb_cloud.addItem("1")
+        self.ui.cb_cloud.addItem("2")
+        self.ui.cb_cloud.addItem("3")
+        self.ui.cb_cloud.addItem("4")
+        self.ui.cb_cloud.addItem("5")
+        self.ui.cb_cloud.addItem("6")
+        self.ui.cb_cloud.addItem("7")
+        self.ui.cb_cloud.addItem("8")
 
         self.ui.cb_vis.addItem("")
-        self.ui.cb_vis.addItem("<5m")
-        self.ui.cb_vis.addItem("5-10m")
-        self.ui.cb_vis.addItem("10-15m")
-        self.ui.cb_vis.addItem("15-20m")
-        self.ui.cb_vis.addItem("20-25m")
-        self.ui.cb_vis.addItem("25-30m")
-        self.ui.cb_vis.addItem(">30m")
+        self.ui.cb_vis.addItem("<5")
+        self.ui.cb_vis.addItem("5-10")
+        self.ui.cb_vis.addItem("10-15")
+        self.ui.cb_vis.addItem("15-20")
+        self.ui.cb_vis.addItem("20-25")
+        self.ui.cb_vis.addItem("25-30")
+        self.ui.cb_vis.addItem(">30")
 
     def site_lookup(self):
         cb_site: QComboBox = self.ui.cb_site
@@ -218,7 +240,10 @@ class SurveysTree(object):
             self.survey()["sea"] = self.ui.cb_sea.currentText()
             self.survey()["wind"] = self.ui.cb_wind.currentText()
             self.survey()["cloud"] = self.ui.cb_cloud.currentText()
-            self.survey()["vis"] = self.ui.cb_vis.currentText()
+            self.survey()["visibility"] = self.ui.cb_vis.currentText()
+            self.survey()["comments"] = self.ed_comments.toPlainText()
+            self.survey()["tide"] = self.ui.cb_tide.currentText()
+            self.survey()["friendly_name"] = self.ui.ed_name.text()
 
             save_survey(self.survey())
 
@@ -227,13 +252,15 @@ class SurveysTree(object):
             self.ui.widEdit.setVisible(True)
             cb_site: QComboBox = self.ui.cb_site
             cb_site.setCurrentIndex(cb_site.findData(self.survey_col("site")))
+            self.ui.ed_name.setText(self.survey_col("friendly_name"))
             self.ui.ed_operator.setText(self.survey_col("operator"))
             self.ui.ed_observer.setText(self.survey_col("observer"))
             self.ui.ed_vessel.setText(self.survey_col("vessel"))
             self.ui.cb_sea.setCurrentText(self.survey_col("sea"))
             self.ui.cb_wind.setCurrentText(self.survey_col("wind"))
             self.ui.cb_cloud.setCurrentText(self.survey_col("cloud"))
-            self.ui.cb_vis.setCurrentText(self.survey_col("vis"))
+            self.ui.cb_vis.setCurrentText(self.survey_col("visibility"))
+            self.ui.cb_tide.setCurrentText(self.survey_col("tide"))
 
             self.ui.lb_sequence_name.setText(self.survey_col("id"))
             self.ui.lb_number_images.setText(self.survey_col("photos"))
@@ -242,13 +269,16 @@ class SurveysTree(object):
             self.ui.lb_start_waypoint.setText(f"{self.survey_col('start_lon')} {self.survey_col('start_lat')}")
             self.ui.lb_end_waypoint.setText(f"{self.survey_col('finish_lon')} {self.survey_col('finish_lat')}")
             self.ui.lb_number_images.setText(self.survey_col("photos"))
+            self.ed_comments.setPlainText(self.survey_col("comments"))
 
         else:
             self.ui.widEdit.setVisible(False)
 
     def survey_col(self, column):
-        if column in self.survey():
-            return str(self.survey()[column])
+        survey = self.survey()
+        if column in survey:
+            column_ = survey[column]
+            return str(column_)
         else:
             return ""
 
@@ -282,7 +312,7 @@ class SurveysTree(object):
             folder = self.survey_col('image_folder')
             samba = self.survey()["samba"]
             file_ops = get_file_ops(samba)
-            photos = [name for name in file_ops.listdir(folder) if name.lower().endswith(".jpg")]
+            photos = [name for name in file_ops.listdir(folder) if name.lower().endswith(".jpg") or name.lower().endswith(".jpeg")]
             self.thumbnail_model = LazyListModel(photos, folder, self.survey_id, samba)
             list_thumbnails.setModel(self.thumbnail_model)
             # self.thumbnail_model.interrupted = False
@@ -368,6 +398,9 @@ class SurveysTree(object):
     def make_site(self):
         input_box = QtWidgets.QInputDialog()
         input_box.setLabelText("Site Name")
+        if "start_lat" not in self.survey() or "start_lon" not in self.survey():
+            raise Exception("Cannot not make a site for this survey. No geographic data exists. Is the slow_network check box ticked?")
+
         result = input_box.exec_()
         if result == QtWidgets.QDialog.Accepted:
             site_name = input_box.textValue()

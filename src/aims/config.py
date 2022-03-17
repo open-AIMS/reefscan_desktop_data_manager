@@ -14,8 +14,14 @@ class Config(object):
 
         self.data_folder = None
         # self.hardware_data_folder = r"\\10.42.0.1\data"
+        self.hardware_data_folder = r"\\192.168.1.254\data"
+        # self.hardware_data_folder = r"\\xavier\data"
         # self.hardware_data_folder = r"\\169.254.100.1\data"
-        self.hardware_data_folder = r"\\xavier\data"
+        self.camera_samba = True
+
+        # self.hardware_data_folder = r"C:\temp\photos_in"
+        # self.camera_samba = False
+
         self.server_data_folder = None
 
         self.backup_data_folder = None
@@ -26,7 +32,8 @@ class Config(object):
         data_folder_json = {
             "data_folder": self.data_folder,
             "server_data_folder": self.server_data_folder,
-            "backup_data_folder": self.backup_data_folder
+            "backup_data_folder": self.backup_data_folder,
+            "slow_network": self.slow_network
         }
         write_json_file(self.config_folder, self.config_file_name, data_folder_json)
 
@@ -40,3 +47,5 @@ class Config(object):
         self.data_folder = data_folder_json.get("data_folder", home + "/REEFSCAN/local")
         self.server_data_folder = data_folder_json.get("server_data_folder", home + "/REEFSCAN/server")
         self.backup_data_folder = data_folder_json.get("backup_data_folder", home + "/REEFSCAN/backup")
+        self.slow_network = data_folder_json.get("slow_network", False)
+        print(self)

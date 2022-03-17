@@ -15,7 +15,7 @@ from aims.ui.config_ui import ConfigUi
 from aims.ui.surveys_tree import SurveysTree
 from aims.ui.trip import TripDlg
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -52,6 +52,7 @@ sys.excepthook = gui_except_hook
 # cgitb.enable(format='text')
 
 
+
 if __name__ == "__main__":
     try:
         state.meipass = sys._MEIPASS + "/"
@@ -74,6 +75,9 @@ if __name__ == "__main__":
     except Exception:
         logger.exception("Error")
 
-    print("main done")
+    if state.model.data_loaded:
+        print("will export")
+        state.model.export()
 
+    print("main done")
 

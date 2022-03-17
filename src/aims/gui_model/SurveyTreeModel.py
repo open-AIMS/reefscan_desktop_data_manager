@@ -3,8 +3,9 @@ class SurveyTreeModel:
     def __init__(self, survey_data, sites_lookup):
         self.sites = {}
         for survey in survey_data.values():
-
-            site_id = survey["site"]
+            site_id = None
+            if "site" in survey:
+                site_id = survey["site"]
             if site_id is None or site_id == '':
                 site_name = "__Not Assigned"
             elif site_id in sites_lookup:

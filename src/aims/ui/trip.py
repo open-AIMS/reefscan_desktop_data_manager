@@ -1,9 +1,9 @@
 from PyQt5 import uic
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog, QMainWindow, QVBoxLayout
 
 from aims import state
 from aims.gui_model.model import GuiModel
-from aims.operations.aims_status_dialog import AimsStatusDialog
 
 from aims.ui.trip_widget import TripWidget
 
@@ -26,8 +26,8 @@ class TripDlg(QDialog):
 
         super().__init__()
         self.ui = uic.loadUi(f'{state.meipass}resources/trip.ui')
-        self.aims_status_dialog = AimsStatusDialog(self.ui)
 
+        self.ui.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
 
         vbox = QVBoxLayout()
         self.ui.groupBox.setLayout(vbox)
@@ -37,10 +37,8 @@ class TripDlg(QDialog):
         self.ui.buttonBox.accepted.connect(self.ok)
 
     def show(self):
-        state.load_data_model(aims_status_dialog=self.aims_status_dialog)
-        self.trip_widget.load()
         self.ui.show()
-
+        self.trip_widget.load()
 
     def ok(self):
         self.trip_widget.save()
