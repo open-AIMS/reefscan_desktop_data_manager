@@ -12,14 +12,25 @@ class LoadDataOperation(AbstractOperation):
     def __init__(self, model: GuiModel):
         super().__init__()
         self.model = model
-        finished=False
+        self.finished=False
+        self.success=False
+        self.message = ""
 
     def _run(self):
-        finished=False
+        self.finished=False
+        self.success = False
         logger.info("start load data")
-        self.model.read_from_files(self.progress_queue)
+        try:
+            self.model.read_from_files(self.progress_queue)
+            self.success = True
+        except Exception as e:
+            logger.info("ERROR ERROR")
+            logger.info (str(e))
+            self.message = str(e)
+            self.success=False
         logger.info("finish load data")
-        finished=True
+        self.finished=True
+
         return None
 
     def cancel(self):

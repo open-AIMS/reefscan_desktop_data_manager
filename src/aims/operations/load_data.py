@@ -1,8 +1,11 @@
+import logging
+
 from PyQt5.QtWidgets import QApplication
 
 from aims.operations.aims_status_dialog import AimsStatusDialog
 from aims.operations.load_data_operation import LoadDataOperation
 
+logger = logging.getLogger(__name__)
 
 def load_data(model, aims_status_dialog: AimsStatusDialog):
     operation = LoadDataOperation(model)
@@ -12,5 +15,7 @@ def load_data(model, aims_status_dialog: AimsStatusDialog):
     while not result.ready():
         QApplication.processEvents()
 
+    logger.info("Close the status dialog")
     aims_status_dialog.close()
+    return operation.success, operation.message
 

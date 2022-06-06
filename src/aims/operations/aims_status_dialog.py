@@ -13,15 +13,19 @@ class AimsStatusDialog(object):
 
         self.ui = ui
 
+        self.progress_dialog = None
+        self.redrawLock = RLock()
+        self.threadPool = ThreadPool(16)
+        self.operation = None
+
+    def make_progress_dialog(self):
         self.progress_dialog = QProgressDialog("Syncing data.", "Cancel", 0, 1, self.ui)
         self.progress_dialog.setWindowTitle("Wait...")
         self.progress_dialog.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.progress_dialog.setValue(1)
         self.progress_dialog.setMinimumDuration(10)
         self.progress_dialog.setWindowModality(Qt.WindowModal)
-        self.redrawLock = RLock()
-        self.threadPool = ThreadPool(16)
-        self.operation = None
+        self.progress_dialog.setAttribute(Qt.WA_DeleteOnClose, True);
 
     def set_progress_value(self, params):
         (i, label) = params
@@ -41,6 +45,7 @@ class AimsStatusDialog(object):
             self.progress_dialog.setMaximum(i)
 
     def set_operation_connections(self, operation):
+        self.make_progress_dialog()
         self.progress_dialog.canceled.connect(operation.cancel)
         self.operation = operation
         operation.set_max.connect(self.set_progress_max)

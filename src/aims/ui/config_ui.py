@@ -5,7 +5,7 @@ import time
 
 from PyQt5 import uic, QtWidgets
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QWizard, QCheckBox
+from PyQt5.QtWidgets import QWizard, QCheckBox, QMessageBox
 
 from aims import state
 from aims.config import Config
@@ -50,9 +50,18 @@ class ConfigUi(object):
 
         state.load_data_model(aims_status_dialog=self.aims_status_dialog)
 
+        if state.model.data_loaded:
+            state.trip_dlg.show()
+            self.ui.close()
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Error")
+            msg.setInformativeText(state.message)
+            msg.setWindowTitle("Error")
+            msg.exec_()
 
-        state.trip_dlg.show()
-        self.ui.close()
+        logger.info("Really finished")
 
     def local_clicked(self):
         self.choose_file(self.ui.edLocal)

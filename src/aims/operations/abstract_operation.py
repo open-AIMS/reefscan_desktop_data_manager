@@ -38,7 +38,7 @@ class AbstractOperation(QObject):
             # time.sleep(0.001)
             try:
                 (operation, value) = self.progress_queue.q.get(block=True, timeout=0.1)
-                logger.debug(f"{operation} {value}")
+                logger.info(f"{operation} {value}")
                 if operation == "value":
                     self.progress_value += 1
                     if self.progress_value % self.update_interval == 0:
@@ -47,7 +47,7 @@ class AbstractOperation(QObject):
                     self.progress_max = value
                     self.set_progress_max(value)
                 elif operation == "label":
-                    self.progress_label = value
+                    self.set_progress_label(value)
                 self.progress_queue.q.task_done()
             except Exception as e:
                 pass
@@ -65,25 +65,31 @@ class AbstractOperation(QObject):
             result = self._run()
             self.set_progress_value(self.progress_max+1)
             self.finished = True
-            self.set_progress_value(self.progress_max+1)
             logger.info("finish")
             consumer_thread.join()
             logger.info("t joined")
             # self.q.join()
             # logger.info("q joined")
             # self.after_run.emit(result)
-            logger.info("finished thread emitted after run")
+            # logger.info("finished thread emitted after run")
         except Exception as e:
             self.exception.emit(e)
 
     def _run(self):
         pass
 
+    def set_progress_label(self, progress_label, ):
+        self.progress_label = progress_label
+        # logger.info(f"value {i}")
+        self.set_value.emit((self.progress_value, self.progress_label))
+
     def set_progress_value(self, i):
         # logger.info(f"value {i}")
+        self.progress_value = i
         self.set_value.emit((i, self.progress_label))
 
     def set_progress_max(self, i):
         logger.info(f"max {i}")
+        self.progress_max = i
         self.set_max.emit(i)
 
