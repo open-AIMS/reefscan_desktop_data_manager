@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>474</width>
-    <height>218</height>
+    <width>550</width>
+    <height>297</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,13 +15,30 @@
   </property>
   <widget class="QWidget" name="wid_main">
    <layout class="QGridLayout" name="gridLayout_4">
-    <item row="4" column="0">
-     <widget class="QCheckBox" name="cbSlowNetwork">
+    <item row="5" column="1">
+     <widget class="QLineEdit" name="ed_vessel"/>
+    </item>
+    <item row="1" column="2">
+     <widget class="QPushButton" name="btnLocal">
       <property name="text">
-       <string>Slow Network</string>
+       <string>...</string>
       </property>
-      <property name="tristate">
-       <bool>false</bool>
+     </widget>
+    </item>
+    <item row="6" column="1">
+     <widget class="QCheckBox" name="cbCamera">
+      <property name="text">
+       <string>Camera connected</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLineEdit" name="edLocal"/>
+    </item>
+    <item row="6" column="2">
+     <widget class="QPushButton" name="btn_next">
+      <property name="text">
+       <string>Next</string>
       </property>
      </widget>
     </item>
@@ -32,39 +49,22 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="0">
-     <widget class="QLabel" name="label_3">
-      <property name="text">
-       <string>Server folder</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="2">
-     <widget class="QPushButton" name="btnLocal">
-      <property name="text">
-       <string>...</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="1">
-     <widget class="QLineEdit" name="edServer"/>
-    </item>
-    <item row="3" column="2">
-     <widget class="QPushButton" name="btnServer">
-      <property name="text">
-       <string>...</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QLineEdit" name="edLocal"/>
-    </item>
     <item row="2" column="2">
      <widget class="QPushButton" name="btnBackup">
       <property name="text">
        <string>...</string>
       </property>
      </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLabel" name="label_3">
+      <property name="text">
+       <string>Default Operator</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1">
+     <widget class="QLineEdit" name="ed_observer"/>
     </item>
     <item row="1" column="0">
      <widget class="QLabel" name="label">
@@ -73,26 +73,73 @@
       </property>
      </widget>
     </item>
-    <item row="4" column="2">
-     <widget class="QPushButton" name="btn_next">
+    <item row="5" column="0">
+     <widget class="QLabel" name="label_4">
       <property name="text">
-       <string>Next</string>
+       <string>Default vessel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QLineEdit" name="ed_operator"/>
+    </item>
+    <item row="6" column="0">
+     <widget class="QCheckBox" name="cbSlowNetwork">
+      <property name="text">
+       <string>Slow Network</string>
+      </property>
+      <property name="tristate">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QLabel" name="label_5">
+      <property name="text">
+       <string>Default Observer</string>
       </property>
      </widget>
     </item>
     <item row="2" column="1">
      <widget class="QLineEdit" name="edBackup"/>
     </item>
-    <item row="0" column="0">
-     <widget class="QCheckBox" name="cbCamera">
+    <item row="7" column="0" colspan="3">
+     <widget class="QLabel" name="lblNextStep">
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(170, 255, 127);
+color: blue;</string>
+      </property>
       <property name="text">
-       <string>Camera connected</string>
+       <string>TextLabel</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
       </property>
      </widget>
     </item>
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>edLocal</tabstop>
+  <tabstop>edBackup</tabstop>
+  <tabstop>ed_operator</tabstop>
+  <tabstop>ed_observer</tabstop>
+  <tabstop>ed_vessel</tabstop>
+  <tabstop>cbSlowNetwork</tabstop>
+  <tabstop>cbCamera</tabstop>
+  <tabstop>btn_next</tabstop>
+  <tabstop>btnBackup</tabstop>
+  <tabstop>btnLocal</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

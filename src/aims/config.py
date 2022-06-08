@@ -11,6 +11,7 @@ class Config(object):
         self.config_folder = str(Path.home()) + "/.aims/reefscan"
         self.config_file_name = "config.json"
         self.config_file = f"{self.config_folder}/{self.config_file_name}"
+        self.camera_connected = True
 
         self.data_folder = None
         # self.hardware_data_folder = r"\\10.42.0.1\data"
@@ -22,18 +23,24 @@ class Config(object):
         # self.hardware_data_folder = r"C:\temp\photos_in"
         # self.camera_samba = False
 
-        self.server_data_folder = None
-
         self.backup_data_folder = None
+        self.default_operator = None
+        self.default_observer = None
+        self.default_vessel = None
+
 
         self.read_config_file()
 
     def save_config_file(self):
         data_folder_json = {
             "data_folder": self.data_folder,
-            "server_data_folder": self.server_data_folder,
+            "camera_connected": self.camera_connected,
             "backup_data_folder": self.backup_data_folder,
-            "slow_network": self.slow_network
+            "slow_network": self.slow_network,
+            "default_operator": self.default_operator,
+            "default_observer": self.default_observer,
+            "default_vessel": self.default_vessel
+
         }
         write_json_file(self.config_folder, self.config_file_name, data_folder_json)
 
@@ -45,7 +52,11 @@ class Config(object):
 
         home = str(Path.home())
         self.data_folder = data_folder_json.get("data_folder", home + "/REEFSCAN/local")
-        self.server_data_folder = data_folder_json.get("server_data_folder", home + "/REEFSCAN/server")
         self.backup_data_folder = data_folder_json.get("backup_data_folder", home + "/REEFSCAN/backup")
         self.slow_network = data_folder_json.get("slow_network", False)
+        self.camera_connected = data_folder_json.get("camera_connected",True)
+        self.default_operator = data_folder_json.get("default_operator", "")
+        self.default_observer = data_folder_json.get("default_observer", "")
+        self.default_vessel = data_folder_json.get("default_vessel", "")
+
         print(self)

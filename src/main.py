@@ -13,7 +13,6 @@ from aims import state
 from aims.config import Config
 from aims.ui.config_ui import ConfigUi
 from aims.ui.surveys_tree import SurveysTree
-from aims.ui.trip import TripDlg
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -65,7 +64,6 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
 
     try:
-        state.trip_dlg = TripDlg()
         config_ui = ConfigUi()
         state.surveys_tree = SurveysTree()
 

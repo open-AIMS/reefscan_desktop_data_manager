@@ -31,9 +31,9 @@ These are the values for the three edit boxes
 
 # Create executable  
 On Windows:  
-`pyinstaller -p src --noconsole --add-data src\resources\*;resources --onefile src\main.py`  
+`pyinstaller -p src --noconsole --name reefscan-transom --add-data src\resources\*;resources --icon src\resources\aims_fish.ico --onefile src\main.py`  
 On Linux:  
-`pyinstaller -p src --noconsole --add-data src/resources/*:resources --onefile src/main.py`
+`pyinstaller -p src --noconsole --name reefscan-transom --add-data src/resources/*:resources --icon src\resources\aims_fish.ico --onefile src/main.py`
 
 
 

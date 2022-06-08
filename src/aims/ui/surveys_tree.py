@@ -9,12 +9,12 @@ from aims.gui_model.lazy_list_model import LazyListModel
 from aims.ui.map_html import map_html_str
 import PyQt5.QtWebEngineWidgets
 from PyQt5 import QtWidgets, uic, QtLocation, QtPositioning
-from PyQt5.QtCore import QItemSelection, Qt, QModelIndex, QAbstractItemModel, QItemSelectionModel, QUrl, QSize
+from PyQt5.QtCore import QItemSelection, Qt, QModelIndex, QAbstractItemModel, QItemSelectionModel, QUrl, QSize, QEvent
 from PyQt5.QtGui import QStandardItemModel, QIcon
 from PyQt5.QtQuick import QQuickView
 from PyQt5.QtWidgets import QTreeView, QWidget, QComboBox, QApplication, QListWidget, QListWidgetItem, QListView, \
-    QMessageBox, QTextEdit, QPlainTextEdit
-from reefscanner.basic_model.reader_writer import save_survey, save_site
+    QMessageBox, QTextEdit, QPlainTextEdit, QMainWindow
+from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
 from aims.config import Config
@@ -24,25 +24,16 @@ from aims.operations.aims_status_dialog import AimsStatusDialog
 from aims.operations.load_data import load_data
 from aims.operations.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.ui.checked_tree_item import CheckTreeitem
+from aims.ui.ui_utils import highlight, unHighlight
 
 logger = logging.getLogger(__name__)
 
 
-def find_in_tree(model: QAbstractItemModel, name_to_find, parent: QModelIndex = QModelIndex()):
-    for r in range(model.rowCount(parent)):
-        index = model.index(r, 0, parent)
-        name = model.data(index)
-        if name == name_to_find:
-            return index
-        # // here is your applicable code
-        if model.hasChildren(index):
-            r = find_in_tree(model, name_to_find, index)
-            if r is not None:
-                return r
-    return None
+def none_or_empty(str):
+    return str is None or str == ""
 
 
-class SurveysTree(object):
+class SurveysTree(QMainWindow):
     def __init__(self):
         super().__init__()
         self.app = QtWidgets.QApplication(sys.argv)
@@ -62,17 +53,126 @@ class SurveysTree(object):
         self.ui.btn_upload.clicked.connect(self.upload)
         self.ui.btn_copy.clicked.connect(self.copy)
         self.ui.btn_paste.clicked.connect(self.paste)
-        self.ui.widEdit.setVisible(False)
-        self.ui.widInfo.setVisible(False)
-        self.ui.widMap.setVisible(False)
-        self.ui.wid_thumbnails.setVisible(False)
-        self.ui.btnAddSite.clicked.connect(self.make_site)
-        self.ui.cb_site.currentIndexChanged.connect(self.site_changed)
+        self.hide_survey_panel()
+        self.ui.ed_site.editingFinished.connect(self.site_changed)
         self.has_site_changed = False
         self.thumbnail_model = None
         self.ed_comments: QTextEdit = self.ui.ed_comments
         lv_thumbnails:QListView = self.ui.lv_thumbnails
         lv_thumbnails.doubleClicked.connect(self.click_photo)
+        self.ui.centralwidget.installEventFilter(self)
+        self.update_next_step()
+        self.ui.ed_site.editingFinished.connect(self.update_next_step)
+        self.ui.ed_name.editingFinished.connect(self.update_next_step)
+        self.ui.cb_tide.currentIndexChanged.connect(self.update_next_step)
+        self.ui.cb_vis.currentIndexChanged.connect(self.update_next_step)
+        self.ui.cb_wind.currentIndexChanged.connect(self.update_next_step)
+        self.ui.cb_sea.currentIndexChanged.connect(self.update_next_step)
+        self.ui.cb_cloud.currentIndexChanged.connect(self.update_next_step)
+
+        self.ui.ed_vessel.editingFinished.connect(self.update_next_step)
+        self.ui.ed_observer.editingFinished.connect(self.update_next_step)
+        self.ui.ed_operator.editingFinished.connect(self.update_next_step)
+
+    def show_survey_panel(self):
+        self.ui.widEdit.setVisible(True)
+        self.ui.btn_thumbnails.setVisible(True)
+        self.ui.btnInfo.setVisible(True)
+        self.ui.btnMap.setVisible(True)
+
+    def hide_survey_panel(self):
+        self.ui.widEdit.setVisible(False)
+        self.ui.widInfo.setVisible(False)
+        self.ui.widMap.setVisible(False)
+        self.ui.btn_thumbnails.setVisible(False)
+        self.ui.btnInfo.setVisible(False)
+        self.ui.btnMap.setVisible(False)
+        self.ui.wid_thumbnails.setVisible(False)
+
+    def reset_next_step(self):
+        unHighlight(self.ui.treeView)
+        unHighlight(self.ui.btn_upload)
+        unHighlight(self.ui.ed_name)
+        unHighlight(self.ui.ed_site)
+        unHighlight(self.ui.cb_tide)
+        unHighlight(self.ui.cb_sea)
+        unHighlight(self.ui.cb_cloud)
+        unHighlight(self.ui.cb_wind)
+        unHighlight(self.ui.cb_vis)
+        unHighlight(self.ui.ed_vessel)
+        unHighlight(self.ui.ed_operator)
+        unHighlight(self.ui.ed_observer)
+
+    def update_survey_next_step(self):
+        if none_or_empty(self.ui.ed_name.text()):
+            self.ui.lbl_next_step.setText("Enter a name")
+            highlight(self.ui.ed_name)
+            return True
+
+        if none_or_empty(self.ui.ed_site.text()):
+            self.ui.lbl_next_step.setText("Enter a site")
+            highlight(self.ui.ed_site)
+            return True
+
+        if none_or_empty(self.ui.cb_tide.currentText()):
+            self.ui.lbl_next_step.setText("Choose a value for tide")
+            highlight(self.ui.cb_tide)
+            return True
+
+        if none_or_empty(self.ui.cb_sea.currentText()):
+            self.ui.lbl_next_step.setText("Choose a value for sea")
+            highlight(self.ui.cb_sea)
+            return True
+
+        if none_or_empty(self.ui.cb_cloud.currentText()):
+            self.ui.lbl_next_step.setText("Choose a value for cloud")
+            highlight(self.ui.cb_cloud)
+            return True
+
+        if none_or_empty(self.ui.cb_wind.currentText()):
+            self.ui.lbl_next_step.setText("Choose a value for wind")
+            highlight(self.ui.cb_wind)
+            return True
+        if none_or_empty(self.ui.cb_vis.currentText()):
+            self.ui.lbl_next_step.setText("Choose a value for visibility")
+            highlight(self.ui.cb_vis)
+            return True
+        if none_or_empty(self.ui.ed_vessel.text()):
+            self.ui.lbl_next_step.setText("Enter the name of the vessel")
+            highlight(self.ui.ed_vessel)
+            return True
+        if none_or_empty(self.ui.ed_operator.text()):
+            self.ui.lbl_next_step.setText("Enter the name of the operator")
+            highlight(self.ui.ed_operator)
+            return True
+        if none_or_empty(self.ui.ed_observer.text()):
+            self.ui.lbl_next_step.setText("Enter the name of the observer")
+            highlight(self.ui.ed_observer)
+            return True
+
+        return False
+
+    def update_next_step(self):
+        self.reset_next_step()
+        if self.survey_id is None:
+            self.ui.lbl_next_step.setText(
+                "Choose a survey from the tree on the left. Or select surveys from the tree and hit the upload button")
+            return
+        if self.update_survey_next_step():
+            return
+
+        self.ui.lbl_next_step.setText(
+            "Choose a survey from the tree on the left. Or select surveys from the tree and hit the upload button")
+        highlight(self.ui.treeView)
+        highlight(self.ui.btn_upload)
+
+    def eventFilter(self, source, event):
+        # print(event.type())
+        if event.type() == QEvent.Leave:
+            self.ui_to_data()
+
+        return super(SurveysTree, self).eventFilter(source, event)
+
 
     def checked_surveys(self, parent: QModelIndex = QModelIndex()):
         model = self.tree_model
@@ -138,6 +238,9 @@ class SurveysTree(object):
             if self.survey()["vessel"] == "":
                 self.survey()["vessel"] = self.clipboard["vessel"]
 
+            if self.survey()["tide"] == "":
+                self.survey()["tide"] = self.clipboard["tide"]
+
             if self.survey()["sea"] == "":
                 self.survey()["sea"] = self.clipboard["sea"]
 
@@ -182,7 +285,6 @@ class SurveysTree(object):
         self.add_tree_data(None)
 
     def lookups(self):
-        self.site_lookup()
 
         self.ui.cb_tide.addItem("")
         self.ui.cb_tide.addItem("Falling")
@@ -224,16 +326,9 @@ class SurveysTree(object):
         self.ui.cb_vis.addItem("25-30")
         self.ui.cb_vis.addItem(">30")
 
-    def site_lookup(self):
-        cb_site: QComboBox = self.ui.cb_site
-        lookup = state.model.surveysModel.sites_lookup.items()
-        for key, value in sorted(lookup, key=lambda item: item[1]):
-            cb_site.addItem(value, key)
-
     def ui_to_data(self):
         if self.survey_id is not None:
-            cb_site: QComboBox = self.ui.cb_site
-            self.survey()["site"] = cb_site.currentData()
+            self.survey()["site"] = self.ui.ed_site.text()
             self.survey()["operator"] = self.ui.ed_operator.text()
             self.survey()["observer"] = self.ui.ed_observer.text()
             self.survey()["vessel"] = self.ui.ed_vessel.text()
@@ -249,9 +344,8 @@ class SurveysTree(object):
 
     def data_to_ui(self):
         if self.survey_id is not None:
-            self.ui.widEdit.setVisible(True)
-            cb_site: QComboBox = self.ui.cb_site
-            cb_site.setCurrentIndex(cb_site.findData(self.survey_col("site")))
+            self.show_survey_panel()
+            self.ui.ed_site.setText(self.survey_col("site"))
             self.ui.ed_name.setText(self.survey_col("friendly_name"))
             self.ui.ed_operator.setText(self.survey_col("operator"))
             self.ui.ed_observer.setText(self.survey_col("observer"))
@@ -272,7 +366,8 @@ class SurveysTree(object):
             self.ed_comments.setPlainText(self.survey_col("comments"))
 
         else:
-            self.ui.widEdit.setVisible(False)
+            self.hide_survey_panel()
+
 
     def survey_col(self, column):
         survey = self.survey()
@@ -362,7 +457,7 @@ class SurveysTree(object):
             # view.scrollTo(row_found)
 
     def make_branch(self, survey_data, name, checkable):
-        survey_tree_model = SurveyTreeModel(survey_data, state.model.surveysModel.sites_lookup)
+        survey_tree_model = SurveyTreeModel(survey_data)
         branch = CheckTreeitem(name, checkable)
         sites = survey_tree_model.sites
         for site in sites.keys():
@@ -394,32 +489,8 @@ class SurveysTree(object):
         self.draw_map()
         self.load_thumbnails()
         self.has_site_changed = False
+        self.update_next_step()
 
-    def make_site(self):
-        input_box = QtWidgets.QInputDialog()
-        input_box.setLabelText("Site Name")
-        if "start_lat" not in self.survey() or "start_lon" not in self.survey():
-            raise Exception("Cannot not make a site for this survey. No geographic data exists. Is the slow_network check box ticked?")
-
-        result = input_box.exec_()
-        if result == QtWidgets.QDialog.Accepted:
-            site_name = input_box.textValue()
-
-            self.new_site_for_survey(site_name)
-            self.data_to_ui()
-
-    def new_site_for_survey(self, site_name):
-        site_id = shortuuid.uuid()
-        survey = self.survey()
-        site = {"uuid": site_id, "name": site_name,
-                "latitude": survey["start_lat"], "longitude": survey["start_lon"]
-                }
-        state.model.add_new_site(site)
-        state.model.surveysModel.sites_lookup[site_id] = site_name
-        self.site_lookup()
-        survey["site"] = site_id
-
-        save_survey(survey)
 
     # @pyqtSlot(QStandardItem)
     def on_itemChanged(self,  item):

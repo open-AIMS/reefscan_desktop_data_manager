@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1014</width>
-    <height>1509</height>
+    <width>1004</width>
+    <height>1554</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -226,84 +226,50 @@
           </size>
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
-          <item row="3" column="4">
+          <item row="0" column="2">
+           <widget class="QLineEdit" name="ed_name"/>
+          </item>
+          <item row="2" column="0">
            <widget class="QLabel" name="label_9">
             <property name="text">
              <string>Cloud Cover</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
-           <widget class="QLabel" name="label_5">
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_15">
             <property name="text">
-             <string>Vessel</string>
+             <string>Tide</string>
             </property>
            </widget>
-          </item>
-          <item row="2" column="4">
-           <widget class="QLabel" name="label_8">
-            <property name="text">
-             <string>Wind Speed</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="4">
-           <widget class="QLabel" name="label_10">
-            <property name="text">
-             <string>Visibility</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="2">
-           <widget class="QLineEdit" name="ed_vessel"/>
           </item>
           <item row="1" column="3">
-           <widget class="QPushButton" name="btnAddSite">
-            <property name="text">
-             <string>Add</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_2">
-            <property name="text">
-             <string>Site</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="4">
            <widget class="QLabel" name="label_7">
             <property name="text">
              <string>Sea State</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="2">
-           <widget class="QLineEdit" name="ed_observer"/>
+          <item row="1" column="2">
+           <widget class="QComboBox" name="cb_tide"/>
           </item>
-          <item row="2" column="5">
-           <widget class="QComboBox" name="cb_wind"/>
+          <item row="2" column="2">
+           <widget class="QComboBox" name="cb_cloud"/>
           </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_6">
+          <item row="1" column="4">
+           <widget class="QComboBox" name="cb_sea"/>
+          </item>
+          <item row="2" column="3">
+           <widget class="QLabel" name="label_8">
             <property name="text">
-             <string>Observer</string>
+             <string>Wind Speed</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="5">
-           <widget class="QComboBox" name="cb_cloud"/>
+          <item row="2" column="4">
+           <widget class="QComboBox" name="cb_wind"/>
           </item>
-          <item row="1" column="5">
-           <widget class="QComboBox" name="cb_sea"/>
-          </item>
-          <item row="1" column="2">
-           <widget class="QComboBox" name="cb_site"/>
-          </item>
-          <item row="4" column="5">
-           <widget class="QComboBox" name="cb_vis"/>
-          </item>
-          <item row="5" column="2" rowspan="3" colspan="4">
+          <item row="8" column="2" rowspan="3" colspan="3">
            <widget class="QPlainTextEdit" name="ed_comments">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
@@ -319,17 +285,17 @@
             </property>
            </widget>
           </item>
-          <item row="6" column="0">
+          <item row="9" column="0">
            <widget class="QPushButton" name="btn_copy">
             <property name="text">
              <string>Copy Values</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="2">
+          <item row="5" column="2">
            <widget class="QLineEdit" name="ed_operator"/>
           </item>
-          <item row="7" column="0">
+          <item row="10" column="0">
            <widget class="QPushButton" name="btn_paste">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -342,20 +308,6 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_4">
-            <property name="text">
-             <string>Operator</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="0">
-           <widget class="QLabel" name="label_3">
-            <property name="text">
-             <string>Comments</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="0">
            <widget class="QLabel" name="label_13">
             <property name="text">
@@ -363,18 +315,59 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="2" colspan="2">
-           <widget class="QLineEdit" name="ed_name"/>
-          </item>
-          <item row="0" column="4">
-           <widget class="QLabel" name="label_15">
+          <item row="8" column="0">
+           <widget class="QLabel" name="label_3">
             <property name="text">
-             <string>Tide</string>
+             <string>Comments</string>
             </property>
            </widget>
           </item>
-          <item row="0" column="5">
-           <widget class="QComboBox" name="cb_tide"/>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>Operator</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_10">
+            <property name="text">
+             <string>Visibility</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QComboBox" name="cb_vis"/>
+          </item>
+          <item row="3" column="3">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Vessel</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="4">
+           <widget class="QLineEdit" name="ed_vessel"/>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>Site</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <widget class="QLineEdit" name="ed_site"/>
+          </item>
+          <item row="5" column="3">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Observer</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="4">
+           <widget class="QLineEdit" name="ed_observer"/>
           </item>
          </layout>
         </widget>
@@ -398,6 +391,28 @@
       </layout>
      </widget>
     </item>
+    <item row="1" column="0" colspan="3">
+     <widget class="QLabel" name="lbl_next_step">
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(170, 255, 127);
+color: blue;</string>
+      </property>
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -405,7 +420,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1014</width>
+     <width>1004</width>
      <height>26</height>
     </rect>
    </property>
@@ -420,15 +435,7 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>cb_site</tabstop>
   <tabstop>ed_operator</tabstop>
-  <tabstop>ed_observer</tabstop>
-  <tabstop>ed_vessel</tabstop>
-  <tabstop>cb_sea</tabstop>
-  <tabstop>cb_wind</tabstop>
-  <tabstop>cb_cloud</tabstop>
-  <tabstop>cb_vis</tabstop>
-  <tabstop>btnAddSite</tabstop>
   <tabstop>btnInfo</tabstop>
   <tabstop>btnMap</tabstop>
   <tabstop>treeView</tabstop>
