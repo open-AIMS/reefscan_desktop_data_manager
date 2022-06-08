@@ -39,14 +39,14 @@ jobs:
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
-                pyinstaller -p src --noconsole --name reefscan-transom --icon src/resources/aims_fish.ico --add-data src/resources/*:resources --onefile src/main.py &&
+                pyinstaller -p src --name reefscan-transom --icon src/resources/aims_fish.ico --add-data src/resources/*:resources --onefile src/main.py &&
                 cd dist/ &&
                 zip -r9 reefscan-transom reefscan-transom.app/
             OUT_FILE_NAME: reefscan-transom.zip
             ASSET_MIME: application/zip
           - os: windows-latest
             TARGET: windows
-            CMD_BUILD: pyinstaller -p src --name reefscan-transom --icon src\resources\aims_fish.ico --add-data "src\resources\*;resources" --onefile src\main.py
+            CMD_BUILD: pyinstaller -p src --noconsole --name reefscan-transom --icon src\resources\aims_fish.ico --add-data "src\resources\*;resources" --onefile src\main.py
             OUT_FILE_NAME: reefscan-transom.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
     steps:
