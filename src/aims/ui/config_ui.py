@@ -1,12 +1,11 @@
 import logging
 import os
-import sys
-import time
+
 
 from PyQt5 import uic, QtWidgets
 from PyQt5.QtCore import QEvent
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QWizard, QCheckBox, QMessageBox, QMainWindow, QLineEdit
+
+from PyQt5.QtWidgets import QCheckBox, QMessageBox, QMainWindow, QLineEdit
 
 from aims import state
 from aims.operations.aims_status_dialog import AimsStatusDialog

@@ -1,4 +1,4 @@
-import traceback
+
 
 from reefscanner.basic_model.basic_model import BasicModel
 

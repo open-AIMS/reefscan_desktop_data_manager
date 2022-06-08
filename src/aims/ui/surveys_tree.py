@@ -2,26 +2,23 @@ import logging
 import os
 import sys
 
-import shortuuid
 
 from aims import state
 from aims.gui_model.lazy_list_model import LazyListModel
 from aims.ui.map_html import map_html_str
 import PyQt5.QtWebEngineWidgets
-from PyQt5 import QtWidgets, uic, QtLocation, QtPositioning
-from PyQt5.QtCore import QItemSelection, Qt, QModelIndex, QAbstractItemModel, QItemSelectionModel, QUrl, QSize, QEvent
-from PyQt5.QtGui import QStandardItemModel, QIcon
-from PyQt5.QtQuick import QQuickView
-from PyQt5.QtWidgets import QTreeView, QWidget, QComboBox, QApplication, QListWidget, QListWidgetItem, QListView, \
-    QMessageBox, QTextEdit, QPlainTextEdit, QMainWindow
+from PyQt5 import QtWidgets, uic
+from PyQt5.QtCore import QItemSelection, Qt, QModelIndex, QSize, QEvent
+from PyQt5.QtGui import QStandardItemModel
+
+from PyQt5.QtWidgets import QTreeView, QWidget, QApplication, QListWidget, QListView, \
+    QMessageBox, QTextEdit, QMainWindow
 from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
-from aims.config import Config
+
 from aims.gui_model.SurveyTreeModel import SurveyTreeModel
-from aims.gui_model.model import GuiModel
 from aims.operations.aims_status_dialog import AimsStatusDialog
-from aims.operations.load_data import load_data
 from aims.operations.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.ui.checked_tree_item import CheckTreeitem
 from aims.ui.ui_utils import highlight, unHighlight

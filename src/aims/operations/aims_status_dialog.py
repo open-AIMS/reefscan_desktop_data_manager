@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QAbstractItemView, QDialog, QProgressDialog
+from PyQt5.QtWidgets import QProgressDialog
 from PyQt5.QtCore import Qt
 import logging
 from threading import RLock

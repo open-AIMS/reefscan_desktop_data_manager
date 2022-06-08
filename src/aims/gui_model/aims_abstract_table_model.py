@@ -1,9 +1,9 @@
 import logging
 import traceback
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QModelIndex
-from abc import abstractmethod
+
 
 logger = logging.getLogger(__name__)
 

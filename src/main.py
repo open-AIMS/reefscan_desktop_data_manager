@@ -2,9 +2,9 @@ import logging
 import traceback
 
 from PyQt5 import QtWidgets
-# from fbs_runtime.excepthook import ExceptionHandler
 
-# from fbs_runtime.application_context.PyQt5 import ApplicationContext, cached_property
+
+
 import sys
 import glob
 

@@ -3,9 +3,8 @@ from aims import state
 from reefscanner.basic_model.samba import file_ops_factory
 
 from PIL import Image
-from PyQt5.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt, pyqtSignal, QRunnable, pyqtSlot, QThreadPool, \
-    QThread
-from PyQt5.QtGui import QIcon, QImage, QPixmap
+from PyQt5.QtCore import QAbstractListModel, QModelIndex, QVariant, Qt, pyqtSignal, pyqtSlot, QThread
+from PyQt5.QtGui import QIcon,  QPixmap
 import piexif
 from PyQt5.QtWidgets import QApplication
 import os.path

@@ -1,6 +1,4 @@
-from PyQt5 import QtGui
-from PyQt5.QtCore import Qt
-import shortuuid
+
 import os
 
 from reefscanner.basic_model.reader_writer import save_survey

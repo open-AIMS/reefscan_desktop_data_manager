@@ -1,7 +1,3 @@
-from PyQt5 import QtCore
-from PyQt5.QtCore import QRunnable, QMetaObject, Qt, Q_ARG, QThread
-from PyQt5.QtWidgets import QProgressDialog
-
 from aims.operations.abstract_operation import AbstractOperation
 from aims.sync.sync_to_reefscan_server import SyncToReefScanServer
 
