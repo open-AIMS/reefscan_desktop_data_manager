@@ -39,7 +39,7 @@ jobs:
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
-                pyinstaller -p src --name reefscan-transom --icon src/resources/aims_fish.ico --add-data src/resources/*:resources --onefile src/main.py &&
+                pyinstaller -p src --windowed --name reefscan-transom --icon src/resources/aims_fish.ico --add-data src/resources/*:resources src/main.py &&
                 cd dist/ &&
                 zip -r9 reefscan-transom reefscan-transom.app/
             OUT_FILE_NAME: reefscan-transom.zip

@@ -1,4 +1,5 @@
 import logging
+import multiprocessing
 import traceback
 
 from PyQt5 import QtWidgets
@@ -51,8 +52,8 @@ sys.excepthook = gui_except_hook
 # cgitb.enable(format='text')
 
 
-
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     try:
         state.meipass = sys._MEIPASS + "/"
     except:
