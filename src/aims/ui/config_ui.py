@@ -44,6 +44,7 @@ class ConfigUi(QMainWindow):
         self.ui.ed_vessel.setText(state.config.default_vessel)
         self.ui.ed_observer.setText(state.config.default_observer)
         self.ui.ed_operator.setText(state.config.default_operator)
+        self.ui.ed_camera_folder.setText(state.config.hardware_data_folder)
         self.ui.wid_main.installEventFilter(self)
 
         self.ed_local.editingFinished.connect(self.update_next_step)
@@ -151,6 +152,7 @@ class ConfigUi(QMainWindow):
         state.config.default_vessel = self.ui.ed_vessel.text()
         state.config.default_observer = self.ui.ed_observer.text()
         state.config.default_operator = self.ui.ed_operator.text()
+        state.config.hardware_data_folder = self.ui.ed_camera_folder.text()
         state.config.save_config_file()
 
     def local_clicked(self):

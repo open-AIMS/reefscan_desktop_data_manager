@@ -153,15 +153,21 @@ class SurveysTree(QMainWindow):
         self.reset_next_step()
         if self.survey_id is None:
             self.ui.lbl_next_step.setText(
-                "Choose a survey from the tree on the left. Or select surveys from the tree and hit the upload button")
+                self.choose_survey_text())
             return
         if self.update_survey_next_step():
             return
 
         self.ui.lbl_next_step.setText(
-            "Choose a survey from the tree on the left. Or select surveys from the tree and hit the upload button")
+            self.choose_survey_text())
         highlight(self.ui.treeView)
         highlight(self.ui.btn_upload)
+
+    def choose_survey_text(self):
+        text = "Choose a survey from the tree on the left."
+        if len(state.model.camera_surveys) > 0:
+            text = text + " Or tick surveys from the tree and hit the upload button"
+        return text
 
     def eventFilter(self, source, event):
         # print(event.type())
@@ -169,7 +175,6 @@ class SurveysTree(QMainWindow):
             self.ui_to_data()
 
         return super(SurveysTree, self).eventFilter(source, event)
-
 
     def checked_surveys(self, parent: QModelIndex = QModelIndex()):
         model = self.tree_model

@@ -15,7 +15,8 @@ class Config(object):
 
         self.data_folder = None
         # self.hardware_data_folder = r"\\10.42.0.1\data"
-        self.hardware_data_folder = r"\\192.168.1.254\data"
+        # self.hardware_data_folder = r"\\192.168.1.254\data"
+        self.hardware_data_folder = r"\\192.168.3.2\data"
         # self.hardware_data_folder = r"\\xavier\data"
         # self.hardware_data_folder = r"\\169.254.100.1\data"
         self.camera_samba = True
@@ -39,7 +40,8 @@ class Config(object):
             "slow_network": self.slow_network,
             "default_operator": self.default_operator,
             "default_observer": self.default_observer,
-            "default_vessel": self.default_vessel
+            "default_vessel": self.default_vessel,
+            "hardware_data_folder": self.hardware_data_folder
 
         }
         write_json_file(self.config_folder, self.config_file_name, data_folder_json)
@@ -58,5 +60,6 @@ class Config(object):
         self.default_operator = data_folder_json.get("default_operator", "")
         self.default_observer = data_folder_json.get("default_observer", "")
         self.default_vessel = data_folder_json.get("default_vessel", "")
+        self.hardware_data_folder = data_folder_json.get("hardware_data_folder", r"\\192.168.3.2\data")
 
         print(self)
