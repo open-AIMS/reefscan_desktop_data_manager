@@ -29,7 +29,7 @@ class SyncFromHardware(Synchroniser):
         if not os.path.isdir(self.local_folder):
             os.makedirs(self.local_folder)
 
-        h_surveys_folder = f'{self.hardware_folder}/images'
+        h_surveys_folder = f'{self.hardware_folder}'
 
         if not self.camera_os.isdir(h_surveys_folder):
             raise Exception(f"Hardware surveys not found at {h_surveys_folder}")
@@ -38,7 +38,7 @@ class SyncFromHardware(Synchroniser):
         # self.copytree_parallel(h_surveys_folder, l_surveys_folder)
         for survey_id in survey_ids:
             h_survey_folder = h_surveys_folder + "/" + survey_id
-            l_survey_folder = self.local_folder + "/images/" + survey_id
+            l_survey_folder = self.local_folder + "/" + survey_id
 
             self.copytree_parallel(h_survey_folder, l_survey_folder)
             self.camera_os.rmdir(h_survey_folder)

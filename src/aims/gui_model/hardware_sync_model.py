@@ -48,7 +48,7 @@ class HardwareSyncModel(AimsAbstractTableModel):
         self.data_array = []
 
     def read_from_hardware_files(self):
-        surveys_folder = f'{self.hardware_data_folder}/images'
+        surveys_folder = f'{self.hardware_data_folder}'
         survey_folders = os.listdir(surveys_folder)
         for survey_folder in survey_folders:
             full_path = f'{surveys_folder}/{survey_folder}'
