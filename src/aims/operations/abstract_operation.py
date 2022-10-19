@@ -37,6 +37,10 @@ class AbstractOperation(QObject):
             try:
                 (operation, value) = self.progress_queue.q.get(block=True, timeout=0.1)
                 logger.info(f"{operation} {value}")
+                if operation == "reset":
+                    self.progress_value = 0
+                    self.set_progress_value(0)
+
                 if operation == "value":
                     self.progress_value += 1
                     if self.progress_value % self.update_interval == 0:
@@ -76,15 +80,18 @@ class AbstractOperation(QObject):
     def _run(self):
         pass
 
-    def set_progress_label(self, progress_label, ):
+    def set_progress_label(self, progress_label):
         self.progress_label = progress_label
-        # logger.info(f"value {i}")
-        self.set_value.emit((self.progress_value, self.progress_label))
+        # logger.info(f"label {progress_label}")
+        # logger.info(f"value {self.progress_value}")
+        if self.progress_value < 10:
+            self.set_value.emit((self.progress_value, self.progress_label))
 
     def set_progress_value(self, i):
         # logger.info(f"value {i}")
         self.progress_value = i
-        self.set_value.emit((i, self.progress_label))
+        # self.set_value.emit((i, self.progress_label))
+        self.set_value.emit((self.progress_value, self.progress_label))
 
     def set_progress_max(self, i):
         logger.info(f"max {i}")

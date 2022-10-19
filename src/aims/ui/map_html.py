@@ -40,6 +40,10 @@ html_str = """
 
 	// zoom the map to the polyline
 	mymap.fitBounds(polyline.getBounds());
+	if (mymap.getZoom() > 14) {
+	    mymap.setZoom(14)
+	}
+	
 
 
 </script>

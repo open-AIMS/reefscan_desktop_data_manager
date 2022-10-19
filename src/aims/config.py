@@ -16,6 +16,9 @@ class Config(object):
         self.data_folder = None
         # self.hardware_data_folder = r"\\10.42.0.1\data"
         # self.hardware_data_folder = r"\\192.168.1.254\data"
+        self.camera_ip = "192.168.3.2"
+        self.camera_images_folder = "/media/jetson/data" \
+                                    "/images"
         self.hardware_data_folder = r"\\192.168.3.2\images"
         # self.hardware_data_folder = r"\\xavier\data"
         # self.hardware_data_folder = r"\\169.254.100.1\data"

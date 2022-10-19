@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import traceback
 from datetime import datetime
 from aims.samba import aims_shutil
 from joblib import Parallel, delayed
@@ -20,6 +21,8 @@ class SyncFromHardware(Synchroniser):
         self.backup_folder = backup_folder
         self.camera_samba = camera_samba
         self.camera_os = get_file_ops(self.camera_samba)
+        self.folder_message = ""
+        self.cancelled = False
 
     def sync(self, survey_ids):
 
@@ -30,19 +33,37 @@ class SyncFromHardware(Synchroniser):
             os.makedirs(self.local_folder)
 
         h_surveys_folder = f'{self.hardware_folder}'
+        l_surveys_folder = self.local_folder
+        archive_folder = h_surveys_folder + "/archive"
+        try:
+            self.camera_os.mkdir(archive_folder)
+        except:
+            pass
 
         if not self.camera_os.isdir(h_surveys_folder):
             raise Exception(f"Hardware surveys not found at {h_surveys_folder}")
 
         #   Copy all surveys from hardware to local. Then Archive
         # self.copytree_parallel(h_surveys_folder, l_surveys_folder)
+        tot_surveys = len(survey_ids)
+        i=0
         for survey_id in survey_ids:
-            h_survey_folder = h_surveys_folder + "/" + survey_id
-            l_survey_folder = self.local_folder + "/" + survey_id
+            if not self.cancelled:
+                i += 1
+                self.progress_queue.reset()
+                self.folder_message = f"Survey {survey_id}. {i} of {tot_surveys}"
+                h_survey_folder = h_surveys_folder + "/" + survey_id
+                l_survey_folder = l_surveys_folder + "/" + survey_id
+                # archive_survey_folder = archive_folder + "/" + survey_id
+                l_survey_folder = self.local_folder + "/" + survey_id
 
-            self.copytree_parallel(h_survey_folder, l_survey_folder)
-            self.camera_os.rmdir(h_survey_folder)
-            logger.info("surveys copied")
+                self.copytree_parallel(h_survey_folder, l_survey_folder)
+                try:
+                    self.camera_os.rmdir(h_survey_folder)
+                except:
+                    logger.warn(f"Cannot remove folder {h_survey_folder}")
+
+                logger.info("surveys copied")
 
         # for survey_id in survey_ids:
         #     add_exif_from_csv()
@@ -56,7 +77,7 @@ class SyncFromHardware(Synchroniser):
     def copytree_parallel(self, from_folder, to_folder):
         self.files_to_copy = []
         self.total_files = 0
-        self.cancelled = False
+
         start = datetime.now()
         if self.camera_samba:
             aims_shutil.copytree(from_folder, to_folder, dirs_exist_ok=True, copy_function=self.prepare_copy,
@@ -71,11 +92,13 @@ class SyncFromHardware(Synchroniser):
         self.total_files = len(self.files_to_copy)
         logger.warn(f"total files = {self.total_files}")
         self.progress_queue.set_progress_max(self.total_files)
-        result = Parallel(n_jobs=1, require='sharedmem')(
-            delayed(self.copy2_verbose)(src, dst) for src, dst in self.files_to_copy)
 
-        # for src, dst in self.files_to_copy:
-        #     self.copy2_verbose(src, dst)
+        if self.files_to_copy is not None:
+            files = sorted(self.files_to_copy, key=lambda tup: tup[0])
+            # result = Parallel(n_jobs=10, require='sharedmem')(
+            #     delayed(self.copy2_verbose)(src, dst) for src, dst in files)
+            for src, dst in files:
+                self.copy2_verbose(src, dst)
 
         finish = datetime.now()
         logger.warn(f'copy took {(finish - start).total_seconds()} seconds')
@@ -87,18 +110,47 @@ class SyncFromHardware(Synchroniser):
         dst_last_part = dst[len(self.local_folder): ]
 
         b_dst = f"{self.backup_folder}/{dst_last_part}"
+        a_dst = f"{self.hardware_folder}/archive/{dst_last_part}"
 
         if self.cancelled:
             print("cancelled")
         else:
             message = f'copying  {src}'
-            self.progress_queue.set_progress_label(message)
-            os.makedirs(os.path.dirname(l_dst), exist_ok=True)
-            self.camera_os.copyfile(src, l_dst)
-            os.makedirs(os.path.dirname(b_dst), exist_ok=True)
-            shutil.copyfile(l_dst, b_dst)
-            self.camera_os.remove(src)
+            print(message)
+            try:
+                if os.path.exists(l_dst):
+                    message = f'skipping {src}'
+                    # print(message)
+                    self.set_progress_label(message)
+                else:
+                    logger.info(f"will copy {src}")
+                    os.makedirs(os.path.dirname(l_dst), exist_ok=True)
+                    self.camera_os.copyfile(src, l_dst)
+                if os.path.exists(b_dst):
+                    message = f'skipping {src}'
+                else:
+                    logger.info(f"will copy backup {src}")
+                    os.makedirs(os.path.dirname(b_dst), exist_ok=True)
+                    shutil.copyfile(l_dst, b_dst)
+
+                archive_dir = os.path.dirname(a_dst)
+                if not self.camera_os.exists(archive_dir):
+                    self.camera_os.mkdir(archive_dir)
+
+                if self.camera_os.exists(a_dst):
+                    self.camera_os.remove(src)
+                else:
+                    self.camera_os.move(src, a_dst)
+
+                self.set_progress_label(message)
+            except Exception as e:
+                print (f"there is an exception. {e}")
+                traceback.print_exception(e)
+                raise e
 
         self.progress_queue.set_progress_value()
         # logger.info("produced " + src)
+
+    def set_progress_label(self, message):
+        self.progress_queue.set_progress_label(f"{self.folder_message}\n{message}")
 

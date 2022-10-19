@@ -2,13 +2,15 @@ import logging
 import os
 
 
-from PyQt5 import uic, QtWidgets
+from PyQt5 import uic, QtWidgets, QtCore
 from PyQt5.QtCore import QEvent
 
 from PyQt5.QtWidgets import QCheckBox, QMessageBox, QMainWindow, QLineEdit
+from reefscanner.basic_model.model_helper import check_model, rename_folders
 
 from aims import state
 from aims.operations.aims_status_dialog import AimsStatusDialog
+from aims.ui.archive_ui import ArchiveUi
 from aims.ui.ui_utils import unHighlight, highlight
 
 logger = logging.getLogger(__name__)
@@ -19,6 +21,21 @@ class ConfigUi(QMainWindow):
         super().__init__()
         ui_file = f'{state.meipass}resources/config.ui'
         self.ui = uic.loadUi(ui_file)
+        main_style = "#wid_main {background-image:url('" + state.meipass_linux() + "resources/theme1.jpg'); background-position: center;color: rgb(255, 255, 255);} "
+        label_style = """
+QLabel
+{
+    color: white;
+}
+QCheckBox
+{
+    color: white;
+}
+    
+        """
+        self.ui.wid_main.setStyleSheet(
+            main_style + label_style
+        )
 
         self.lbl_next_step = self.ui.lblNextStep
         self.ed_local: QLineEdit = self.ui.edLocal
@@ -39,6 +56,8 @@ class ConfigUi(QMainWindow):
         self.ui.btnBackup.clicked.connect(self.backup_clicked)
 
         self.ui.btn_next.clicked.connect(self.finished)
+        self.ui.btnArchive.clicked.connect(self.archive)
+        self.ui.btnFinishTrip.clicked.connect(self.finish_trip)
         self.aims_status_dialog = AimsStatusDialog(self.ui)
 
         self.ui.ed_vessel.setText(state.config.default_vessel)
@@ -60,6 +79,7 @@ class ConfigUi(QMainWindow):
         self.ed_vessel.returnPressed.connect(self.next_tab)
 
         self.update_next_step()
+        self.archiveUi = ArchiveUi()
 
     def eventFilter(self, source, event):
         # print(event.type())
@@ -121,9 +141,31 @@ class ConfigUi(QMainWindow):
         highlight(self.ui.btn_next)
         self.lbl_next_step.setText("Hit the next button to continue")
 
-
     def show(self):
         self.ui.show()
+
+    def finish_trip(self):
+        msg = QMessageBox()
+        answer = msg.question(self, "Finished?", "Have you got all the data off the ReefScan?", msg.Yes | msg.No)
+        if answer == msg.Yes:
+            state.load_data_model(aims_status_dialog=self.aims_status_dialog)
+
+            if state.model.data_loaded:
+                check_model(state.model)
+                rename_folders(state.model, state.config.data_folder, state.config.backup_data_folder)
+
+    def archive(self):
+        print("archive")
+        state.load_data_model(aims_status_dialog=self.aims_status_dialog)
+        if state.model.data_loaded:
+            self.archiveUi.show()
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText(state.model.message)
+            msg.setWindowTitle("Error")
+            msg.exec_()
+
 
     def finished(self, page_id):
         logger.info("finished")

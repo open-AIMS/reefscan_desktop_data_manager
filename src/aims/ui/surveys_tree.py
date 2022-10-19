@@ -1,18 +1,20 @@
 import logging
 import os
+import subprocess
 import sys
 
 
 from aims import state
 from aims.gui_model.lazy_list_model import LazyListModel
+from aims.gui_model.marks_model import MarksModel
 from aims.ui.map_html import map_html_str
 import PyQt5.QtWebEngineWidgets
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import QItemSelection, Qt, QModelIndex, QSize, QEvent
-from PyQt5.QtGui import QStandardItemModel
+from PyQt5.QtGui import QStandardItemModel, QPixmap
 
 from PyQt5.QtWidgets import QTreeView, QWidget, QApplication, QListWidget, QListView, \
-    QMessageBox, QTextEdit, QMainWindow
+    QMessageBox, QTextEdit, QMainWindow, QTableView, QLabel
 from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
@@ -33,11 +35,36 @@ def none_or_empty(str):
 class SurveysTree(QMainWindow):
     def __init__(self):
         super().__init__()
+
         self.app = QtWidgets.QApplication(sys.argv)
         self.start_ui = f'{state.meipass}resources/surveys-tree.ui'
 
         self.ui = uic.loadUi(self.start_ui)
+
+        main_style = "#centralwidget {border-image:url('" + state.meipass_linux() + "resources/theme-big.jpg') 0 0 0 0 stretch stretch;color: rgb(255, 255, 255);} "
+        label_style = """
+        QLabel
+        {
+            color: white;
+        }
+        QCheckBox
+        {
+            color: white;
+        }
+
+                """
+        self.ui.centralwidget.setStyleSheet(
+            main_style + label_style
+        )
+
         self.ui.setWindowState(self.ui.windowState() | Qt.WindowMaximized)
+        self.marks_widget_file = f'{state.meipass}resources/marks.ui'
+        self.marks_widget: QWidget = uic.loadUi(self.marks_widget_file)
+        self.ui.widMarks.layout().addWidget(self.marks_widget)
+        self.marks_table: QTableView = self.marks_widget.tableView
+        self.ui.widMarks.setVisible(False)
+        # self.marks_table.clicked.connect(self.marks_table_clicked)
+
         self.aims_status_dialog = AimsStatusDialog(self.ui)
         self.all_surveys = {}
         self.survey_id = None
@@ -47,12 +74,17 @@ class SurveysTree(QMainWindow):
         self.ui.btnMap.clicked.connect(self.toggle_map)
         self.ui.btnInfo.clicked.connect(self.toggle_info)
         self.ui.btn_thumbnails.clicked.connect(self.toggle_thumbnails)
+        self.ui.btnMarks.clicked.connect(self.toggle_marks)
         self.ui.btn_upload.clicked.connect(self.upload)
         self.ui.btn_copy.clicked.connect(self.copy)
         self.ui.btn_paste.clicked.connect(self.paste)
+        self.ui.btnOpenFolder.clicked.connect(self.open_folder)
+        self.marks_widget.btnOpenMarkFolder.clicked.connect(self.open_mark_folder)
+        self.marks_widget.btnOpenMark.clicked.connect(self.open_mark)
         self.hide_survey_panel()
-        self.ui.ed_site.editingFinished.connect(self.site_changed)
-        self.has_site_changed = False
+        self.ui.ed_site.editingFinished.connect(self.site_or_name_changed)
+        self.ui.ed_name.editingFinished.connect(self.site_or_name_changed)
+        self.has_site_or_name_changed = False
         self.thumbnail_model = None
         self.ed_comments: QTextEdit = self.ui.ed_comments
         lv_thumbnails:QListView = self.ui.lv_thumbnails
@@ -70,21 +102,37 @@ class SurveysTree(QMainWindow):
         self.ui.ed_vessel.editingFinished.connect(self.update_next_step)
         self.ui.ed_observer.editingFinished.connect(self.update_next_step)
         self.ui.ed_operator.editingFinished.connect(self.update_next_step)
+        self.marks_model:MarksModel = None
+        self.mark_filename = None
+
+    def marks_table_clicked(self, selected, deselected):
+        index = selected
+        print("You clicked on {0}x{1}".format(index.column(), index.row()))
+        if self.marks_model is not None:
+            filename = self.marks_model.photo_file(index.row())
+            print(filename)
+            label:QLabel = self.marks_widget.label
+            pixmap = QPixmap(filename).scaled(label.size().width(), label.size().height(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            label.setPixmap(pixmap)
 
     def show_survey_panel(self):
         self.ui.widEdit.setVisible(True)
-        self.ui.btn_thumbnails.setVisible(True)
+        self.ui.widThumbnailButtons.setVisible(True)
         self.ui.btnInfo.setVisible(True)
         self.ui.btnMap.setVisible(True)
+        self.ui.btnMarks.setVisible(True)
 
     def hide_survey_panel(self):
         self.ui.widEdit.setVisible(False)
         self.ui.widInfo.setVisible(False)
         self.ui.widMap.setVisible(False)
-        self.ui.btn_thumbnails.setVisible(False)
+        self.ui.widThumbnailButtons.setVisible(False)
         self.ui.btnInfo.setVisible(False)
         self.ui.btnMap.setVisible(False)
         self.ui.wid_thumbnails.setVisible(False)
+        self.ui.btnMarks.setVisible(False)
+        self.ui.widMarks.setVisible(False)
+
 
     def reset_next_step(self):
         unHighlight(self.ui.treeView)
@@ -164,9 +212,9 @@ class SurveysTree(QMainWindow):
         highlight(self.ui.btn_upload)
 
     def choose_survey_text(self):
-        text = "Choose a survey from the tree on the left."
+        text = "Choose a survey from the tree"
         if len(state.model.camera_surveys) > 0:
-            text = text + " Or tick surveys from the tree and hit the upload button"
+            text = text + " or tick surveys from the tree and hit the upload button"
         return text
 
     def eventFilter(self, source, event):
@@ -218,8 +266,8 @@ class SurveysTree(QMainWindow):
     def survey(self):
         return self.all_surveys[self.survey_id]
 
-    def site_changed(self):
-        self.has_site_changed = True
+    def site_or_name_changed(self):
+        self.has_site_or_name_changed = True
 
     def copy(self):
         self.ui_to_data()
@@ -342,7 +390,7 @@ class SurveysTree(QMainWindow):
             self.survey()["tide"] = self.ui.cb_tide.currentText()
             self.survey()["friendly_name"] = self.ui.ed_name.text()
 
-            save_survey(self.survey())
+            save_survey(self.survey(), state.config.data_folder, state.config.backup_data_folder)
 
     def data_to_ui(self):
         if self.survey_id is not None:
@@ -400,6 +448,52 @@ class SurveysTree(QMainWindow):
         wid_thumbnails.setVisible(not wid_thumbnails.isVisible())
         self.load_thumbnails()
 
+    def toggle_marks(self):
+        wid_marks: QWidget = self.ui.widMarks
+        wid_marks.setVisible(not wid_marks.isVisible())
+        self.load_marks()
+
+    def load_marks(self):
+        wid_marks: QWidget = self.ui.widMarks
+        if wid_marks.isVisible():
+            self.mark_filename = None
+            self.marks_model = MarksModel(self.survey_col("json_folder"))
+            self.marks_table.setModel(self.marks_model)
+            self.marks_table.selectionModel().currentChanged.connect(self.marks_table_clicked)
+            if self.marks_model.hasData():
+                self.marks_table.selectRow(0)
+            else:
+                label: QLabel = self.marks_widget.lblPhoto
+                label.clear()
+                self.marks_widget.lblFileName.setText("There are no marks for this survey")
+
+    def marks_table_clicked(self, selected, deselected):
+        index = selected
+        if self.marks_model is not None:
+            self.mark_filename = self.marks_model.photo_file(index.row())
+            self.marks_widget.lblFileName.setText(self.marks_model.photo_file_name(index.row()))
+            label:QLabel = self.marks_widget.lblPhoto
+            pixmap = QPixmap(self.mark_filename).scaled(label.size().width(), label.size().height(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            label.setPixmap(pixmap)
+
+    def open_folder(self):
+        os.startfile(self.survey_col("json_folder"))
+
+    def open_mark(self):
+        if self.mark_filename is not None:
+            os.startfile(self.mark_filename)
+
+    def open_mark_folder(self):
+        if self.mark_filename is not None:
+            try:
+                fname = self.mark_filename.replace("//", "/")
+                fname = fname.replace("/", "\\")
+                command = f'explorer.exe /select,"{fname}"'
+                print (command)
+                subprocess.call(command)
+            except:
+                os.startfile(self.mark_filename, "open")
+
     def load_thumbnails(self):
         list_thumbnails:QListView = self.ui.lv_thumbnails
         list_thumbnails.setViewMode(QListWidget.IconMode)
@@ -416,7 +510,6 @@ class SurveysTree(QMainWindow):
             # photos = photos[0:20]
             # for photo in photos:
             #     list_thumbnails.addItem(QListWidgetItem(QIcon(folder + "/" + photo), photo));
-
 
     def add_tree_data(self, selected_row):
         print("add tree data")
@@ -467,10 +560,18 @@ class SurveysTree(QMainWindow):
             branch.appendRow(site_branch)
 
             surveys = sites[site]
-            for survey_id in surveys:
-                survey_branch = CheckTreeitem(survey_id, checkable)
-                survey_branch.setData(survey_id, Qt.UserRole)
-                site_branch.appendRow(survey_branch)
+            for survey in surveys:
+                survey_id = survey["id"]
+                if survey_id != "archive":
+                    try:
+                        name = survey["friendly_name"]
+                    except:
+                        name = None
+                    if name is None or name == "":
+                        name = survey_id
+                    survey_branch = CheckTreeitem(name, checkable)
+                    survey_branch.setData(survey_id, Qt.UserRole)
+                    site_branch.appendRow(survey_branch)
         return branch
 
     def selection_changed(self,  item_selection:QItemSelection):
@@ -484,13 +585,14 @@ class SurveysTree(QMainWindow):
             self.survey_id = index.data(Qt.UserRole)
             # print(self.survey_id)
 
-        if self.has_site_changed:
+        if self.has_site_or_name_changed:
             self.add_tree_data(self.survey_id)
 
         self.data_to_ui()
         self.draw_map()
         self.load_thumbnails()
-        self.has_site_changed = False
+        self.load_marks()
+        self.has_site_or_name_changed = False
         self.update_next_step()
 
 

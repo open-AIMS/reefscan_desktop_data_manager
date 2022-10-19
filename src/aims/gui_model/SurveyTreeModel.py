@@ -10,7 +10,7 @@ class SurveyTreeModel:
                 site_name = "__Not Assigned"
 
             if site_name in self.sites:
-                self.sites[site_name].append(survey["id"])
+                self.sites[site_name].append(survey)
             else:
-                self.sites[site_name] = [survey["id"]]
+                self.sites[site_name] = [survey]
 

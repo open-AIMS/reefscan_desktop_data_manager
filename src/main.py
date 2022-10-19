@@ -2,14 +2,14 @@ import logging
 import multiprocessing
 import traceback
 
-from PyQt5 import QtWidgets
-
-
+from PyQt5 import QtWidgets, QtCore, QtGui
 
 import sys
 import glob
 
 # from uncaught_hook import UncaughtHook
+
+
 from aims import state
 from aims.config import Config
 from aims.ui.config_ui import ConfigUi
@@ -17,6 +17,8 @@ from aims.ui.surveys_tree import SurveysTree
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger_smb = logging.getLogger('smbprotocol')
+logger_smb.setLevel(level=logging.WARNING)
 
 
 def gui_except_hook(exc_class, exc_value, tb):
@@ -63,6 +65,28 @@ if __name__ == "__main__":
     print(files)
 
     app = QtWidgets.QApplication(sys.argv)
+    print(app.font().pointSize())
+    font = app.font()
+    font.setPointSize(12)
+    app.setFont(font)
+    print(app.font().pointSize())
+
+    app_icon = QtGui.QIcon()
+    app_icon.addFile(f'{state.meipass}resources/aims-fish16.png', QtCore.QSize(16, 16))
+    app_icon.addFile(f'{state.meipass}resources/aims-fish24.png', QtCore.QSize(24, 24))
+    app_icon.addFile(f'{state.meipass}resources/aims-fish32.png', QtCore.QSize(32, 32))
+    app_icon.addFile(f'{state.meipass}resources/aims-fish48.png', QtCore.QSize(48, 48))
+    app_icon.addFile(f'{state.meipass}resources/aims-fish256.png', QtCore.QSize(256, 256))
+    app.setWindowIcon(app_icon)
+
+    # This makes the Icon show in the task bar on Windows
+    try:
+        import ctypes
+        myappid = 'aims.reefscan.boom'  # arbitrary string
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    except:
+        print ("Error setting up windows task bar. Probably not windows.")
+
 
     try:
         config_ui = ConfigUi()
