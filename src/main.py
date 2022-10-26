@@ -13,6 +13,7 @@ import glob
 from aims import state
 from aims.config import Config
 from aims.ui.config_ui import ConfigUi
+from aims.ui.main_ui import MainUi
 from aims.ui.surveys_tree import SurveysTree
 
 logging.basicConfig(level=logging.INFO)
@@ -58,8 +59,10 @@ if __name__ == "__main__":
     multiprocessing.freeze_support()
     try:
         state.meipass = sys._MEIPASS + "/"
+        state.meipass2 = state.meipass
     except:
         state.meipass=""
+        state.meipass2 = "C:/aa_git_root/techdev/reefscan-data-entry/src/"
     print(state.meipass)
     files = glob.glob(state.meipass + '**/*', recursive=True)
     print(files)
@@ -89,18 +92,17 @@ if __name__ == "__main__":
 
 
     try:
-        config_ui = ConfigUi()
-        state.surveys_tree = SurveysTree()
+        main_ui = MainUi()
 
-        config_ui.show()
+        main_ui.show()
         app.exec()
 
     except Exception:
         logger.exception("Error")
 
-    if state.model.data_loaded:
-        print("will export")
-        state.model.export()
+    # if state.model.data_loaded:
+    #     print("will export")
+    #     state.model.export()
 
     print("main done")
 

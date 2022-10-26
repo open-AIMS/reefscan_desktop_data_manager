@@ -7,6 +7,7 @@ import sys
 from aims import state
 from aims.gui_model.lazy_list_model import LazyListModel
 from aims.gui_model.marks_model import MarksModel
+from aims.gui_model.tree_model import make_tree_model
 from aims.ui.map_html import map_html_str
 import PyQt5.QtWebEngineWidgets
 from PyQt5 import QtWidgets, uic
@@ -511,10 +512,9 @@ class SurveysTree(QMainWindow):
             # for photo in photos:
             #     list_thumbnails.addItem(QListWidgetItem(QIcon(folder + "/" + photo), photo));
 
+
     def add_tree_data(self, selected_row):
         print("add tree data")
-        self.tree_model = QStandardItemModel()
-
         duplicate_ids = state.model.surveys_data.keys() & state.model.camera_surveys.keys()
         if len(duplicate_ids) > 0:
             msg = QMessageBox()
@@ -529,17 +529,13 @@ class SurveysTree(QMainWindow):
         self.all_surveys.update(state.model.surveys_data)
         self.all_surveys.update(state.model.camera_surveys)
 
+        self.tree_model = make_tree_model()
         self.tree_model.itemChanged.connect(self.on_itemChanged)
+
         view: QTreeView = self.ui.treeView
         view.setHeaderHidden(True)
         view.setModel(self.tree_model)
         view.selectionModel().selectionChanged.connect(self.selection_changed)
-
-        camera_branch = self.make_branch(state.model.camera_surveys, 'Reefscan Camera', checkable=True)
-        local_branch = self.make_branch(state.model.surveys_data, 'Local Drive', checkable=False)
-
-        self.tree_model.appendRow(camera_branch)
-        self.tree_model.appendRow(local_branch)
 
         view.expandAll()
 
@@ -551,28 +547,9 @@ class SurveysTree(QMainWindow):
             # view.selectionModel().setCurrentIndex(row_found, QItemSelectionModel.Current)
             # view.scrollTo(row_found)
 
-    def make_branch(self, survey_data, name, checkable):
-        survey_tree_model = SurveyTreeModel(survey_data)
-        branch = CheckTreeitem(name, checkable)
-        sites = survey_tree_model.sites
-        for site in sites.keys():
-            site_branch = CheckTreeitem(site, checkable)
-            branch.appendRow(site_branch)
 
-            surveys = sites[site]
-            for survey in surveys:
-                survey_id = survey["id"]
-                if survey_id != "archive":
-                    try:
-                        name = survey["friendly_name"]
-                    except:
-                        name = None
-                    if name is None or name == "":
-                        name = survey_id
-                    survey_branch = CheckTreeitem(name, checkable)
-                    survey_branch.setData(survey_id, Qt.UserRole)
-                    site_branch.appendRow(survey_branch)
-        return branch
+
+
 
     def selection_changed(self,  item_selection:QItemSelection):
         if self.thumbnail_model is not None:

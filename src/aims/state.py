@@ -1,6 +1,6 @@
 from aims.config import Config
 from aims.gui_model.model import GuiModel
-from aims.operations.load_data import load_data
+from aims.operations.load_data import load_data, load_camera_data
 
 config = Config()
 model = GuiModel()
@@ -20,6 +20,11 @@ def load_data_model(aims_status_dialog):
     model.default_operator = config.default_operator
     model.default_observer = config.default_observer
     model.data_loaded, model.message = load_data(model, config.camera_connected, aims_status_dialog=aims_status_dialog)
+
+
+def load_camera_data_model(aims_status_dialog):
+    model.camera_data_folder = config.hardware_data_folder
+    model.data_loaded, model.message = load_camera_data(model, aims_status_dialog=aims_status_dialog)
 
 
 def set_data_folders():
