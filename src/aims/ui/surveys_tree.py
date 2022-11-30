@@ -20,7 +20,7 @@ from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
 
-from aims.gui_model.SurveyTreeModel import SurveyTreeModel
+from aims.gui_model.SurveyTreeModelBySite import SurveyTreeModelBySite
 from aims.operations.aims_status_dialog import AimsStatusDialog
 from aims.operations.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.ui.checked_tree_item import CheckTreeitem
@@ -88,7 +88,7 @@ class SurveysTree(QMainWindow):
         self.has_site_or_name_changed = False
         self.thumbnail_model = None
         self.ed_comments: QTextEdit = self.ui.ed_comments
-        lv_thumbnails:QListView = self.ui.lv_thumbnails
+        lv_thumbnails: QListView = self.ui.lv_thumbnails
         lv_thumbnails.doubleClicked.connect(self.click_photo)
         self.ui.centralwidget.installEventFilter(self)
         self.update_next_step()
@@ -133,7 +133,6 @@ class SurveysTree(QMainWindow):
         self.ui.wid_thumbnails.setVisible(False)
         self.ui.btnMarks.setVisible(False)
         self.ui.widMarks.setVisible(False)
-
 
     def reset_next_step(self):
         unHighlight(self.ui.treeView)

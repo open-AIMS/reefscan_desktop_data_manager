@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="newPrefix">
+    <file>ethernet.jpg</file>
+  </qresource>
+</RCC>

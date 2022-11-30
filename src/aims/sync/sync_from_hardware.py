@@ -3,6 +3,8 @@ import os
 import shutil
 import traceback
 from datetime import datetime
+
+from aims import state
 from aims.samba import aims_shutil
 from joblib import Parallel, delayed
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
@@ -19,6 +21,8 @@ class SyncFromHardware(Synchroniser):
         self.hardware_folder = hardware_folder
         self.local_folder = local_folder
         self.backup_folder = backup_folder
+        self.backup = state.config.backup
+
         self.camera_samba = camera_samba
         self.camera_os = get_file_ops(self.camera_samba)
         self.folder_message = ""
@@ -53,7 +57,6 @@ class SyncFromHardware(Synchroniser):
                 self.progress_queue.reset()
                 self.folder_message = f"Survey {survey_id}. {i} of {tot_surveys}"
                 h_survey_folder = h_surveys_folder + "/" + survey_id
-                l_survey_folder = l_surveys_folder + "/" + survey_id
                 # archive_survey_folder = archive_folder + "/" + survey_id
                 l_survey_folder = self.local_folder + "/" + survey_id
 
@@ -108,8 +111,9 @@ class SyncFromHardware(Synchroniser):
 
         l_dst = dst
         dst_last_part = dst[len(self.local_folder): ]
+        if (self.backup):
+            b_dst = f"{self.backup_folder}/{dst_last_part}"
 
-        b_dst = f"{self.backup_folder}/{dst_last_part}"
         a_dst = f"{self.hardware_folder}/archive/{dst_last_part}"
 
         if self.cancelled:
@@ -126,12 +130,14 @@ class SyncFromHardware(Synchroniser):
                     logger.info(f"will copy {src}")
                     os.makedirs(os.path.dirname(l_dst), exist_ok=True)
                     self.camera_os.copyfile(src, l_dst)
-                if os.path.exists(b_dst):
-                    message = f'skipping {src}'
-                else:
-                    logger.info(f"will copy backup {src}")
-                    os.makedirs(os.path.dirname(b_dst), exist_ok=True)
-                    shutil.copyfile(l_dst, b_dst)
+
+                if self.backup:
+                    if os.path.exists(b_dst):
+                        message = f'skipping {src}'
+                    else:
+                        logger.info(f"will copy backup {src}")
+                        os.makedirs(os.path.dirname(b_dst), exist_ok=True)
+                        shutil.copyfile(l_dst, b_dst)
 
                 archive_dir = os.path.dirname(a_dst)
                 if not self.camera_os.exists(archive_dir):

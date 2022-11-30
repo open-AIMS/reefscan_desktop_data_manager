@@ -1,11 +1,13 @@
 from aims.config import Config
 from aims.gui_model.model import GuiModel
 from aims.operations.load_data import load_data, load_camera_data
+from fabric import Connection
 
 config = Config()
 model = GuiModel()
 meipass = None
 surveys_tree = None
+reefscan_id = ""
 
 
 def meipass_linux():
@@ -29,3 +31,14 @@ def load_camera_data_model(aims_status_dialog):
 
 def set_data_folders():
     model.set_data_folders(config.data_folder, config.hardware_data_folder)
+
+
+def read_reefscan_id():
+    conn = Connection(
+        "jetson@" + config.camera_ip,
+        connect_kwargs={"password": "jetson"}
+    )
+
+    r = conn.run("cat ~/reefscan_id.txt")
+    reefscan_id = r.stdout
+    return reefscan_id

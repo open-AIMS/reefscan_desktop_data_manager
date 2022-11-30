@@ -1,5 +1,5 @@
 
-class SurveyTreeModel:
+class SurveyTreeModelBySite:
     def __init__(self, survey_data):
         self.sites = {}
         for survey in survey_data.values():
@@ -13,4 +13,6 @@ class SurveyTreeModel:
                 self.sites[site_name].append(survey)
             else:
                 self.sites[site_name] = [survey]
+
+        self.first_level = self.sites
 

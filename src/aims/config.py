@@ -32,6 +32,8 @@ class Config(object):
         self.default_observer = None
         self.default_vessel = None
 
+        self.backup = True
+        self.time_zone = ""
 
         self.read_config_file()
 
@@ -44,7 +46,9 @@ class Config(object):
             "default_operator": self.default_operator,
             "default_observer": self.default_observer,
             "default_vessel": self.default_vessel,
-            "hardware_data_folder": self.hardware_data_folder
+            "hardware_data_folder": self.hardware_data_folder,
+            "backup": self.backup,
+            "time_zone": self.time_zone
 
         }
         write_json_file(self.config_folder, self.config_file_name, data_folder_json)
@@ -64,5 +68,7 @@ class Config(object):
         self.default_observer = data_folder_json.get("default_observer", "")
         self.default_vessel = data_folder_json.get("default_vessel", "")
         self.hardware_data_folder = data_folder_json.get("hardware_data_folder", r"\\192.168.3.2\images")
+        self.backup = data_folder_json.get("backup", True)
+        self.time_zone = data_folder_json.get("time_zone", "")
 
         print(self)

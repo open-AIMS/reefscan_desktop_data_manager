@@ -22,6 +22,7 @@ def load_data(model, camera_connected, aims_status_dialog: AimsStatusDialog):
     print (operation.message)
     return operation.success, operation.message
 
+
 def load_camera_data(model, aims_status_dialog: AimsStatusDialog):
     operation = LoadCameraDataOperation(model)
     operation.update_interval = 1
