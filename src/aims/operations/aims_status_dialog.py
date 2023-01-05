@@ -30,7 +30,7 @@ class AimsStatusDialog(object):
     def set_progress_value(self, params):
         (i, label) = params
         try:
-            logger.info(f"value {i}")
+            logger.debug(f"value {i}")
             with self.redrawLock:
                 self.progress_dialog.setValue(i)
                 self.progress_dialog.setLabelText(label)

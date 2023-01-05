@@ -25,6 +25,30 @@ html_str = """
 <div id="mapid" style="width: 100%; height: 100%; position: absolute; top:0; bottom:0"></div>
 <script>
 
+     function makePopup(image) {
+        return image +'<br/><a href=file:///' + image + ' target="_">a</a>';
+    }
+     var icon = L.divIcon({
+      className: 'map-magnitude-icon',
+       iconAnchor: [0, 0],
+      popupAnchor: [0, 0],
+      iconSize: [10, 10],
+       html: 
+        `
+        <div style=
+        "background-color: #00FFFF;
+      width: 10px;
+      height: 10px;
+      display: block;
+      transform: translate(-50%,-50%);
+      position: relative;
+      border-radius: 100%;
+      border: 1px solid #FFFFFF;
+      opacity: 0.7;">
+        </div>
+        `
+    });
+      
 	var mymap = L.map("mapid");
 	
 	googleSat = L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",{
@@ -36,10 +60,21 @@ html_str = """
 	var latlngs = ___PASTE_TRACK_HERE___
 	
 	
-	var polyline = L.polyline(latlngs, {color: 'red'}).addTo(mymap);
+//	 var polyline = L.polyline(latlngs, {color: 'red'}).addTo(mymap);
+	var markersLayer = L.featureGroup();
+    mymap.addLayer(this.markersLayer);
+    for (const l of latlngs) {
+        const marker = L.marker([l[0], l[1]]);
+        marker.setIcon(icon)
+        marker.addTo(markersLayer);
+        marker.bindPopup(makePopup(l[2]))
+	}
+	
+	
+
 
 	// zoom the map to the polyline
-	mymap.fitBounds(polyline.getBounds());
+	mymap.fitBounds(markersLayer.getBounds());
 	if (mymap.getZoom() > 14) {
 	    mymap.setZoom(14)
 	}
@@ -53,6 +88,9 @@ html_str = """
 </body>
 </html>
 
+"""
+stupid = """
+    file:///D:/COTS_Control_whitsunday_december_2022/20211211_022527_Seq01/20211211_022658_000_0308.jpg
 """
 
 

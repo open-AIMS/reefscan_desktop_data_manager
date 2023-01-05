@@ -36,7 +36,7 @@ class AbstractOperation(QObject):
             # time.sleep(0.001)
             try:
                 (operation, value) = self.progress_queue.q.get(block=True, timeout=0.1)
-                logger.info(f"{operation} {value}")
+                logger.debug(f"{operation} {value}")
                 if operation == "reset":
                     self.progress_value = 0
                     self.set_progress_value(0)

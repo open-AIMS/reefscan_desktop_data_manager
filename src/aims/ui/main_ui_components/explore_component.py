@@ -6,6 +6,7 @@ import subprocess
 from PyQt5 import QtCore, uic
 from PyQt5.QtCore import QModelIndex, QItemSelection, QSize, Qt
 from PyQt5.QtGui import QPixmap
+from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QAction, QMenu, QInputDialog, QWidget, QTableView, QLabel, QListView, \
     QListWidget
 from pytz import utc
@@ -17,6 +18,7 @@ from aims.gui_model.lazy_list_model import LazyListModel
 from aims.gui_model.marks_model import MarksModel
 from aims.gui_model.tree_model import make_tree_model
 from aims.operations.sync_from_hardware_operation import SyncFromHardwareOperation
+from aims.stats.survey_stats import SurveyStats
 from aims.ui.main_ui_components.utils import setup_folder_tree, setup_file_system_tree_and_combo_box, clearLayout, \
     update_data_folder_from_tree
 from aims.ui.map_html import map_html_str
@@ -25,10 +27,13 @@ from aims.ui.map_html import map_html_str
 logger = logging.getLogger(__name__)
 
 def utc_to_local(utc_str, timezone):
-    naive_date = datetime.datetime.strptime(utc_str, "%Y-%m-%dT%H:%M:%S")
-    utc_date = utc.localize(naive_date)
-    local_date = utc_date.astimezone(timezone)
-    return datetime.datetime.strftime(local_date, "%Y-%m-%d %H:%M:%S")
+    try:
+        naive_date = datetime.datetime.strptime(utc_str, "%Y-%m-%dT%H:%M:%S")
+        utc_date = utc.localize(naive_date)
+        local_date = utc_date.astimezone(timezone)
+        return datetime.datetime.strftime(local_date, "%Y-%m-%d %H:%M:%S")
+    except:
+        return utc_str
 
 
 class ExploreComponent:
@@ -182,12 +187,29 @@ class ExploreComponent:
     def explore_tree_selection_changed(self,  item_selection:QItemSelection):
         self.ui_to_data()
 
+        if len(item_selection.indexes()) == 0:
+            return()
+
         for index in item_selection.indexes():
             self.survey_id = index.data(Qt.UserRole)
+            selected_index = index
 
         if self.survey_id is None:
-            self.explore_widget.tabWidget.setCurrentIndex(0)
+            self.explore_widget.tabWidget.setCurrentIndex(1)
             self.explore_widget.tabWidget.setEnabled(False)
+            print(selected_index.data(Qt.DisplayRole))
+            print("columns " + str(selected_index.model().columnCount()))
+            print("rows " + str(selected_index.model().rowCount()))
+            print("children: " + str(len(selected_index.model().children())))
+
+            descendant_surveys = self.get_all_descendants(selected_index)
+            survey_stats = SurveyStats()
+            survey_stats.calculate_surveys(descendant_surveys)
+            self.survey_stats_to_ui(survey_stats)
+            self.non_survey_to_stats_ui(selected_index.data(Qt.DisplayRole))
+
+            print(descendant_surveys)
+
         else:
             if self.explore_widget.tabWidget.currentIndex() == 0:
                 self.explore_widget.tabWidget.setCurrentIndex(1)
@@ -197,6 +219,20 @@ class ExploreComponent:
             self.draw_map()
             self.load_thumbnails()
             self.load_marks()
+
+    def get_all_descendants(self, selected_index):
+        if selected_index.data(Qt.UserRole) is not None:
+            return [selected_index.data(Qt.UserRole)]
+
+        ret = []
+        row = 0
+        child = selected_index.child(row, 0)
+        while child.data(Qt.DisplayRole) is not None:
+            ret.extend(self.get_all_descendants(child))
+            print(child.data(Qt.DisplayRole))
+            row += 1
+            child = selected_index.child(row, 0)
+        return ret
 
     def survey_col(self, column):
         survey = self.survey()
@@ -243,13 +279,20 @@ class ExploreComponent:
             self.metadata_widget.ed_comments.setPlainText(self.survey_col("comments"))
 
             self.info_widget.lb_sequence_name.setText(self.survey_col("id"))
-            self.info_widget.lb_number_images.setText(self.survey_col("photos"))
             self.info_widget.lb_start_time.setText(utc_to_local(self.survey_col("start_date"), timezone=self.time_zone))
             self.info_widget.lb_end_time.setText(utc_to_local(self.survey_col("finish_date"), timezone=self.time_zone))
             self.info_widget.lb_start_waypoint.setText(f"{self.survey_col('start_lon')} {self.survey_col('start_lat')}")
             self.info_widget.lb_end_waypoint.setText(f"{self.survey_col('finish_lon')} {self.survey_col('finish_lat')}")
-            self.info_widget.lb_number_images.setText(self.survey_col("photos"))
             self.explore_widget.folder_label.setText(self.survey_col('json_folder'))
+            survey_stats = SurveyStats()
+            survey_stats.calculate(self.survey())
+            self.survey_stats_to_ui(survey_stats)
+
+    def survey_stats_to_ui(self, survey_stats):
+        self.info_widget.lb_number_images.setText(str(survey_stats.photos))
+        self.info_widget.lbl_missing_gps.setText(str(survey_stats.missing_gps))
+        self.info_widget.lbl_missing_ping.setText(str(survey_stats.missing_ping_depth))
+        self.info_widget.lbl_missing_pressure.setText(str(survey_stats.missing_pressure_depth))
 
     def load_thumbnails(self):
         list_thumbnails:QListView = self.explore_widget.lv_thumbnails
@@ -282,5 +325,16 @@ class ExploreComponent:
         if self.survey_id is not None:
             folder = self.survey_col('image_folder')
             html_str = map_html_str(folder, False)
+            # print (html_str)
             if html_str is not None:
-                self.explore_widget.mapView.setHtml(html_str)
+                view:QWebEngineView = self.explore_widget.mapView
+                view.setHtml(html_str)
+
+    def non_survey_to_stats_ui(self, name):
+        self.info_widget.lb_sequence_name.setText(name)
+        self.info_widget.lb_start_time.setText("")
+        self.info_widget.lb_end_time.setText("")
+        self.info_widget.lb_start_waypoint.setText("")
+        self.info_widget.lb_end_waypoint.setText("")
+
+

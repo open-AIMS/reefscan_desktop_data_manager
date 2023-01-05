@@ -117,17 +117,17 @@ class SyncFromHardware(Synchroniser):
         a_dst = f"{self.hardware_folder}/archive/{dst_last_part}"
 
         if self.cancelled:
-            print("cancelled")
+            logger.debug("cancelled")
         else:
             message = f'copying  {src}'
-            print(message)
+            logger.debug(message)
             try:
                 if os.path.exists(l_dst):
                     message = f'skipping {src}'
                     # print(message)
                     self.set_progress_label(message)
                 else:
-                    logger.info(f"will copy {src}")
+                    logger.debug(f"will copy {src}")
                     os.makedirs(os.path.dirname(l_dst), exist_ok=True)
                     self.camera_os.copyfile(src, l_dst)
 
@@ -135,7 +135,7 @@ class SyncFromHardware(Synchroniser):
                     if os.path.exists(b_dst):
                         message = f'skipping {src}'
                     else:
-                        logger.info(f"will copy backup {src}")
+                        logger.debug(f"will copy backup {src}")
                         os.makedirs(os.path.dirname(b_dst), exist_ok=True)
                         shutil.copyfile(l_dst, b_dst)
 
