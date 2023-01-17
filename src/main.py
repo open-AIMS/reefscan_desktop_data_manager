@@ -4,6 +4,7 @@ import traceback
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
+import os
 import sys
 import glob
 
@@ -57,12 +58,13 @@ sys.excepthook = gui_except_hook
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
+    file_path = os.path.dirname(os.path.realpath(__file__))
     try:
         state.meipass = sys._MEIPASS + "/"
         state.meipass2 = state.meipass
     except:
-        state.meipass=""
-        state.meipass2 = "C:/aa_git_root/techdev/reefscan-data-entry/src/"
+        state.meipass= file_path + os.sep
+        state.meipass2 = file_path + os.sep
     print(state.meipass)
     files = glob.glob(state.meipass + '**/*', recursive=True)
     print(files)
