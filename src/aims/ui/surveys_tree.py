@@ -418,7 +418,6 @@ class SurveysTree(QMainWindow):
         else:
             self.hide_survey_panel()
 
-
     def survey_col(self, column):
         survey = self.survey()
         if column in survey:
@@ -528,7 +527,7 @@ class SurveysTree(QMainWindow):
         self.all_surveys.update(state.model.surveys_data)
         self.all_surveys.update(state.model.camera_surveys)
 
-        self.tree_model = make_tree_model()
+        self.tree_model = make_tree_model(None)
         self.tree_model.itemChanged.connect(self.on_itemChanged)
 
         view: QTreeView = self.ui.treeView

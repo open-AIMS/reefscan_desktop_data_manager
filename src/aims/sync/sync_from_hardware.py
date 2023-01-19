@@ -52,10 +52,15 @@ class SyncFromHardware(Synchroniser):
         tot_surveys = len(survey_ids)
         i=0
         for survey_id in survey_ids:
+            try:
+                friendly_name = state.model.camera_surveys[survey_id]["friendly_name"]
+            except:
+                friendly_name = survey_id
+
             if not self.cancelled:
                 i += 1
                 self.progress_queue.reset()
-                self.folder_message = f"Survey {survey_id}. {i} of {tot_surveys}"
+                self.folder_message = f"Survey {friendly_name}. {i} of {tot_surveys}"
                 h_survey_folder = h_surveys_folder + "/" + survey_id
                 # archive_survey_folder = archive_folder + "/" + survey_id
                 l_survey_folder = self.local_folder + "/" + survey_id

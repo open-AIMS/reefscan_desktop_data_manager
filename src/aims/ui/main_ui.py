@@ -25,7 +25,7 @@ from aims.ui.main_ui_components.archive_component import ArchiveComponent
 from aims.ui.main_ui_components.download_component import DownloadComponent
 from aims.ui.main_ui_components.explore_component import ExploreComponent
 from aims.ui.main_ui_components.upload_component import UploadComponent
-from aims.ui.main_ui_components.utils import clearLayout
+from aims.ui.main_ui_components.utils import clearLayout, setup_file_system_tree_and_combo_box
 from aims.ui.no_network_drives_filter import NoNetworkDrivesFilter
 import win32file
 import win32api
@@ -87,6 +87,7 @@ class MainUi(QMainWindow):
         self.aims_status_dialog = AimsStatusDialog(self.ui)
         self.archive_checker = ArchiveChecker()
         self.update_status()
+        self.connected = False
 
 
     def setup_timezone(self):
@@ -137,15 +138,22 @@ class MainUi(QMainWindow):
         status_widget_file = f'{state.meipass}resources/status-bar.ui'
         self.status_widget: QWidget = uic.loadUi(status_widget_file)
         self.ui.statusFrame.layout().addWidget(self.status_widget)
+        self.status_widget.refreshButton.clicked.connect(self.update_status)
 
     def highlight_button(self, button):
         remove_button_border(self.workflow_widget.connectButton)
+        self.workflow_widget.connectButton.setEnabled(True)
         remove_button_border(self.workflow_widget.downloadButton)
+        self.workflow_widget.downloadButton.setEnabled(self.connected)
         remove_button_border(self.workflow_widget.archiveButton)
+        self.workflow_widget.archiveButton.setEnabled(self.connected)
         remove_button_border(self.workflow_widget.exploreButton)
+        self.workflow_widget.exploreButton.setEnabled(True)
         remove_button_border(self.workflow_widget.uploadButton)
+        self.workflow_widget.uploadButton.setEnabled(True)
 
         add_button_border(button)
+        button.setEnabled(False)
 
     def setup_workflow(self):
         workflow_widget_file = f'{state.meipass}resources/workflow-bar.ui'
@@ -179,6 +187,9 @@ class MainUi(QMainWindow):
         self.download_component.download_widget = self.load_main_frame(f'{state.meipass}resources/download.ui')
         self.download_component.load_download_screen(self.fixed_drives, time_zone=self.time_zone, aims_status_dialog=self.aims_status_dialog)
         self.highlight_button(self.workflow_widget.downloadButton)
+        self.download_component.download_widget.refreshPrimaryButton.clicked.connect(self.update_status)
+        self.download_component.download_widget.refreshSecondaryButton.clicked.connect(self.update_status)
+
 
     def load_start_screen(self):
         self.load_main_frame(f'{state.meipass}resources/start.ui')
@@ -190,7 +201,7 @@ class MainUi(QMainWindow):
         print(drives)
         for d in drives:
             drive_type = win32file.GetDriveType(d)
-            if drive_type == win32file.DRIVE_FIXED:
+            if drive_type == win32file.DRIVE_FIXED or drive_type == win32file.DRIVE_REMOVABLE:
                 self.fixed_drives.append(d)
 
     def load_explore_screen(self):
@@ -200,6 +211,8 @@ class MainUi(QMainWindow):
         self.explore_component.explore_widget = self.load_main_frame(f'{state.meipass}resources/explore.ui')
 
         self.explore_component.load_explore_screen(self.fixed_drives, self.aims_status_dialog, self.time_zone)
+        self.explore_component.explore_widget.refreshButton.clicked.connect(self.update_status)
+
 
 
     def load_archive_screen(self):
@@ -245,7 +258,7 @@ class MainUi(QMainWindow):
             self.workflow_widget.archiveButton.setEnabled(True)
             self.load_download_screen()
             state.reefscan_id = remove_control_characters(state.read_reefscan_id())
-            self.update_status()
+            self.connected = True
         else:
             self.connect_widget.lblMessage.setText(state.model.message)
 
@@ -268,10 +281,14 @@ class MainUi(QMainWindow):
             local_space = local_space + f"{drive} {gbFree} Gb Free \n"
         self.status_widget.lblLocal.setText(local_space)
 
+        if self.current_screen == "download":
+            self.load_download_screen()
+
+        if self.current_screen == "explore":
+            self.load_explore_screen()
+
     def show(self):
         self.ui.show()
-
-
 
 
 

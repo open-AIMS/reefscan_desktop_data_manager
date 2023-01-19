@@ -86,25 +86,6 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
-       <widget class="QLabel" name="lblSequences">
-        <property name="font">
-         <font>
-          <pointsize>14</pointsize>
-         </font>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">background-color: rgb(162, 196, 201);
-border: 2px solid black;</string>
-        </property>
-        <property name="text">
-         <string>Not Connected</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="3">
        <widget class="QLabel" name="lblLocal">
         <property name="font">
@@ -118,6 +99,25 @@ border: 2px solid black;</string>
         </property>
         <property name="text">
          <string>Local Drive</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="lblSequences">
+        <property name="font">
+         <font>
+          <pointsize>14</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(162, 196, 201);
+border: 2px solid black;</string>
+        </property>
+        <property name="text">
+         <string>Not Connected</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -141,6 +141,22 @@ border: 2px solid black;</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="QPushButton" name="refreshButton">
+        <property name="font">
+         <font>
+          <pointsize>14</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(200, 200, 255);
+</string>
+        </property>
+        <property name="text">
+         <string>Refresh</string>
         </property>
        </widget>
       </item>

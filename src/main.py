@@ -93,6 +93,7 @@ if __name__ == "__main__":
 
     try:
         main_ui = MainUi()
+        # main_ui = ConfigUi()
 
         main_ui.show()
         app.exec()
@@ -100,9 +101,9 @@ if __name__ == "__main__":
     except Exception:
         logger.exception("Error")
 
-    # if state.model.data_loaded:
-    #     print("will export")
-    #     state.model.export()
+    if state.model.data_loaded:
+        print("will export")
+        state.model.export()
 
     print("main done")
 

@@ -6,6 +6,7 @@ from PyQt5 import uic, QtWidgets, QtCore
 from PyQt5.QtCore import QEvent
 
 from PyQt5.QtWidgets import QCheckBox, QMessageBox, QMainWindow, QLineEdit
+from pytz import timezone
 from reefscanner.basic_model.model_helper import check_model, rename_folders
 
 from aims import state
@@ -152,7 +153,7 @@ QCheckBox
 
             if state.model.data_loaded:
                 check_model(state.model)
-                rename_folders(state.model, state.config.data_folder, state.config.backup_data_folder)
+                rename_folders(state.model, state.config.data_folder, state.config.backup_data_folder, local_tz=timezone("Australia/Brisbane"))
 
     def archive(self):
         print("archive")
