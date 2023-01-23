@@ -3,12 +3,12 @@ import logging
 import os
 import subprocess
 
-from PyQt5 import QtCore, uic
+from PyQt5 import QtCore, uic, QtGui
 from PyQt5.QtCore import QModelIndex, QItemSelection, QSize, Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QAction, QMenu, QInputDialog, QWidget, QTableView, QLabel, QListView, \
-    QListWidget
+    QListWidget, QMessageBox
 from pytz import utc
 from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
@@ -93,6 +93,8 @@ class ExploreComponent:
         self.explore_widget.tabWidget.setCurrentIndex(0)
         self.explore_widget.tabWidget.setEnabled(False)
         self.survey_id = None
+        self.metadata_widget.cancelButton.clicked.connect(self.data_to_ui)
+        self.metadata_widget.saveButton.clicked.connect(self.ui_to_data)
 
     def lookups(self):
 
@@ -185,7 +187,11 @@ class ExploreComponent:
                 os.startfile(self.mark_filename, "open")
 
     def explore_tree_selection_changed(self,  item_selection:QItemSelection):
-        self.ui_to_data()
+        if self.is_modified():
+            reply = QMessageBox.question(self.explore_widget, 'Save?', "Do you want to save your changes?", QMessageBox.Yes | QMessageBox.No)
+
+            if reply == QMessageBox.Yes:
+                self.ui_to_data()
 
         if len(item_selection.indexes()) == 0:
             return()
@@ -244,6 +250,21 @@ class ExploreComponent:
 
     def survey(self):
         return state.model.surveys_data[self.survey_id]
+
+    def is_modified(self):
+        if self.survey_id is None:
+            return False
+        return self.survey_col("site") != self.metadata_widget.ed_site.text() or \
+            self.survey_col("operator") != self.metadata_widget.ed_operator.text() or \
+            self.survey_col("observer") != self.metadata_widget.ed_observer.text() or \
+            self.survey_col("vessel") != self.metadata_widget.ed_vessel.text() or \
+            self.survey_col("sea") != self.metadata_widget.cb_sea.currentText() or \
+            self.survey_col("wind") != self.metadata_widget.cb_wind.currentText() or \
+            self.survey_col("cloud") != self.metadata_widget.cb_cloud.currentText() or \
+            self.survey_col("visibility") != self.metadata_widget.cb_vis.currentText() or \
+            self.survey_col("comments") != self.metadata_widget.ed_comments.toPlainText() or \
+            self.survey_col("tide") != self.metadata_widget.cb_tide.currentText() or \
+            self.survey_col("friendly_name") != self.metadata_widget.ed_name.text()
 
     def ui_to_data(self):
         if self.thumbnail_model is not None:
