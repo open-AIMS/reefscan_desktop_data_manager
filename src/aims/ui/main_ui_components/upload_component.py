@@ -1,3 +1,10 @@
+import os
+
+from aims import state
+from reefcloud.sub_sample import sub_sample_dir
+from reefcloud.upload import upload_file
+
+
 class UploadComponent:
     def __init__(self):
         self.login_widget = None
@@ -5,52 +12,37 @@ class UploadComponent:
 
     def load_login_screen(self, aims_status_dialog):
         self.aims_status_dialog = aims_status_dialog
-        self.existing_user_mode()
-        self.login_widget.existing_user_mode_button.clicked.connect(self.existing_user_mode)
-        self.login_widget.new_user_mode_button.clicked.connect(self.new_user_mode)
-        self.login_widget.forgot_mode_button.clicked.connect(self.forgot_mode)
+        self.login_widget.upload_button.clicked.connect(self.upload)
 
-    def existing_user_mode(self):
-        self.login_widget.existing_user_mode_button.setVisible(False)
-        self.login_widget.new_user_mode_button.setVisible(True)
-        self.login_widget.forgot_mode_button.setVisible(True)
+    def upload(self):
+        print("uploading")
+        state.config.camera_connected = False
+        state.load_data_model(aims_status_dialog=self.aims_status_dialog)
 
-        self.login_widget.login_button.setVisible(True)
-        self.login_widget.create_user_button.setVisible(False)
-        self.login_widget.request_password_button.setVisible(False)
+        surveys = state.model.surveys_data
+        for key in surveys.keys():
+            print(key)
+            print(surveys[key])
+            survey_folder = surveys[key]["image_folder"]
+            survey_name = surveys[key]["sequence_name"]
+            sub_sample_dir(survey_folder)
+            # upload subsampled images
+            subsampled_image_folder = survey_folder + "/reefcloud"
+            for file in os.listdir(subsampled_image_folder):
+                upload_file (survey_name=survey_name, folder=subsampled_image_folder, file_name=file)
 
-        self.login_widget.email_label.setVisible(False)
-        self.login_widget.email_edit.setVisible(False)
+            # upload other files (images or not survey.json)
+            for file in os.listdir(survey_folder):
+                if (not file.lower().endswith(".jpg")) and file!="survey.json":
+                    upload_file(survey_name=survey_name, folder=survey_folder, file_name=file)
 
-        self.login_widget.password_label.setVisible(True)
-        self.login_widget.password_edit.setVisible(True)
+            # upload survey.json last
+            upload_file(survey_name=survey_name, folder=survey_folder, file_name="survey.json")
 
-    def new_user_mode(self):
-        self.login_widget.existing_user_mode_button.setVisible(True)
-        self.login_widget.new_user_mode_button.setVisible(False)
-        self.login_widget.forgot_mode_button.setVisible(True)
 
-        self.login_widget.login_button.setVisible(False)
-        self.login_widget.create_user_button.setVisible(True)
-        self.login_widget.request_password_button.setVisible(False)
 
-        self.login_widget.email_label.setVisible(True)
-        self.login_widget.email_edit.setVisible(True)
 
-        self.login_widget.password_label.setVisible(False)
-        self.login_widget.password_edit.setVisible(False)
 
-    def forgot_mode(self):
-        self.login_widget.existing_user_mode_button.setVisible(True)
-        self.login_widget.new_user_mode_button.setVisible(True)
-        self.login_widget.forgot_mode_button.setVisible(False)
 
-        self.login_widget.login_button.setVisible(False)
-        self.login_widget.create_user_button.setVisible(False)
-        self.login_widget.request_password_button.setVisible(True)
 
-        self.login_widget.email_label.setVisible(True)
-        self.login_widget.email_edit.setVisible(True)
 
-        self.login_widget.password_label.setVisible(False)
-        self.login_widget.password_edit.setVisible(False)
