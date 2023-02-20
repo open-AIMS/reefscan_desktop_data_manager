@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 
@@ -22,20 +23,20 @@ target_distance = 5
 
 
 def sub_sample_dir(image_dir):
-    good_dir = f"{image_dir}"
     sample_dir = f"{image_dir}/reefcloud"
     if os.path.exists (sample_dir):
         shutil.rmtree(sample_dir)
     os.makedirs(sample_dir, exist_ok=True)
 
-    listdir = os.listdir(good_dir)
+    listdir = os.listdir(image_dir)
     listdir.sort()
     old_wp = None
+    selected_photo_infos = []
     for f in listdir:
         if f.lower().endswith(".jpg"):
-            fname = good_dir + "/" + f
+            fname = image_dir + "/" + f
             try:
-                exif = get_exif_data(fname, True)
+                exif = get_exif_data(fname, False)
                 wp = exif["latitude"], exif["longitude"]
                 keep = should_keep(wp, old_wp, target_distance)
             except Exception as e:
@@ -44,6 +45,12 @@ def sub_sample_dir(image_dir):
             if keep:
                 shutil.copy2(fname, sample_dir)
                 old_wp = wp
+                exif = get_exif_data(fname, True)
+                exif["filename"] = f
+                selected_photo_infos.append(exif)
+
+    return selected_photo_infos
+
 
 
 def sub_sample_dir_simple(image_dir):
