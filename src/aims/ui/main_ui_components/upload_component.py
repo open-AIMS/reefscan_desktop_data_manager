@@ -45,7 +45,8 @@ class UploadComponent:
                 if "first_file_uploaded" not in survey["reefcloud"]:
                     survey["reefcloud"]["first_photo_uploaded"] = file
                 survey["reefcloud"]["last_photo_uploaded"] = file
-                survey["reefcloud"]["uploaded_photo_count"] += 1
+                if file.lower().endswith(".jpg"):
+                    survey["reefcloud"]["uploaded_photo_count"] += 1
                 save_survey(survey, state.config.data_folder, state.config.backup_data_folder)
 
 

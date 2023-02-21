@@ -3,7 +3,7 @@ import os
 
 import requests
 
-create_signed_url_url = 'https://zb3d39vc2m.execute-api.ap-southeast-2.amazonaws.com/prod/reefscan/api/upload2'
+create_signed_url_url = 'https://xx6zbht7ue.execute-api.ap-southeast-2.amazonaws.com/prod/reefscan/api/upload2'
 surveys_folder = "surveys"
 
 
@@ -45,11 +45,18 @@ def upload_file(survey_name, folder, file_name):
         return
 
     signed_url = response.content.decode('utf-8')
+    print(signed_url)
     # upload image
     headers = {
         "content-type": "application/unknown"
     }
+    # headers = {
+    #     "content-type": "image/jpeg"
+    # }
 
     response = requests.put(signed_url, data=open(full_file_name, 'rb'), headers=headers)
     if not response.ok:
         raise Exception(f"Error uploading file {file_name}", response.text)
+
+if __name__ == "__main__":
+    upload_file("greg", "c:/temp/surfbee", "greg.xml")
