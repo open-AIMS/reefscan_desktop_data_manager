@@ -5,8 +5,9 @@ from threading import Thread
 from requests_oauthlib import OAuth2Session
 import webbrowser
 import logging
-import typer
-
+from urllib.parse import urlparse, parse_qs
+# import typer
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -31,21 +32,39 @@ html = """
                 };
                 http.send(queryParamsString);
                 console.log("Sent params");
+                timeoutID = setTimeout(submit, 1000);
             }
+            
         </script>
     </body
 </html>
 """
+otherhtml = """
+<html>
+    <head><title>ReefCloud Authentication</title></head>
+    <body>
+        <p id="message">token received.  Please close this tab or window.</p>
 
+    </body
+</html>
+"""
 
 id_token = None
 access_token = None
 class TokenServer(BaseHTTPRequestHandler):
     def do_GET(self):
+        global access_token, id_token
+        print(self.path)
+        params = parse_qs(urlparse(self.path).query)
+        if 'code' in params:
+            access_token = params['code'][0]
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
-        self.wfile.write(bytes(html, "UTF-8"))
+        if access_token:
+            self.wfile.write(bytes(otherhtml, "UTF-8"))
+        else:
+            self.wfile.write(bytes(html, "UTF-8"))
 
     def do_POST(self):
         global access_token, id_token
@@ -56,8 +75,9 @@ class TokenServer(BaseHTTPRequestHandler):
         )
         access_token = form.getvalue("access_token")
         id_token = form.getvalue("id_token")
-        logger.info("FORM: {}".format(form))
-        logger.info(f"Access token: {access_token}")
+        print("POST request")
+        print("FORM: {}".format(form))
+        print(f"Access token: {access_token}")
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
@@ -85,13 +105,16 @@ class LoginWorker(Thread):
         print("LoginWorker run() start")
         self.oauth_session = OAuth2Session(client=self.client,
                                            redirect_uri=f"http://{self.host_name}:{self.port}{self.path}")
+        print(f"http://{self.host_name}:{self.port}{self.path}")
         authorization_url, state = self.oauth_session.authorization_url(f"{self.cognito_uri}/login")
         logger.info(f"{authorization_url}")
         print(f"{authorization_url}")
         if self.launch_browser:
             print("launcher start")
-            webbrowser.open("Youtube.com")
-
+            webbrowser.open(authorization_url)
+            command = f"\\\"C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe\\\" \\\"{authorization_url}\\\""
+            print(command)
+            #os.system(command)
             #typer.launch(authorization_url, locate=True)
             print("launcher end")
 
@@ -104,7 +127,9 @@ class LoginWorker(Thread):
         while access_token is None:
             print("Henadling")
             self.web_server.handle_request()
+
         self.web_server.server_close()
+        print("After webserver close")
         self.oauth_session.access_token = id_token
         print("LoginWorker run() end")
 
@@ -113,7 +138,7 @@ class LoginWorker(Thread):
     def get_session(self):
         return self.oauth_session
 
-def bens_login(client_id, cognito_url, authorization_url):
+def bens_login(client_id, cognito_uri):
     print("Start bens_login")
     global access_token, id_token
     login_worker = LoginWorker(client_id, cognito_uri)
@@ -125,9 +150,7 @@ def bens_login(client_id, cognito_url, authorization_url):
     return access_token # Or id_token?
 
 
-client_id = 'fq1a9kvjkscu52976rmo60v3u'
-cognito_uri = 'https://reefscan1.auth.ap-southeast-2.amazoncognito.com'
-authorization_url = f'{cognito_uri}/authorize'
-bens_login(client_id, cognito_uri, authorization_url)
+
+
 
 

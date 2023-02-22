@@ -3,7 +3,8 @@ import os
 
 import requests
 
-create_signed_url_url = 'https://zb3d39vc2m.execute-api.ap-southeast-2.amazonaws.com/prod/reefscan/api/upload2'
+#create_signed_url_url = 'https://zb3d39vc2m.execute-api.ap-southeast-2.amazonaws.com/prod/reefscan/api/upload'
+create_signed_url_url = 'https://xx6zbht7ue.execute-api.ap-southeast-2.amazonaws.com/prod/reefscan/api/upload'
 surveys_folder = "surveys"
 
 
@@ -26,15 +27,18 @@ def write_reefcloud_photos_json (survey_name, outputfile, selected_photo_infos):
 
 
 
-def upload_file(survey_name, folder, file_name):
+def upload_file(access_token, survey_name, folder, file_name):
     full_file_name = f"{folder}/{file_name}"
     if os.path.isdir (full_file_name):
         return
     size = os.path.getsize(full_file_name)
     if size == 0:
         return
-
-    response = requests.put(create_signed_url_url,
+    headers = {
+        'Authorization': 'Bearer {}'.format(access_token)
+    }
+    print(headers)
+    response = requests.put(create_signed_url_url, headers=headers,
                             data=json.dumps({"file_name": f"{surveys_folder}/{survey_name}/{file_name}"}))
     if not response.ok:
         raise Exception(f"Error uploading file {file_name}", response.text)
