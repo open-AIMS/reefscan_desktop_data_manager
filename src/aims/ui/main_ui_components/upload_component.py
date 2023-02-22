@@ -6,6 +6,7 @@ from reefscanner.basic_model.reader_writer import save_survey
 from aims import state
 from reefcloud.sub_sample import sub_sample_dir
 from reefcloud.reefcloud_utils import upload_file, write_reefcloud_photos_json
+from reefcloud.logon import bens_login
 
 
 class UploadComponent:
@@ -16,6 +17,7 @@ class UploadComponent:
     def load_login_screen(self, aims_status_dialog):
         self.aims_status_dialog = aims_status_dialog
         self.login_widget.upload_button.clicked.connect(self.upload)
+        self.login_widget.login_button.clicked.connect(self.login)
 
     def upload(self):
         print("uploading")
@@ -30,6 +32,7 @@ class UploadComponent:
             survey_folder = survey["image_folder"]
             survey_name = survey["sequence_name"]
             selected_photo_infos = sub_sample_dir(survey_folder)
+            print (selected_photo_infos)
             subsampled_image_folder = survey_folder + "/reefcloud"
             write_reefcloud_photos_json(survey_name=survey_name,
                                         outputfile=f"{subsampled_image_folder}/photos.json",
@@ -41,7 +44,7 @@ class UploadComponent:
 
             # upload subsampled images
             for file in sorted(os.listdir(subsampled_image_folder)):
-                upload_file(survey_name=survey_name, folder=subsampled_image_folder, file_name=file)
+                upload_file(access_token=state.access_token, survey_name=survey_name, folder=subsampled_image_folder, file_name=file)
                 if "first_file_uploaded" not in survey["reefcloud"]:
                     survey["reefcloud"]["first_photo_uploaded"] = file
                 survey["reefcloud"]["last_photo_uploaded"] = file
@@ -61,9 +64,10 @@ class UploadComponent:
             # upload survey.json last
             upload_file(survey_name=survey_name, folder=survey_folder, file_name="survey.json")
 
-
-
-
+    def login(self):
+        print("*******************************************About to attempt login")
+        state.access_token = bens_login(state.config.client_id, state.config.cognito_uri)
+        print("Received token " + state.access_token)
 
 
 

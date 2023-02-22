@@ -39,6 +39,9 @@ def sub_sample_dir(image_dir):
                 exif = get_exif_data(fname, False)
                 wp = exif["latitude"], exif["longitude"]
                 keep = should_keep(wp, old_wp, target_distance)
+                # Ignore photos with bad geolocation in exif data.
+                if exif["latitude"] is None or exif["longitude"] is None or "altitude" not in exif:
+                    keep = False
             except Exception as e:
                 print (e)
                 keep = False
