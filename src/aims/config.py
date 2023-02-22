@@ -27,6 +27,14 @@ class Config(object):
         # self.hardware_data_folder = r"C:\temp\photos_in"
         # self.camera_samba = False
 
+        # Configuration for AWS
+
+        self.client_id = '4g2uk4maadbqvuoep86ov2mig8'
+        self.cognito_uri = 'https://reefscan1.auth.ap-southeast-2.amazoncognito.com'
+        #self.authorization_url = f'{self.cognito_uri}/authorize'
+        self.token = ""
+
+
         self.backup_data_folder = None
         self.default_operator = None
         self.default_observer = None
