@@ -205,7 +205,7 @@
 </string>
         </property>
         <property name="text">
-         <string>Upload to cloud</string>
+         <string>Reefcloud</string>
         </property>
        </widget>
       </item>
