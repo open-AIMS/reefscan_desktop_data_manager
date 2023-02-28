@@ -19,6 +19,11 @@ class UploadComponent:
         self.login_widget.upload_button.clicked.connect(self.upload)
         self.login_widget.login_button.clicked.connect(self.login)
 
+    def upload1(self):
+        user = user_info(state.tokens)
+        print(user)
+        self.login_widget.username_label.setText(f"Hello again {user}")
+
     def upload(self):
         print("uploading")
         state.config.camera_connected = False
@@ -45,11 +50,12 @@ class UploadComponent:
             # upload subsampled images
             for file in sorted(os.listdir(subsampled_image_folder)):
                 upload_file(tokens=state.tokens, survey_name=survey_name, folder=subsampled_image_folder, file_name=file)
-                if "first_file_uploaded" not in survey["reefcloud"]:
-                    survey["reefcloud"]["first_photo_uploaded"] = file
-                survey["reefcloud"]["last_photo_uploaded"] = file
                 if file.lower().endswith(".jpg"):
                     survey["reefcloud"]["uploaded_photo_count"] += 1
+                    if "first_photo_uploaded" not in survey["reefcloud"]:
+                        survey["reefcloud"]["first_photo_uploaded"] = file
+                    survey["reefcloud"]["last_photo_uploaded"] = file
+
                 save_survey(survey, state.config.data_folder, state.config.backup_data_folder)
 
 

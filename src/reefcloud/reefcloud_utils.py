@@ -25,7 +25,7 @@ def write_reefcloud_photos_json (survey_name, outputfile, selected_photo_infos):
         reefcloud_infos.append(reefcloud_info)
 
     with open(outputfile, "w") as text_file:
-        text_file.write(json.dumps(selected_photo_infos))
+        text_file.write(json.dumps(reefcloud_infos))
 
 
 
