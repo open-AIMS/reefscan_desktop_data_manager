@@ -6,7 +6,7 @@ from reefscanner.basic_model.reader_writer import save_survey
 from aims import state
 from reefcloud.sub_sample import sub_sample_dir
 from reefcloud.reefcloud_utils import upload_file, write_reefcloud_photos_json, user_info
-from reefcloud.logon import bens_login
+from reefcloud.logon import ReefCloudSession
 
 
 class UploadComponent:
@@ -66,11 +66,12 @@ class UploadComponent:
 
     def login(self):
         print("*******************************************About to attempt login")
-        state.tokens = bens_login(state.config.client_id, state.config.cognito_uri)
-        # print("Received token " + state.access_token)
-        user = user_info(state.tokens)
-        self.login_widget.username_label.setText(f"Hello user {user}")
-        print(user)
+
+        reefcloud_session = ReefCloudSession(state.config.client_id, state.config.cognito_uri)
+        tokens = reefcloud_session.login()
+        if reefcloud_session.is_logged_in:
+            user_info = reefcloud_session.current_user
+            self.login_widget.username_label.setText(f"Hello user {user_info.name}")
 
 
 
