@@ -208,10 +208,10 @@ class ReefCloudSession():
         return self.oauth2_session.post(url, data=data, json=json, **kwargs)
 
     def put(self, url, data=None, **kwargs):
-        return self.put(url, data=data, **kwargs)
+        return self.oauth2_session.put(url, data=data, **kwargs)
 
     def patch(self, url, data=None, **kwargs):
-        return self.patch(url, data=data, **kwargs)
+        return self.oauth2_session.patch(url, data=data, **kwargs)
 
     def delete(self, url, **kwargs):
         return self.delete(url, **kwargs)

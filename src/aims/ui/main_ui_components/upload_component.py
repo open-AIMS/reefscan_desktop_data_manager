@@ -44,7 +44,7 @@ class UploadComponent:
 
             # upload subsampled images
             for file in sorted(os.listdir(subsampled_image_folder)):
-                upload_file(tokens=state.tokens, survey_name=survey_name, folder=subsampled_image_folder, file_name=file)
+                upload_file(oauth2_session=state.reefcloud_session, survey_name=survey_name, folder=subsampled_image_folder, file_name=file)
                 if "first_file_uploaded" not in survey["reefcloud"]:
                     survey["reefcloud"]["first_photo_uploaded"] = file
                 survey["reefcloud"]["last_photo_uploaded"] = file
@@ -56,21 +56,21 @@ class UploadComponent:
             # upload other files (images or not survey.json)
             for file in os.listdir(survey_folder):
                 if (not file.lower().endswith(".jpg")) and file!="survey.json":
-                    upload_file(tokens=state.tokens, survey_name=survey_name, folder=survey_folder, file_name=file)
+                    upload_file(oauth2_session=state.reefcloud_session, survey_name=survey_name, folder=survey_folder, file_name=file)
 
             survey["reefcloud"]["total_photo_count"] = survey["photos"]
             save_survey(survey, state.config.data_folder, state.config.backup_data_folder)
 
             # upload survey.json last
-            upload_file(tokens=state.tokens, survey_name=survey_name, folder=survey_folder, file_name="survey.json")
+            upload_file(oauth2_session=state.reefcloud_session, survey_name=survey_name, folder=survey_folder, file_name="survey.json")
 
     def login(self):
         print("*******************************************About to attempt login")
 
-        reefcloud_session = ReefCloudSession(state.config.client_id, state.config.cognito_uri)
-        tokens = reefcloud_session.login()
-        if reefcloud_session.is_logged_in:
-            user_info = reefcloud_session.current_user
+        state.reefcloud_session = ReefCloudSession(state.config.client_id, state.config.cognito_uri)
+        tokens = state.reefcloud_session.login()
+        if state.reefcloud_session.is_logged_in:
+            user_info = state.reefcloud_session.current_user
             self.login_widget.username_label.setText(f"Hello user {user_info.name}")
 
 
