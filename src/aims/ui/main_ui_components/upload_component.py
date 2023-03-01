@@ -5,7 +5,7 @@ from reefscanner.basic_model.reader_writer import save_survey
 
 from aims import state
 from reefcloud.sub_sample import sub_sample_dir
-from reefcloud.reefcloud_utils import upload_file, write_reefcloud_photos_json, user_info
+from reefcloud.reefcloud_utils import upload_file, write_reefcloud_photos_json
 from reefcloud.logon import ReefCloudSession
 
 
@@ -71,7 +71,13 @@ class UploadComponent:
         tokens = state.reefcloud_session.login()
         if state.reefcloud_session.is_logged_in:
             user_info = state.reefcloud_session.current_user
-            self.login_widget.username_label.setText(f"Hello user {user_info.name}")
+            self.login_widget.username_label.setText(f"Hello user {user_info.name}.  " + user_info.message)
+            if not user_info.authorized:
+                self.login_widget.upload_button.setEnabled(False)
+            else:
+                self.login_widget.upload_button.setEnabled(True)
+
+
 
 
 

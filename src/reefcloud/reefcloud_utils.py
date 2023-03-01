@@ -6,7 +6,6 @@ import requests
 api_url = 'https://xx6zbht7ue.execute-api.ap-southeast-2.amazonaws.com/prod/reefscan/api'
 
 create_signed_url_url = f'{api_url}/upload'
-user_info_url = f'{api_url}/user_info'
 surveys_folder = "surveys"
 
 
@@ -61,16 +60,6 @@ def upload_file(oauth2_session, survey_name, folder, file_name):
     response = requests.put(signed_url, data=open(full_file_name, 'rb'), headers=headers)
     if not response.ok:
         raise Exception(f"Error uploading file {file_name}", response.text)
-
-def user_info(tokens):
-    access_token = tokens["access_token"]
-    headers = {
-        'Authorization': 'Bearer {}'.format(access_token)
-    }
-    # response = session.get(user_info_url)
-    response = requests.get(user_info_url, headers=headers)
-    return response.text
-
 
 
 if __name__ == "__main__":

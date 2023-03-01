@@ -2,6 +2,10 @@ import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import cgi
 
+
+api_url = 'https://xx6zbht7ue.execute-api.ap-southeast-2.amazonaws.com/prod/reefscan/api'
+user_info_url = f'{api_url}/user_info'
+
 import requests
 from oauthlib.oauth2 import WebApplicationClient, MobileApplicationClient, BackendApplicationClient, TokenExpiredError
 from threading import Thread
@@ -147,10 +151,14 @@ class LoginWorker(Thread):
 
     def get_session(self):
         return self.oauth_session
+
+
 class UserInfo():
-    def __init__(self, name, email):
+    def __init__(self, name, email, authorized=False, message=""):
         self.name = name
         self.email = email
+        self.authorized = authorized
+        self.message = message
 
     @classmethod
     def _get_jwt_encryption_pub_keys(self):
@@ -159,15 +167,27 @@ class UserInfo():
             print(response.json())
             print(type(response.json()))
             return response.json()
+
     @classmethod
-    def from_id_token(cls, id_token):
+    def from_id_token(cls, id_token, access_token):
         jwt_object = JWT()
         data = cls._get_jwt_encryption_pub_keys()
         signing_key = jwk_from_dict(data['keys'][0])
         decoded = jwt_object.decode(id_token, signing_key)
-        # decoded = decode_and_validate_token(id_token)
-        print(decoded)
-        return cls(decoded['name'], decoded['email'])
+        headers = {
+            'Authorization': 'Bearer {}'.format(access_token)
+        }
+        # response = session.get(user_info_url)
+        response = requests.get(user_info_url, headers=headers)
+        if response.status_code == 200:
+            authorized = True
+            message = 'You are a valid Reefcloud user and authorized to upload reefscan data.'
+            print("AUTHORIZED. AUTHORIZED.AUTHORIZED.AUTHORIZED.AUTHORIZED.AUTHORIZED.AUTHORIZED")
+        else:
+            authorized = False
+            message = str(response.content.decode('UTF-8'))
+            print("NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED")
+        return cls(decoded['name'], decoded['email'], authorized=authorized, message=message)
 
 
 class ReefCloudSession():
@@ -176,6 +196,7 @@ class ReefCloudSession():
         self.cognito_url = cognito_url
         self.current_user = None
         self.is_logged_in = False
+
 
 
     def login(self):
@@ -187,10 +208,15 @@ class ReefCloudSession():
         self.oauth2_session = login_worker.get_session()
 
         token_url = f'{cognito_uri}/oauth2/token'
-        self.tokens = self.oauth2_session.fetch_token(token_url, code=code, state=state, client_id=self.client_id, include_client_id=True)
+        self.tokens = self.oauth2_session.fetch_token(token_url,
+                                                      code=code,
+                                                      state=state,
+                                                      client_id=self.client_id,
+                                                      include_client_id=True)
         print(f"self.tokens is {self.tokens}")
         self.id_token = self.tokens['id_token']
-        self.current_user = UserInfo.from_id_token(self.id_token)
+        self.access_token = self.tokens['access_token']
+        self.current_user = UserInfo.from_id_token(self.id_token, self.access_token)
         self.is_logged_in = True
         code = None
         return self.tokens
