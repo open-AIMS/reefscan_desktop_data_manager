@@ -6,7 +6,6 @@ import requests
 api_url = 'https://xx6zbht7ue.execute-api.ap-southeast-2.amazonaws.com/prod/reefscan/api'
 
 create_signed_url_url = f'{api_url}/upload'
-user_info_url = f'{api_url}/user_info'
 surveys_folder = "surveys"
 
 
@@ -29,8 +28,7 @@ def write_reefcloud_photos_json (survey_name, outputfile, selected_photo_infos):
 
 
 
-def upload_file(tokens, survey_name, folder, file_name):
-    access_token = tokens["access_token"]
+def upload_file(oauth2_session, survey_name, folder, file_name):
 
     full_file_name = f"{folder}/{file_name}"
     if os.path.isdir (full_file_name):
@@ -38,11 +36,8 @@ def upload_file(tokens, survey_name, folder, file_name):
     size = os.path.getsize(full_file_name)
     if size == 0:
         return
-    headers = {
-        'Authorization': 'Bearer {}'.format(access_token)
-    }
-    print(headers)
-    response = requests.put(create_signed_url_url, headers=headers,
+
+    response = oauth2_session.put(create_signed_url_url,
                             data=json.dumps({"file_name": f"{surveys_folder}/{survey_name}/{file_name}"}))
     if not response.ok:
         raise Exception(f"Error uploading file {file_name}", response.text)
@@ -66,17 +61,6 @@ def upload_file(tokens, survey_name, folder, file_name):
     if not response.ok:
         raise Exception(f"Error uploading file {file_name}", response.text)
 
-def user_info(tokens):
-    access_token = tokens["access_token"]
-    headers = {
-        'Authorization': 'Bearer {}'.format(access_token)
-    }
-    # response = session.get(user_info_url)
-    response = requests.get(user_info_url, headers=headers)
-    return response.text
-
-
 
 if __name__ == "__main__":
-    print(headers)
     upload_file("greg", "c:/temp/surfbee", "greg.xml")

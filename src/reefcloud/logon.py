@@ -2,6 +2,10 @@ import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import cgi
 
+
+api_url = 'https://xx6zbht7ue.execute-api.ap-southeast-2.amazonaws.com/prod/reefscan/api'
+user_info_url = f'{api_url}/user_info'
+
 import requests
 from oauthlib.oauth2 import WebApplicationClient, MobileApplicationClient, BackendApplicationClient, TokenExpiredError
 from threading import Thread
@@ -11,11 +15,21 @@ import logging
 from urllib.parse import urlparse, parse_qs
 # import typer
 import os
+import requests
+
+from jwt import (
+    JWT,
+    jwk_from_dict,
+    jwk_from_pem,
+)
+from jwt.utils import get_int_from_datetime
+
 
 logger = logging.getLogger(__name__)
-client_id = '4g2uk4maadbqvuoep86ov2mig8'
 cognito_uri = 'https://reefscan1.auth.ap-southeast-2.amazoncognito.com'
-
+cognito_token_key_url = 'https://cognito-idp.ap-southeast-2.amazonaws.com/ap-southeast-2_mX1uDv7na/.well-known/jwks.json'
+code = None
+state = None
 
 html = """
 <html>
@@ -58,38 +72,24 @@ tokens=None
 
 class TokenServer(BaseHTTPRequestHandler):
     def do_GET(self):
-        global tokens
+        global code
         print(self.path)
         params = parse_qs(urlparse(self.path).query)
         if 'code' in params:
             code = params['code'][0]
             print(f"code: {code}")
-            client = WebApplicationClient(client_id)
 
-            data = client.prepare_request_body(
-                code=code,
-                redirect_uri='http://localhost:4200/app/',
-                client_id=client_id
-            )
-
-            headers = {'Content-type': 'application/x-www-form-urlencoded'}
-
-            token_url = f'{cognito_uri}/oauth2/token'
-            response = requests.post(token_url, data=data, headers=headers)
-            json_str = response.content.decode('utf-8')
-            print(f"json_str {json_str}")
-            tokens = json.loads(json_str)
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
-        if tokens:
+        if code:
             self.wfile.write(bytes(otherhtml, "UTF-8"))
         else:
             self.wfile.write(bytes(html, "UTF-8"))
 
     def do_POST(self):
-        global tokens
+        global code
         form = cgi.FieldStorage(
             fp=self.rfile,
             headers=self.headers,
@@ -115,7 +115,6 @@ class LoginWorker(Thread):
         self.cognito_uri = cognito_uri
         self.path = path
         self.launch_browser = launch_browser
-        # self.client = MobileApplicationClient(client_id=self.client_id)
         self.client = WebApplicationClient(client_id=self.client_id)
         self.web_server = None
         print("LoginWorker __init__() end")
@@ -123,7 +122,7 @@ class LoginWorker(Thread):
         self.oauth_session = None
 
     def run(self):
-        global tokens
+        global code, state
         print("LoginWorker run() start")
         self.oauth_session = OAuth2Session(client=self.client,
                                            redirect_uri=f"http://{self.host_name}:{self.port}{self.path}")
@@ -132,22 +131,16 @@ class LoginWorker(Thread):
         logger.info(f"{authorization_url}")
         print(f"{authorization_url}")
         if self.launch_browser:
-            print("launcher start")
             webbrowser.open(authorization_url)
-            command = f"\\\"C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe\\\" \\\"{authorization_url}\\\""
-            print(command)
-            #os.system(command)
-            #typer.launch(authorization_url, locate=True)
-            print("launcher end")
-
         else:
             print(f"Please authorize rdp upload here: {authorization_url}")
 
         self.web_server = HTTPServer((self.host_name, self.port), TokenServer)
         logger.debug(f"Server starting http://{self.host_name}:{self.port}")
         print(f"Server starting http://{self.host_name}:{self.port}")
-        while tokens is None:
-            print("Henadling")
+        print(f"Code is {code}")
+        while code is None:
+            print("Handling")
             self.web_server.handle_request()
 
         self.web_server.server_close()
@@ -159,20 +152,92 @@ class LoginWorker(Thread):
     def get_session(self):
         return self.oauth_session
 
-def bens_login(client_id, cognito_uri):
-    print("Start bens_login")
-    global tokens
-    login_worker = LoginWorker(client_id, cognito_uri)
-    login_worker.start()
-    login_worker.join()
 
-    # oauth_session = OAuth2Session(client=login_worker.client, token=id_token)
-    # print("end bens login")
-    # return access_token # Or id_token?
-    return tokens
+class UserInfo():
+    def __init__(self, name, email, authorized=False, message=""):
+        self.name = name
+        self.email = email
+        self.authorized = authorized
+        self.message = message
+
+    @classmethod
+    def _get_jwt_encryption_pub_keys(self):
+        response = requests.get('https://cognito-idp.ap-southeast-2.amazonaws.com/ap-southeast-2_mX1uDv7na/.well-known/jwks.json')
+        if response.status_code == 200 and 'application/json' in response.headers.get('Content-Type', ''):
+            print(response.json())
+            print(type(response.json()))
+            return response.json()
+
+    @classmethod
+    def from_id_token(cls, id_token, access_token):
+        jwt_object = JWT()
+        data = cls._get_jwt_encryption_pub_keys()
+        signing_key = jwk_from_dict(data['keys'][0])
+        decoded = jwt_object.decode(id_token, signing_key)
+        headers = {
+            'Authorization': 'Bearer {}'.format(access_token)
+        }
+        # response = session.get(user_info_url)
+        response = requests.get(user_info_url, headers=headers)
+        if response.status_code == 200:
+            authorized = True
+            message = 'You are a valid Reefcloud user and authorized to upload reefscan data.'
+            print("AUTHORIZED. AUTHORIZED.AUTHORIZED.AUTHORIZED.AUTHORIZED.AUTHORIZED.AUTHORIZED")
+        else:
+            authorized = False
+            message = str(response.content.decode('UTF-8'))
+            print("NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED")
+        return cls(decoded['name'], decoded['email'], authorized=authorized, message=message)
+
+
+class ReefCloudSession():
+    def __init__(self, client_id, cognito_url):
+        self.client_id = client_id
+        self.cognito_url = cognito_url
+        self.current_user = None
+        self.is_logged_in = False
 
 
 
+    def login(self):
+        global code, state
+        login_worker = LoginWorker(self.client_id, self.cognito_url)
+        login_worker.start()
+        login_worker.join()
+        print(f"Code is {code}")
+        self.oauth2_session = login_worker.get_session()
 
+        token_url = f'{cognito_uri}/oauth2/token'
+        self.tokens = self.oauth2_session.fetch_token(token_url,
+                                                      code=code,
+                                                      state=state,
+                                                      client_id=self.client_id,
+                                                      include_client_id=True)
+        print(f"self.tokens is {self.tokens}")
+        self.id_token = self.tokens['id_token']
+        self.access_token = self.tokens['access_token']
+        self.current_user = UserInfo.from_id_token(self.id_token, self.access_token)
+        self.is_logged_in = True
+        code = None
+        return self.tokens
 
+    def get(self, url, **kwargs):
+        return self.oauth2_session.get(url, **kwargs)
 
+    def options(self, url, **kwargs):
+        return self.oauth2_session.options(url, **kwargs)
+
+    def head(self, url, **kwargs):
+        return self.oauth2_session.head(url, **kwargs)
+
+    def post(self, url, data=None, json=None, **kwargs):
+        return self.oauth2_session.post(url, data=data, json=json, **kwargs)
+
+    def put(self, url, data=None, **kwargs):
+        return self.oauth2_session.put(url, data=data, **kwargs)
+
+    def patch(self, url, data=None, **kwargs):
+        return self.oauth2_session.patch(url, data=data, **kwargs)
+
+    def delete(self, url, **kwargs):
+        return self.delete(url, **kwargs)
