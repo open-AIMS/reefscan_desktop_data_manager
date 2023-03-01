@@ -1,4 +1,3 @@
-import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import cgi
 
@@ -6,23 +5,19 @@ import cgi
 api_url = 'https://xx6zbht7ue.execute-api.ap-southeast-2.amazonaws.com/prod/reefscan/api'
 user_info_url = f'{api_url}/user_info'
 
-import requests
-from oauthlib.oauth2 import WebApplicationClient, MobileApplicationClient, BackendApplicationClient, TokenExpiredError
+
+from oauthlib.oauth2 import WebApplicationClient
 from threading import Thread
 from requests_oauthlib import OAuth2Session
 import webbrowser
 import logging
 from urllib.parse import urlparse, parse_qs
-# import typer
-import os
 import requests
-
 from jwt import (
     JWT,
     jwk_from_dict,
-    jwk_from_pem,
+
 )
-from jwt.utils import get_int_from_datetime
 
 
 logger = logging.getLogger(__name__)
@@ -79,7 +74,6 @@ class TokenServer(BaseHTTPRequestHandler):
             code = params['code'][0]
             print(f"code: {code}")
 
-
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
@@ -95,11 +89,6 @@ class TokenServer(BaseHTTPRequestHandler):
             headers=self.headers,
             environ={'REQUEST_METHOD': 'POST'}
         )
-        # access_token = form.getvalue("access_token")
-        # id_token = form.getvalue("id_token")
-        # print("POST request")
-        # print("FORM: {}".format(form))
-        # print(f"Access token: {access_token}")
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
@@ -138,7 +127,6 @@ class LoginWorker(Thread):
         self.web_server = HTTPServer((self.host_name, self.port), TokenServer)
         logger.debug(f"Server starting http://{self.host_name}:{self.port}")
         print(f"Server starting http://{self.host_name}:{self.port}")
-        print(f"Code is {code}")
         while code is None:
             print("Handling")
             self.web_server.handle_request()
@@ -177,16 +165,13 @@ class UserInfo():
         headers = {
             'Authorization': 'Bearer {}'.format(access_token)
         }
-        # response = session.get(user_info_url)
         response = requests.get(user_info_url, headers=headers)
         if response.status_code == 200:
             authorized = True
             message = 'You are a valid Reefcloud user and authorized to upload reefscan data.'
-            print("AUTHORIZED. AUTHORIZED.AUTHORIZED.AUTHORIZED.AUTHORIZED.AUTHORIZED.AUTHORIZED")
         else:
             authorized = False
             message = str(response.content.decode('UTF-8'))
-            print("NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED. NOTAUTHORIZED")
         return cls(decoded['name'], decoded['email'], authorized=authorized, message=message)
 
 
@@ -204,7 +189,6 @@ class ReefCloudSession():
         login_worker = LoginWorker(self.client_id, self.cognito_url)
         login_worker.start()
         login_worker.join()
-        print(f"Code is {code}")
         self.oauth2_session = login_worker.get_session()
 
         token_url = f'{cognito_uri}/oauth2/token'
@@ -213,11 +197,11 @@ class ReefCloudSession():
                                                       state=state,
                                                       client_id=self.client_id,
                                                       include_client_id=True)
-        print(f"self.tokens is {self.tokens}")
         self.id_token = self.tokens['id_token']
         self.access_token = self.tokens['access_token']
         self.current_user = UserInfo.from_id_token(self.id_token, self.access_token)
         self.is_logged_in = True
+        # Set code to none so if the user clicks the login page a second time, the web server waits for the new code
         code = None
         return self.tokens
 
