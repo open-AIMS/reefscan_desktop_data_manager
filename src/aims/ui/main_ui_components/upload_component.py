@@ -48,7 +48,6 @@ class UploadComponent:
                 if "first_file_uploaded" not in survey["reefcloud"]:
                     survey["reefcloud"]["first_photo_uploaded"] = file
                 survey["reefcloud"]["last_photo_uploaded"] = file
-                upload_file(tokens=state.tokens, survey_name=survey_name, folder=subsampled_image_folder, file_name=file)
                 if file.lower().endswith(".jpg"):
                     survey["reefcloud"]["uploaded_photo_count"] += 1
                     if "first_photo_uploaded" not in survey["reefcloud"]:
