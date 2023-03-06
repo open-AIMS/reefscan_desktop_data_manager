@@ -13,7 +13,8 @@ def split_drive(dir_name):
 
 def setup_file_system_tree_and_combo_box(drive_combo_box, tree, selected_folder, fixed_drives):
     data_drive, data_folder_only = split_drive(selected_folder)
-    drive_combo_box.addItems(fixed_drives)
+    for drive in fixed_drives:
+        drive_combo_box.addItem(drive["label"], drive["letter"])
     drive_combo_box.setCurrentText(data_drive)
 
     if data_drive in fixed_drives:

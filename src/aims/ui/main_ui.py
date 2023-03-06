@@ -22,6 +22,7 @@ from aims.operations.aims_status_dialog import AimsStatusDialog
 from aims.operations.archive_checker import ArchiveChecker
 from aims.operations.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.ui.main_ui_components.archive_component import ArchiveComponent
+from aims.ui.main_ui_components.disk_drives_component import DiskDrivesComponent
 from aims.ui.main_ui_components.download_component import DownloadComponent
 from aims.ui.main_ui_components.explore_component import ExploreComponent
 from aims.ui.main_ui_components.upload_component import UploadComponent
@@ -70,6 +71,7 @@ class MainUi(QMainWindow):
         self.download_component = DownloadComponent(self)
         self.explore_component = ExploreComponent()
         self.upload_component = UploadComponent()
+        self.disk_drives_component = DiskDrivesComponent()
         self.archive_component = None
 
         self.workflow_widget = None
@@ -141,6 +143,8 @@ class MainUi(QMainWindow):
         self.status_widget.refreshButton.clicked.connect(self.update_status)
 
     def highlight_button(self, button):
+        remove_button_border(self.workflow_widget.connectDisksButton)
+        self.workflow_widget.connectDisksButton.setEnabled(True)
         remove_button_border(self.workflow_widget.connectButton)
         self.workflow_widget.connectButton.setEnabled(True)
         remove_button_border(self.workflow_widget.downloadButton)
@@ -166,6 +170,7 @@ class MainUi(QMainWindow):
         self.workflow_widget.exploreButton.clicked.connect(self.load_explore_screen)
         self.workflow_widget.uploadButton.clicked.connect(self.load_upload_screen)
         self.workflow_widget.archiveButton.clicked.connect(self.load_archive_screen)
+        self.workflow_widget.connectDisksButton.clicked.connect(self.load_connect_disks_screen)
 
     def ui_to_data(self):
         if self.current_screen == "explore":
@@ -200,9 +205,10 @@ class MainUi(QMainWindow):
         self.fixed_drives = []
         print(drives)
         for d in drives:
+            label = win32api.GetVolumeInformation(d)[0]
             drive_type = win32file.GetDriveType(d)
             if drive_type == win32file.DRIVE_FIXED or drive_type == win32file.DRIVE_REMOVABLE:
-                self.fixed_drives.append(d)
+                self.fixed_drives.append({"letter": d, "label": label})
 
     def load_explore_screen(self):
         self.ui_to_data()
@@ -230,6 +236,13 @@ class MainUi(QMainWindow):
         self.connect_widget.textBrowser.setHtml(html)
         self.connect_widget.btnConnect.clicked.connect(self.connect)
         self.highlight_button(self.workflow_widget.connectButton)
+
+    def load_connect_disks_screen(self):
+        self.current_screen = "connect_disks"
+        self.disk_drives_component.widget = self.load_main_frame(f'{state.meipass}resources/disk_drives.ui')
+        self.highlight_button(self.workflow_widget.connectDisksButton)
+        self.disk_drives_component.load_screen(self.fixed_drives, self.aims_status_dialog)
+
 
 
     def load_main_frame(self, ui_file):
@@ -276,9 +289,9 @@ class MainUi(QMainWindow):
         self.load_fixed_drives()
         local_space = ""
         for drive in self.fixed_drives:
-            du = shutil.disk_usage(drive)
+            du = shutil.disk_usage(drive["letter"])
             gbFree = round(du.free / 1000000000)
-            local_space = local_space + f"{drive} {gbFree} Gb Free \n"
+            local_space = local_space + f"{drive['letter']}({drive['label']}) {gbFree} Gb Free \n"
         self.status_widget.lblLocal.setText(local_space)
 
         if self.current_screen == "download":
