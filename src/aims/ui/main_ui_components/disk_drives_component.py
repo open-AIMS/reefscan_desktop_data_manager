@@ -1,6 +1,8 @@
 import os
 
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import QSize
+from PyQt5.QtWidgets import QMessageBox
 
 from aims import state
 from aims.operations.disk_drive_sync import compare
@@ -68,7 +70,7 @@ class DiskDrivesComponent:
         state.set_data_folders()
         state.config.save_config_file()
 
-        return True
+        return False
 
 
     def compare_disks(self, primary_folder, secondary_folder):
@@ -76,10 +78,11 @@ class DiskDrivesComponent:
         if total_differences > 0:
             message = f"""
                 Contents of the primary and seconday drives do not match.\n
-                Do you want to copy
+                Do you want to copy all the missing and modified files from the primary to the secondary drive? \n
+                {message_str} 
             """
-            QtWidgets.QMessageBox.question(self.parent, "ERRORS",
-                                           f"")
+
+            self.widget.messageText.setText(message_str)
             print(messages)
 
 
