@@ -36,9 +36,6 @@ class Config(object):
 
 
         self.backup_data_folder = None
-        self.default_operator = None
-        self.default_observer = None
-        self.default_vessel = None
 
         self.backup = True
         self.time_zone = ""
@@ -51,9 +48,6 @@ class Config(object):
             "camera_connected": self.camera_connected,
             "backup_data_folder": self.backup_data_folder,
             "slow_network": self.slow_network,
-            "default_operator": self.default_operator,
-            "default_observer": self.default_observer,
-            "default_vessel": self.default_vessel,
             "hardware_data_folder": self.hardware_data_folder,
             "backup": self.backup,
             "time_zone": self.time_zone
@@ -72,9 +66,6 @@ class Config(object):
         self.backup_data_folder = data_folder_json.get("backup_data_folder", home + "/REEFSCAN/backup")
         self.slow_network = data_folder_json.get("slow_network", False)
         self.camera_connected = data_folder_json.get("camera_connected",True)
-        self.default_operator = data_folder_json.get("default_operator", "")
-        self.default_observer = data_folder_json.get("default_observer", "")
-        self.default_vessel = data_folder_json.get("default_vessel", "")
         self.hardware_data_folder = data_folder_json.get("hardware_data_folder", r"\\192.168.3.2\images")
         self.backup = data_folder_json.get("backup", True)
         self.time_zone = data_folder_json.get("time_zone", "")

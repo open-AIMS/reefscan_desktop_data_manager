@@ -19,7 +19,8 @@ def write_reefcloud_photos_json (survey_name, outputfile, selected_photo_infos):
             "latitude": info["latitude"],
             "longitude": info["longitude"],
             "width": info["width"],
-            "height": info["height"]
+            "height": info["height"],
+            "time": info["date_taken"] + "Z"
         }
         reefcloud_infos.append(reefcloud_info)
 

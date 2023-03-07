@@ -5,8 +5,8 @@ pyinstaller
 PyQt5==5.15.5
 shortuuid
 PyQtWebEngine
-reefscanner @ git+https://github.com/AIMS/reefscan-data-model@v0.4.2
-# reefscanner @ file:///C:/aa_git_root/techdev/reef_scanner_data_model/dist/reefscanner-0.4.2b0-py3-none-any.whl
+# reefscanner @ git+https://github.com/AIMS/reefscan-data-model@v0.4.2
+reefscanner @ file:///C:/aa_git_root/techdev/reef_scanner_data_model/dist/reefscanner-0.5.0e-py3-none-any.whl
 pandas
 smbprotocol
 fabric

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>354</width>
-    <height>486</height>
+    <height>533</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -211,6 +211,20 @@
       </item>
       <item row="0" column="0">
        <widget class="QPushButton" name="connectDisksButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>14</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: cyan;</string>
+        </property>
         <property name="text">
          <string>Connect - Disks</string>
         </property>

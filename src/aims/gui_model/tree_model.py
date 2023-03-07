@@ -2,6 +2,7 @@ from PyQt5.QtGui import QStandardItemModel
 
 from aims.gui_model.SurveyTreeModelByDate import SurveyTreeModelByDate
 from aims.gui_model.SurveyTreeModelBySite import SurveyTreeModelBySite
+from aims.stats.survey_stats import SurveyStats
 from aims.ui.checked_tree_item import CheckTreeitem
 from PyQt5.QtCore import QItemSelection, Qt, QModelIndex, QSize, QEvent
 from aims import state
@@ -44,7 +45,10 @@ def make_branch(survey_data, name, checkable, timezone):
             survey_id = survey["id"]
             if survey_id != "archive":
                 name = best_name(survey, survey_id)
-                survey_branch = CheckTreeitem(name, checkable)
+                survey_stats = SurveyStats()
+                survey_stats.calculate(survey)
+
+                survey_branch = CheckTreeitem(f"{name}({survey_stats.photos} photos)", checkable)
                 survey_branch.setData(survey_id, Qt.UserRole)
                 first_level_branch.appendRow(survey_branch)
     return branch
@@ -64,4 +68,5 @@ def best_name(survey, survey_id):
 
     if name is None or name == "":
         name = survey_id
+
     return name

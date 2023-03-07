@@ -12,10 +12,7 @@ import glob
 
 
 from aims import state
-from aims.config import Config
-from aims.ui.config_ui import ConfigUi
 from aims.ui.main_ui import MainUi
-from aims.ui.surveys_tree import SurveysTree
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

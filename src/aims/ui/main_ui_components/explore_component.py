@@ -60,30 +60,16 @@ class ExploreComponent:
         if index == 3:
             self.draw_map()
 
-    def explore_drive_selected(self, value):
-        print("combobox changed", value)
-        setup_folder_tree(value, self.explore_widget.folderTree)
-
     def load_explore_screen(self, fixed_drives, aims_status_dialog, time_zone):
 
         self.time_zone = time_zone
 
         self.aims_status_dialog = aims_status_dialog
 
-        setup_file_system_tree_and_combo_box(drive_combo_box=self.explore_widget.driveComboBox,
-                                                  tree=self.explore_widget.folderTree,
-                                                  selected_folder=state.config.data_folder,
-                                                fixed_drives = fixed_drives
-                                             )
-
-        print ("file tree is set up")
-        self.explore_widget.driveComboBox.currentTextChanged.connect(self.explore_drive_selected)
-
         self.info_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_info.ui', self.explore_widget.info_tab)
         self.metadata_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_metadata.ui', self.explore_widget.metadata_tab)
         self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui', self.explore_widget.marks_tab)
 
-        self.explore_widget.loadButton.clicked.connect(self.load_explore_surveys_tree)
         self.lookups()
         self.explore_widget.tabWidget.currentChanged.connect(self.tab_changed)
 
@@ -95,6 +81,8 @@ class ExploreComponent:
         self.survey_id = None
         self.metadata_widget.cancelButton.clicked.connect(self.data_to_ui)
         self.metadata_widget.saveButton.clicked.connect(self.ui_to_data)
+
+        self.load_explore_surveys_tree(self.aims_status_dialog)
 
     def lookups(self):
 
@@ -330,11 +318,9 @@ class ExploreComponent:
 
     def load_explore_surveys_tree(self, aims_status_dialog):
         self.ui_to_data()
-        update_data_folder_from_tree(self.explore_widget.folderTree)
 
         state.config.camera_connected = False
         state.load_data_model(aims_status_dialog=self.aims_status_dialog)
-        state.config.save_config_file()
         tree = self.explore_widget.surveysTree
         self.surveys_tree_model = make_tree_model(timezone=self.time_zone, include_camera=False, checkable=False)
         tree.setModel(self.surveys_tree_model)

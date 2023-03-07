@@ -14,8 +14,8 @@ class GuiModel(BasicModel):
         self.slow_network = False
         self.data_loaded = False
 
-    def read_surveys(self, progress_queue, image_folder, json_folder, samba, slow_network):
-        surveys_data = super().read_surveys(progress_queue, image_folder, json_folder, samba, slow_network)
+    def read_surveys(self, progress_queue, image_folder, backup_folder, json_folder, samba, slow_network):
+        surveys_data = super().read_surveys(progress_queue, image_folder, backup_folder, json_folder, samba, slow_network)
         self.surveysModel.data_dict = surveys_data
         return surveys_data
 
