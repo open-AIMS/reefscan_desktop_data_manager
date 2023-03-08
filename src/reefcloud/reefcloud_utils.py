@@ -9,11 +9,11 @@ create_signed_url_url = f'{api_url}/upload'
 surveys_folder = "surveys"
 
 
-def write_reefcloud_photos_json (survey_name, outputfile, selected_photo_infos):
+def write_reefcloud_photos_json (survey_id, outputfile, selected_photo_infos):
     reefcloud_infos = []
     for info in selected_photo_infos:
         reefcloud_info = {
-            "s3-key": f"{surveys_folder}/{survey_name}/{info['filename']}",
+            "s3-key": f"{surveys_folder}/{survey_id}/{info['filename']}",
             "depth": info["altitude"],
             "distance-from-camera": info["subject_distance"],
             "latitude": info["latitude"],
@@ -27,8 +27,10 @@ def write_reefcloud_photos_json (survey_name, outputfile, selected_photo_infos):
         text_file.write(json.dumps(selected_photo_infos))
 
 
+# Uses an oauth2_session to upload a file named file_name in residing in a folder specified in var named folder to S3.
+# The destination within S3 is f"{surveys_folder}/{survey_id}/{file_name}
 
-def upload_file(oauth2_session, survey_name, folder, file_name):
+def upload_file(oauth2_session, survey_id, folder, file_name):
 
     full_file_name = f"{folder}/{file_name}"
     if os.path.isdir (full_file_name):
@@ -38,7 +40,7 @@ def upload_file(oauth2_session, survey_name, folder, file_name):
         return
 
     response = oauth2_session.put(create_signed_url_url,
-                            data=json.dumps({"file_name": f"{surveys_folder}/{survey_name}/{file_name}"}))
+                            data=json.dumps({"file_name": f"{surveys_folder}/{survey_id}/{file_name}"}))
     if not response.ok:
         raise Exception(f"Error uploading file {file_name}", response.text)
 
@@ -61,6 +63,3 @@ def upload_file(oauth2_session, survey_name, folder, file_name):
     if not response.ok:
         raise Exception(f"Error uploading file {file_name}", response.text)
 
-
-if __name__ == "__main__":
-    upload_file("greg", "c:/temp/surfbee", "greg.xml")

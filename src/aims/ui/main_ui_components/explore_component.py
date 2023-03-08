@@ -5,7 +5,7 @@ import subprocess
 
 from PyQt5 import QtCore, uic, QtGui
 from PyQt5.QtCore import QModelIndex, QItemSelection, QSize, Qt
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QStandardItem
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QAction, QMenu, QInputDialog, QWidget, QTableView, QLabel, QListView, \
     QListWidget, QMessageBox
@@ -140,6 +140,52 @@ class ExploreComponent:
 
 
 
+        # Get the QComboBox and QStandardItemModel objects
+        #self.my_combo_box = self.findChild(QtWidgets.QComboBox, "myComboBox")
+        #self.my_combo_box_model = self.my_combo_box.model()
+
+        combobox_model = self.metadata_widget.cb_reefcloud_project.model()
+        self.metadata_widget.cb_reefcloud_project.addItem("")
+        for project in state.config.reefcloud_projects:
+            #self.metadata_widget.cb_reefcloud_project.addItem(project)
+            item = QStandardItem(project)
+            item.setData(state.config.reefcloud_projects[project], Qt.UserRole)
+            combobox_model.appendRow(item)
+
+        # Add items to the model
+
+        self.metadata_widget.cb_reefcloud_project.currentIndexChanged.connect(self.combo_box_selection_changed1)
+
+        combobox_model = self.metadata_widget.cb_reefcloud_site.model()
+        self.metadata_widget.cb_reefcloud_site.addItem("")
+        for site in state.config.reefcloud_sites:
+            #self.metadata_widget.cb_reefcloud_project.addItem(project)
+            item = QStandardItem(site)
+            item.setData(state.config.reefcloud_sites[site], Qt.UserRole)
+            combobox_model.appendRow(item)
+
+        self.metadata_widget.cb_reefcloud_site.currentIndexChanged.connect(self.combo_box_selection_changed2)
+
+        # self.metadata_widget.cb_reefcloud_site.addItem("")
+        #for site in state.config.reefcloud_sites:
+        #    self.metadata_widget.cb_reefcloud_site.addItem(site)
+
+    def combo_box_selection_changed1(self, index):
+        # Get the id of the selected item
+        combobox_model = self.metadata_widget.cb_reefcloud_project.model()
+        item = combobox_model.item(index)
+        id = item.data(Qt.UserRole)
+        print(id)
+
+    def combo_box_selection_changed2(self, index):
+        # Get the id of the selected item
+        combobox_model = self.metadata_widget.cb_reefcloud_site.model()
+        item = combobox_model.item(index)
+        id = item.data(Qt.UserRole)
+        print(id)
+
+
+
     def load_sequence_frame(self, ui_file, parent_widget):
         clearLayout(parent_widget.layout())
         widget: QWidget = uic.loadUi(ui_file)
@@ -264,7 +310,10 @@ class ExploreComponent:
             self.survey_col("visibility") != self.metadata_widget.cb_vis.currentText() or \
             self.survey_col("comments") != self.metadata_widget.ed_comments.toPlainText() or \
             self.survey_col("tide") != self.metadata_widget.cb_tide.currentText() or \
-            self.survey_col("friendly_name") != self.metadata_widget.ed_name.text()
+            self.survey_col("friendly_name") != self.metadata_widget.ed_name.text() or \
+            self.survey_col("reefcloud_project") != self.metadata_widget.cb_reefcloud_project.currentText() or \
+            self.survey_col("reefcloud_site") != self.metadata_widget.cb_reefcloud_site.currentText()
+
 
     def ui_to_data(self):
         if self.thumbnail_model is not None:
@@ -283,6 +332,36 @@ class ExploreComponent:
             self.survey()["tide"] = self.metadata_widget.cb_tide.currentText()
             self.survey()["friendly_name"] = self.metadata_widget.ed_name.text()
 
+            ################################################
+
+            selected_text = self.metadata_widget.cb_reefcloud_project.currentText()
+            selected_index = self.metadata_widget.cb_reefcloud_project.currentIndex()
+
+            # Get the model object from the QComboBox
+            model = self.metadata_widget.cb_reefcloud_project.model()
+
+            # Get the id of the selected item from the model
+            selected_id = model.data(model.index(selected_index, 0), Qt.UserRole)
+
+            self.survey()["reefcloud_project_id"] = selected_id
+            self.survey()["reefcloud_project"] = selected_text
+
+            ################################################
+
+            selected_text = self.metadata_widget.cb_reefcloud_site.currentText()
+            selected_index = self.metadata_widget.cb_reefcloud_site.currentIndex()
+
+            # Get the model object from the QComboBox
+            model = self.metadata_widget.cb_reefcloud_site.model()
+
+            # Get the id of the selected item from the model
+            selected_id = model.data(model.index(selected_index, 0), Qt.UserRole)
+
+            self.survey()["reefcloud_site_id"] = selected_id
+            self.survey()["reefcloud_site"] = selected_text
+
+            ####################################################
+
             save_survey(self.survey(), state.config.data_folder, state.config.backup_data_folder)
 
     def data_to_ui(self):
@@ -297,6 +376,10 @@ class ExploreComponent:
             self.metadata_widget.cb_cloud.setCurrentText(self.survey_col("cloud"))
             self.metadata_widget.cb_vis.setCurrentText(self.survey_col("visibility"))
             self.metadata_widget.cb_tide.setCurrentText(self.survey_col("tide"))
+
+            self.metadata_widget.cb_reefcloud_project.setCurrentText(self.survey_col("reefcloud_project"))
+            self.metadata_widget.cb_reefcloud_site.setCurrentText(self.survey_col("reefcloud_site"))
+
             self.metadata_widget.ed_comments.setPlainText(self.survey_col("comments"))
 
             self.info_widget.lb_sequence_name.setText(self.survey_col("id"))
