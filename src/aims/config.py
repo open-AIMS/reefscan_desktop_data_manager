@@ -28,9 +28,13 @@ class Config(object):
         # self.camera_samba = False
 
         # Configuration for AWS
-
-        self.client_id = '4g2uk4maadbqvuoep86ov2mig8'
-        self.cognito_uri = 'https://reefscan1.auth.ap-southeast-2.amazoncognito.com'
+        self.aws_region_id = 'ap-southeast-2'
+        #self.cognito_user_pool_id = 'ap-southeast-2_mX1uDv7na'
+        self.cognito_user_pool_id = 'ap-southeast-2_VpzWNPszV'
+        #self.client_id = '4g2uk4maadbqvuoep86ov2mig8'
+        self.client_id = '6m6rue95t1apbig6i68avk2dt7'
+        self.cognito_uri = 'https://login.dev.reefcloud.ai/'
+        self.cognito_token_key_url = f'https://cognito-idp.{self.aws_region_id}.amazonaws.com/{self.cognito_user_pool_id}/.well-known/jwks.json'
         #self.authorization_url = f'{self.cognito_uri}/authorize'
         self.token = ""
 
