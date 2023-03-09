@@ -6,7 +6,7 @@ from aims import state
 
 class SurveyStats:
     def __init__(self):
-        self.photos = 0
+        self.photos = None
         self.missing_ping_depth = 0
         self.missing_pressure_depth = 0
         self.missing_gps = 0

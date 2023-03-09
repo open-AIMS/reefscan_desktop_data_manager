@@ -10,6 +10,7 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QAction, QMenu, QInputDialog, QWidget, QTableView, QLabel, QListView, \
     QListWidget, QMessageBox
 from pytz import utc
+from reefscanner.basic_model.model_helper import rename_folders
 from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
@@ -23,8 +24,8 @@ from aims.ui.main_ui_components.utils import setup_folder_tree, setup_file_syste
     update_data_folder_from_tree
 from aims.ui.map_html import map_html_str
 
-
 logger = logging.getLogger(__name__)
+
 
 def utc_to_local(utc_str, timezone):
     try:
@@ -54,7 +55,6 @@ class ExploreComponent:
 
         self.time_zone = None
 
-
     def tab_changed(self, index):
         print(index)
         if index == 3:
@@ -66,12 +66,17 @@ class ExploreComponent:
 
         self.aims_status_dialog = aims_status_dialog
 
-        self.info_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_info.ui', self.explore_widget.info_tab)
-        self.metadata_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_metadata.ui', self.explore_widget.metadata_tab)
-        self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui', self.explore_widget.marks_tab)
+        self.info_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_info.ui',
+                                                    self.explore_widget.info_tab)
+        self.metadata_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_metadata.ui',
+                                                        self.explore_widget.metadata_tab)
+        self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui',
+                                                     self.explore_widget.marks_tab)
 
         self.lookups()
         self.explore_widget.tabWidget.currentChanged.connect(self.tab_changed)
+        self.explore_widget.renameFoldersButton.clicked.connect(self.rename_folders)
+        self.explore_widget.refreshButton.clicked.connect(self.refresh)
 
         self.marks_widget.btnOpenMarkFolder.clicked.connect(self.open_mark_folder)
         self.marks_widget.btnOpenMark.clicked.connect(self.open_mark)
@@ -82,7 +87,7 @@ class ExploreComponent:
         self.metadata_widget.cancelButton.clicked.connect(self.data_to_ui)
         self.metadata_widget.saveButton.clicked.connect(self.ui_to_data)
 
-        self.load_explore_surveys_tree(self.aims_status_dialog)
+        self.load_explore_surveys_tree()
 
     def lookups(self):
 
@@ -126,7 +131,24 @@ class ExploreComponent:
         self.metadata_widget.cb_vis.addItem("25-30")
         self.metadata_widget.cb_vis.addItem(">30")
 
+    def refresh(self):
+        old_survey_id = self.survey_id
+        self.ui_to_data()
+        self.survey_id = None
+        self.load_explore_surveys_tree()
+        self.survey_id = old_survey_id
+        self.data_to_ui()
+        print ("refresh done")
 
+    def rename_folders(self):
+        old_survey_id = self.survey_id
+        self.ui_to_data()
+        self.survey_id = None
+        rename_folders(state.model, self.time_zone)
+        self.load_explore_surveys_tree()
+        self.survey_id = old_survey_id
+        self.data_to_ui()
+        print ("rename done")
 
     def load_sequence_frame(self, ui_file, parent_widget):
         clearLayout(parent_widget.layout())
@@ -152,8 +174,9 @@ class ExploreComponent:
         if self.marks_model is not None:
             self.mark_filename = self.marks_model.photo_file(index.row())
             self.marks_widget.lblFileName.setText(self.marks_model.photo_file_name(index.row()))
-            label:QLabel = self.marks_widget.lblPhoto
-            pixmap = QPixmap(self.mark_filename).scaled(label.size().width(), label.size().height(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            label: QLabel = self.marks_widget.lblPhoto
+            pixmap = QPixmap(self.mark_filename).scaled(label.size().width(), label.size().height(), Qt.KeepAspectRatio,
+                                                        Qt.SmoothTransformation)
             label.setPixmap(pixmap)
 
     def open_folder(self):
@@ -169,20 +192,21 @@ class ExploreComponent:
                 fname = self.mark_filename.replace("//", "/")
                 fname = fname.replace("/", "\\")
                 command = f'explorer.exe /select,"{fname}"'
-                print (command)
+                print(command)
                 subprocess.call(command)
             except:
                 os.startfile(self.mark_filename, "open")
 
-    def explore_tree_selection_changed(self,  item_selection:QItemSelection):
+    def explore_tree_selection_changed(self, item_selection: QItemSelection):
         if self.is_modified():
-            reply = QMessageBox.question(self.explore_widget, 'Save?', "Do you want to save your changes?", QMessageBox.Yes | QMessageBox.No)
+            reply = QMessageBox.question(self.explore_widget, 'Save?', "Do you want to save your changes?",
+                                         QMessageBox.Yes | QMessageBox.No)
 
             if reply == QMessageBox.Yes:
                 self.ui_to_data()
 
         if len(item_selection.indexes()) == 0:
-            return()
+            return ()
 
         for index in item_selection.indexes():
             self.survey_id = index.data(Qt.UserRole)
@@ -243,16 +267,16 @@ class ExploreComponent:
         if self.survey_id is None:
             return False
         return self.survey_col("site") != self.metadata_widget.ed_site.text() or \
-            self.survey_col("operator") != self.metadata_widget.ed_operator.text() or \
-            self.survey_col("observer") != self.metadata_widget.ed_observer.text() or \
-            self.survey_col("vessel") != self.metadata_widget.ed_vessel.text() or \
-            self.survey_col("sea") != self.metadata_widget.cb_sea.currentText() or \
-            self.survey_col("wind") != self.metadata_widget.cb_wind.currentText() or \
-            self.survey_col("cloud") != self.metadata_widget.cb_cloud.currentText() or \
-            self.survey_col("visibility") != self.metadata_widget.cb_vis.currentText() or \
-            self.survey_col("comments") != self.metadata_widget.ed_comments.toPlainText() or \
-            self.survey_col("tide") != self.metadata_widget.cb_tide.currentText() or \
-            self.survey_col("friendly_name") != self.metadata_widget.ed_name.text()
+               self.survey_col("operator") != self.metadata_widget.ed_operator.text() or \
+               self.survey_col("observer") != self.metadata_widget.ed_observer.text() or \
+               self.survey_col("vessel") != self.metadata_widget.ed_vessel.text() or \
+               self.survey_col("sea") != self.metadata_widget.cb_sea.currentText() or \
+               self.survey_col("wind") != self.metadata_widget.cb_wind.currentText() or \
+               self.survey_col("cloud") != self.metadata_widget.cb_cloud.currentText() or \
+               self.survey_col("visibility") != self.metadata_widget.cb_vis.currentText() or \
+               self.survey_col("comments") != self.metadata_widget.ed_comments.toPlainText() or \
+               self.survey_col("tide") != self.metadata_widget.cb_tide.currentText() or \
+               self.survey_col("friendly_name") != self.metadata_widget.ed_name.text()
 
     def ui_to_data(self):
         if self.thumbnail_model is not None:
@@ -304,7 +328,7 @@ class ExploreComponent:
         self.info_widget.lbl_missing_pressure.setText(str(survey_stats.missing_pressure_depth))
 
     def load_thumbnails(self):
-        list_thumbnails:QListView = self.explore_widget.lv_thumbnails
+        list_thumbnails: QListView = self.explore_widget.lv_thumbnails
         list_thumbnails.setViewMode(QListWidget.IconMode)
         list_thumbnails.setIconSize(QSize(200, 200))
         list_thumbnails.setResizeMode(QListWidget.Adjust)
@@ -312,11 +336,12 @@ class ExploreComponent:
             folder = self.survey_col('image_folder')
             samba = self.survey()["samba"]
             file_ops = get_file_ops(samba)
-            photos = [name for name in file_ops.listdir(folder) if name.lower().endswith(".jpg") or name.lower().endswith(".jpeg")]
+            photos = [name for name in file_ops.listdir(folder) if
+                      name.lower().endswith(".jpg") or name.lower().endswith(".jpeg")]
             self.thumbnail_model = LazyListModel(photos, folder, self.survey_id, samba)
             list_thumbnails.setModel(self.thumbnail_model)
 
-    def load_explore_surveys_tree(self, aims_status_dialog):
+    def load_explore_surveys_tree(self):
         self.ui_to_data()
 
         state.config.camera_connected = False
@@ -334,7 +359,7 @@ class ExploreComponent:
             html_str = map_html_str(folder, False)
             # print (html_str)
             if html_str is not None:
-                view:QWebEngineView = self.explore_widget.mapView
+                view: QWebEngineView = self.explore_widget.mapView
                 view.setHtml(html_str)
 
     def non_survey_to_stats_ui(self, name):
@@ -343,5 +368,3 @@ class ExploreComponent:
         self.info_widget.lb_end_time.setText("")
         self.info_widget.lb_start_waypoint.setText("")
         self.info_widget.lb_end_waypoint.setText("")
-
-

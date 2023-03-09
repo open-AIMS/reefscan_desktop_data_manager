@@ -32,17 +32,6 @@ class DownloadComponent:
 
 
     def download(self):
-        if state.config.backup:
-            selected = self.download_widget.secondDestinationTree.selectedIndexes()
-            if len(selected) > 0:
-                index = selected[0]
-                item = self.download_widget.secondDestinationTree.model().filePath(index)
-                state.config.backup_data_folder = str(item)
-            else:
-                raise Exception("Please select a backup folder")
-
-        state.config.save_config_file()
-        state.set_data_folders()
 
         surveys = self.checked_surveys()
         if len(surveys) == 0:

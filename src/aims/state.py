@@ -31,11 +31,14 @@ def set_data_folders():
 
 
 def read_reefscan_id():
-    conn = Connection(
-        "jetson@" + config.camera_ip,
-        connect_kwargs={"password": "jetson"}
-    )
+    try:
+        conn = Connection(
+            "jetson@" + config.camera_ip,
+            connect_kwargs={"password": "jetson"}
+        )
 
-    r = conn.run("cat ~/reefscan_id.txt")
-    reefscan_id = r.stdout
-    return reefscan_id
+        r = conn.run("cat ~/reefscan_id.txt")
+        reefscan_id = r.stdout
+        return reefscan_id
+    except:
+        return "REEFSCAN"

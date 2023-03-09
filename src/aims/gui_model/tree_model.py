@@ -45,10 +45,18 @@ def make_branch(survey_data, name, checkable, timezone):
             survey_id = survey["id"]
             if survey_id != "archive":
                 name = best_name(survey, survey_id)
+                try:
+                    site = survey ["site"]
+                except:
+                    site = ""
                 survey_stats = SurveyStats()
                 survey_stats.calculate(survey)
+                if survey_stats.photos is not None:
+                    photos = f"({survey_stats.photos} photos)"
+                else:
+                    photos = ""
 
-                survey_branch = CheckTreeitem(f"{name}({survey_stats.photos} photos)", checkable)
+                survey_branch = CheckTreeitem(f"{name}-{site}{photos}", checkable)
                 survey_branch.setData(survey_id, Qt.UserRole)
                 first_level_branch.appendRow(survey_branch)
     return branch

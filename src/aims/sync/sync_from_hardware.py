@@ -4,6 +4,8 @@ import shutil
 import traceback
 from datetime import datetime
 
+from reefscanner.basic_model.json_utils import read_json_file
+
 from aims import state
 from aims.samba import aims_shutil
 from joblib import Parallel, delayed
@@ -63,7 +65,7 @@ class SyncFromHardware(Synchroniser):
                 self.folder_message = f"Survey {friendly_name}. {i} of {tot_surveys}"
                 h_survey_folder = h_surveys_folder + "/" + survey_id
                 # archive_survey_folder = archive_folder + "/" + survey_id
-                l_survey_folder = self.local_folder + "/" + survey_id
+                l_survey_folder = self.find_local_survey_folder(survey_id)
 
                 self.copytree_parallel(h_survey_folder, l_survey_folder)
                 try:
@@ -81,6 +83,18 @@ class SyncFromHardware(Synchroniser):
         All photos have been copied to the local and backup folders.\n
         """
         return message, detailed_message
+
+    def find_local_survey_folder(self, survey_id):
+        for root, dirs, files in os.walk(self.local_folder):
+            for dir in dirs:
+                full_dir = f"{root}/{dir}".replace("\\", "/")
+                survey_json_path = f"{full_dir}/survey.json"
+                if os.path.exists(survey_json_path):
+                    survey = read_json_file(survey_json_path)
+                    if "id" in survey and survey["id"] == survey_id:
+                        return f"{root}/{dir}"
+
+        return self.local_folder + "/" + survey_id
 
     def copytree_parallel(self, from_folder, to_folder):
         self.files_to_copy = []
@@ -115,11 +129,12 @@ class SyncFromHardware(Synchroniser):
         logger.debug(f"copy2 {src}")
 
         l_dst = dst
-        dst_last_part = dst[len(self.local_folder): ]
+        dst_last_part = dst[len(self.local_folder): ].replace("\\", "/")
+        src_last_part = src[len(self.hardware_folder): ].replace("\\", "/")
         if (self.backup):
             b_dst = f"{self.backup_folder}/{dst_last_part}"
 
-        a_dst = f"{self.hardware_folder}/archive/{dst_last_part}"
+        a_dst = f"{self.hardware_folder}/archive/{src_last_part}"
 
         if self.cancelled:
             logger.debug("cancelled")

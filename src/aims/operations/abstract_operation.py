@@ -23,6 +23,7 @@ class AbstractOperation(QObject):
         self.progress_max = 0
         self.progress_label = ""
         self.update_interval = 100
+        self.sync = None
         logger.info("done set up sync")
 
     def cancel(self):

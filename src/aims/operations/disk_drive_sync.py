@@ -2,10 +2,17 @@ import filecmp
 import os
 import shutil
 
+from PyQt5.QtWidgets import QApplication
+
+from aims.operations.abstract_operation import AbstractOperation
+
+exclude = {'thumbnails'}
+
 
 def dir_with_counts(dir):
     result = {}
-    for root, dirs, files in os.walk(dir, topdown=False):
+    for root, dirs, files in os.walk(dir, topdown=True):
+        dirs[:] = [d for d in dirs if d not in exclude]
         root2 = root.replace(dir, "")
         result[root2] = {"original_file": root, "count": len(files)}
     return result
@@ -15,6 +22,8 @@ def check_all_files_except_photos(dir1, dir2, fix):
     messages = []
     total_differences = 0
     for root, dirs, files in os.walk(dir1, topdown=False):
+        dirs[:] = [d for d in dirs if d not in exclude]
+
         second_root = root.replace(dir1, dir2)
         for name in files:
             if not name.upper().endswith(".JPG"):
@@ -36,19 +45,7 @@ def check_all_files_except_photos(dir1, dir2, fix):
     return total_differences, messages
 
 
-def copy_folder(src, dest):
-    src_files = os.listdir(src)
-    i=0
-    for file in src_files:
-        print (i)
-        i+=1
-        src_file = f"{src}/{file}"
-        dst_file = f"{dest}/{file}"
-        if not os.path.isfile(dst_file) and os.path.isfile(src_file):
-            shutil.copy2(src_file, dst_file)
-
-
-def compare(dir1, dir2, fix):
+def compare(dir1, dir2, fix, aims_status_dialog):
     counts1 = dir_with_counts(dir1)
     print(counts1)
     counts2 = dir_with_counts(dir2)
@@ -72,14 +69,58 @@ def compare(dir1, dir2, fix):
                 total_differences += abs(difference)
                 if fix:
                     dst_folder = counts2[folder]["original_file"]
-                    copy_folder(src_folder, dst_folder)
+                    copy_folder(src_folder, dst_folder, aims_status_dialog)
 
     message_str = "\n".join(messages)
     message_str = f"There are a total of {total_differences} differences.\n{message_str}"
 
     return total_differences, messages, message_str
 
-if __name__ == "__main__":
-    compare("D:\LTMP-Whitsunday-2", "F:\LTMP-Whitsunday-2", True)
+
+def copy_folder(src_folder, dst_folder, aims_status_dialog):
+    copy_folder_operation = CopyFolderOperation(src_folder, dst_folder)
+    copy_folder_operation.update_interval = 1
+    aims_status_dialog.set_operation_connections(copy_folder_operation)
+    result = aims_status_dialog.threadPool.apply_async(copy_folder_operation.run)
+    while not result.ready():
+        QApplication.processEvents()
+    aims_status_dialog.close()
 
 
+class CopyFolderOperation(AbstractOperation):
+    def __init__(self, src, dst):
+        super().__init__()
+        self.finished = False
+        self.message = ""
+        self.src = src
+        self.dst = dst
+        self.sync = self
+        self.cancelled = False
+
+    def cancel(self):
+        self.cancelled = True
+
+    def _run(self):
+        print ("Starting copy")
+        self.progress_queue.reset()
+        self.progress_queue.set_progress_label(f"Copying files from {self.src}")
+        src_files = os.listdir(self.src)
+        self.progress_queue.set_progress_max(len(src_files) + 1)
+
+        i = 0
+        for file in src_files:
+            print(i)
+            i += 1
+            src_file = f"{self.src}/{file}"
+            dst_file = f"{self.dst}/{file}"
+            if not os.path.isfile(dst_file) and os.path.isfile(src_file):
+                shutil.copy2(src_file, dst_file)
+            self.progress_queue.set_progress_value()
+            if self.cancelled:
+                break
+        self.finished = True
+
+
+
+# if __name__ == "__main__":
+#     compare("D:\LTMP-Whitsunday-2", "F:\LTMP-Whitsunday-2", True)

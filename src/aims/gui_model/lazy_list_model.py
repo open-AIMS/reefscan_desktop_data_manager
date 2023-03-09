@@ -31,7 +31,7 @@ def read_file(file, samba):
 
 
 def thumbnail_from_disk_cache(folder, id, photo, samba):
-    thumbnail_folder = state.config.data_folder + "/thumbnails/" + id
+    thumbnail_folder = state.config.data_folder + "_thumbnails/" + id
     os.makedirs(thumbnail_folder, exist_ok=True)
     thumbnail_file = thumbnail_folder + "/" + photo
     if os.path.isfile(thumbnail_file):
