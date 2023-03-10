@@ -331,36 +331,8 @@ class ExploreComponent:
             self.survey()["comments"] = self.metadata_widget.ed_comments.toPlainText()
             self.survey()["tide"] = self.metadata_widget.cb_tide.currentText()
             self.survey()["friendly_name"] = self.metadata_widget.ed_name.text()
-
-            ################################################
-
-            selected_text = self.metadata_widget.cb_reefcloud_project.currentText()
-            selected_index = self.metadata_widget.cb_reefcloud_project.currentIndex()
-
-            # Get the model object from the QComboBox
-            model = self.metadata_widget.cb_reefcloud_project.model()
-
-            # Get the id of the selected item from the model
-            selected_id = model.data(model.index(selected_index, 0), Qt.UserRole)
-
-            self.survey()["reefcloud_project_id"] = selected_id
-            self.survey()["reefcloud_project"] = selected_text
-
-            ################################################
-
-            selected_text = self.metadata_widget.cb_reefcloud_site.currentText()
-            selected_index = self.metadata_widget.cb_reefcloud_site.currentIndex()
-
-            # Get the model object from the QComboBox
-            model = self.metadata_widget.cb_reefcloud_site.model()
-
-            # Get the id of the selected item from the model
-            selected_id = model.data(model.index(selected_index, 0), Qt.UserRole)
-
-            self.survey()["reefcloud_site_id"] = selected_id
-            self.survey()["reefcloud_site"] = selected_text
-
-            ####################################################
+            self.survey()["reefcloud_project"] = self.metadata_widget.cb_reefcloud_project.text()
+            self.survey()["reefcloud_site"] = self.metadata_widget.cb_reefcloud_site.text()
 
             save_survey(self.survey(), state.config.data_folder, state.config.backup_data_folder)
 

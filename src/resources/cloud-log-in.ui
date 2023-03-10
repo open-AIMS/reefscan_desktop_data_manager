@@ -41,6 +41,9 @@
    </item>
    <item row="7" column="0">
     <widget class="QPushButton" name="upload_button">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="font">
       <font>
        <pointsize>12</pointsize>
@@ -86,6 +89,9 @@
    </item>
    <item row="8" column="0">
     <widget class="QPushButton" name="update_button">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="font">
       <font>
        <pointsize>12</pointsize>

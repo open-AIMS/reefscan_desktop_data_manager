@@ -1,13 +1,14 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import cgi
 
-
+api_url = 'https://dev.reefscan.api.aims.gov.au/prod/reefscan/api'
 api_url = 'https://xx6zbht7ue.execute-api.ap-southeast-2.amazonaws.com/prod/reefscan/api'
+
 user_info_url = f'{api_url}/user_info'
 
 from aims import state
 
-from oauthlib.oauth2 import WebApplicationClient
+from oauthlib.oauth2 import WebApplicationClient, BackendApplicationClient
 from threading import Thread
 from requests_oauthlib import OAuth2Session
 import webbrowser
@@ -106,6 +107,7 @@ class LoginWorker(Thread):
         self.path = path
         self.launch_browser = launch_browser
         self.client = WebApplicationClient(client_id=self.client_id)
+        # self.client = BackendApplicationClient(client_id=self.client_id)
         self.web_server = None
         print("LoginWorker __init__() end")
 
@@ -168,6 +170,7 @@ class UserInfo():
         headers = {
             'Authorization': 'Bearer {}'.format(access_token)
         }
+
         response = requests.get(user_info_url, headers=headers)
         if response.status_code == 200:
             authorized = True
@@ -175,6 +178,7 @@ class UserInfo():
         else:
             authorized = False
             message = str(response.content.decode('UTF-8'))
+            print(message)
         return cls(cognito_token_key_url, decoded['name'], decoded['email'], authorized=authorized, message=message)
 
 

@@ -6,7 +6,7 @@ from reefscanner.basic_model.reader_writer import save_survey
 
 from aims import state
 from reefcloud.sub_sample import sub_sample_dir
-from reefcloud.reefcloud_utils import upload_file, write_reefcloud_photos_json
+from reefcloud.reefcloud_utils import upload_file, write_reefcloud_photos_json, update_reefcloud_projects, update_reefcloud_sites
 from reefcloud.logon import ReefCloudSession
 
 
@@ -35,9 +35,6 @@ class UploadComponent:
 
             if not state.config.valid_reefcloud_site(survey['reefcloud_site']):
                 raise Exception("Invalid reefcloud site with " + survey["id"])
-
-
-
 
 
     def upload(self):
@@ -94,17 +91,20 @@ class UploadComponent:
 
         state.reefcloud_session = ReefCloudSession(state.config.client_id, state.config.cognito_uri)
         tokens = state.reefcloud_session.login()
+
         if state.reefcloud_session.is_logged_in:
             user_info = state.reefcloud_session.current_user
             self.login_widget.username_label.setText(f"Hello user {user_info.name}.  " + user_info.message)
             if not user_info.authorized:
                 self.login_widget.upload_button.setEnabled(False)
+                self.login_widget.update_button.setEnabled(False)
             else:
                 self.login_widget.upload_button.setEnabled(True)
+                self.login_widget.update_button.setEnabled(True)
 
     def update(self):
-        state.config.update_reefcloud_projects()
-        state.config.update_reefcloud_sites()
+        update_reefcloud_projects(state.reefcloud_session)
+        update_reefcloud_sites(state.reefcloud_session)
 
 
 
