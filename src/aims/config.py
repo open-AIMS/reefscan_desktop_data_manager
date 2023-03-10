@@ -118,8 +118,9 @@ class Config(object):
         except:
             reefcloud_sites_json = {}
         for project in reefcloud_sites_json:
+            sites[project] = []
             for site in reefcloud_sites_json[project]:
-                sites[site['name']] = site['id']
+                sites[project].append(site['name'])
         return sites
 
     def valid_reefcloud_project(self, project_name):

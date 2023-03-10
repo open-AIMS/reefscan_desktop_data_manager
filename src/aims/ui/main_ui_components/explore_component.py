@@ -138,53 +138,34 @@ class ExploreComponent:
         self.metadata_widget.cb_vis.addItem("25-30")
         self.metadata_widget.cb_vis.addItem(">30")
 
-
-
-        # Get the QComboBox and QStandardItemModel objects
-        #self.my_combo_box = self.findChild(QtWidgets.QComboBox, "myComboBox")
-        #self.my_combo_box_model = self.my_combo_box.model()
-
-        combobox_model = self.metadata_widget.cb_reefcloud_project.model()
         self.metadata_widget.cb_reefcloud_project.addItem("")
         for project in state.config.reefcloud_projects:
-            #self.metadata_widget.cb_reefcloud_project.addItem(project)
-            item = QStandardItem(project)
-            item.setData(state.config.reefcloud_projects[project], Qt.UserRole)
-            combobox_model.appendRow(item)
+            self.metadata_widget.cb_reefcloud_project.addItem(project)
 
-        # Add items to the model
-
-        self.metadata_widget.cb_reefcloud_project.currentIndexChanged.connect(self.combo_box_selection_changed1)
-
-        combobox_model = self.metadata_widget.cb_reefcloud_site.model()
         self.metadata_widget.cb_reefcloud_site.addItem("")
-        for site in state.config.reefcloud_sites:
-            #self.metadata_widget.cb_reefcloud_project.addItem(project)
-            item = QStandardItem(site)
-            item.setData(state.config.reefcloud_sites[site], Qt.UserRole)
-            combobox_model.appendRow(item)
 
-        self.metadata_widget.cb_reefcloud_site.currentIndexChanged.connect(self.combo_box_selection_changed2)
-
-        # self.metadata_widget.cb_reefcloud_site.addItem("")
-        #for site in state.config.reefcloud_sites:
-        #    self.metadata_widget.cb_reefcloud_site.addItem(site)
-
-    def combo_box_selection_changed1(self, index):
-        # Get the id of the selected item
-        combobox_model = self.metadata_widget.cb_reefcloud_project.model()
-        item = combobox_model.item(index)
-        id = item.data(Qt.UserRole)
-        print(id)
-
-    def combo_box_selection_changed2(self, index):
-        # Get the id of the selected item
-        combobox_model = self.metadata_widget.cb_reefcloud_site.model()
-        item = combobox_model.item(index)
-        id = item.data(Qt.UserRole)
-        print(id)
+        self.metadata_widget.cb_reefcloud_project.currentIndexChanged.connect(self.cb_reefcloud_project_changed)
 
 
+    def cb_reefcloud_project_changed(self, index):
+        # figure out what project was selected.
+        project = self.metadata_widget.cb_reefcloud_project.currentText()
+        if project == "":
+            # No project was selected, site not meaningful.
+            # Valid sites are set on per project basis.
+            self.metadata_widget.cb_reefcloud_site.clear()
+            self.metadata_widget.cb_reefcloud_site.addItem("")
+            self.metadata_widget.cb_reefcloud_site.setCurrentText("")
+            self.metadata_widget.cb_reefcloud_site.setEnabled(False)
+        else:
+            # If it is not "", enable sites combo.
+            self.metadata_widget.cb_reefcloud_site.setEnabled(True)
+            # Clear old options
+            self.metadata_widget.cb_reefcloud_site.clear()
+            self.metadata_widget.cb_reefcloud_site.addItem("")
+            # Add sites for that project to the sites combo box
+            for site in state.config.reefcloud_sites[project]:
+                self.metadata_widget.cb_reefcloud_site.addItem(site)
 
     def load_sequence_frame(self, ui_file, parent_widget):
         clearLayout(parent_widget.layout())
