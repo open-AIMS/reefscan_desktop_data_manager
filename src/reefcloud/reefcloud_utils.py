@@ -3,8 +3,8 @@ import os
 from aims import state
 import requests
 
-api_url = 'https://dev.reefscan.api.aims.gov.au/prod/reefscan/api'
-api_url = 'https://xx6zbht7ue.execute-api.ap-southeast-2.amazonaws.com/prod/reefscan/api'
+api_url = 'https://dev.reefscan.api.aims.gov.au/reefscan/api'
+
 create_signed_url_url = f'{api_url}/upload'
 surveys_folder = "surveys"
 

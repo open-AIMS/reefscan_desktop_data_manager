@@ -1,8 +1,8 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import cgi
 
-api_url = 'https://dev.reefscan.api.aims.gov.au/prod/reefscan/api'
-api_url = 'https://xx6zbht7ue.execute-api.ap-southeast-2.amazonaws.com/prod/reefscan/api'
+api_url = 'https://dev.reefscan.api.aims.gov.au/reefscan/api'
+
 
 user_info_url = f'{api_url}/user_info'
 
