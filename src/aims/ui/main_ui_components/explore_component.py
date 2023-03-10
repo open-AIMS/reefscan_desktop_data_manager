@@ -312,8 +312,8 @@ class ExploreComponent:
             self.survey()["comments"] = self.metadata_widget.ed_comments.toPlainText()
             self.survey()["tide"] = self.metadata_widget.cb_tide.currentText()
             self.survey()["friendly_name"] = self.metadata_widget.ed_name.text()
-            self.survey()["reefcloud_project"] = self.metadata_widget.cb_reefcloud_project.text()
-            self.survey()["reefcloud_site"] = self.metadata_widget.cb_reefcloud_site.text()
+            self.survey()["reefcloud_project"] = self.metadata_widget.cb_reefcloud_project.currentText()
+            self.survey()["reefcloud_site"] = self.metadata_widget.cb_reefcloud_site.currentText()
 
             save_survey(self.survey(), state.config.data_folder, state.config.backup_data_folder)
 

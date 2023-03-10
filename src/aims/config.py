@@ -106,8 +106,12 @@ class Config(object):
             reefcloud_projects_json = read_json_file(self.config_folder + "/" + self.reefcloud_projects_filename)
         except Exception as e:
             reefcloud_projects_json = {}
-        if 'WRITE' in reefcloud_projects_json:
+        if 'WRITE' in reefcloud_projects_json and 'ADMIN' in reefcloud_projects_json:
+            return reefcloud_projects_json['WRITE'] + reefcloud_projects_json['ADMIN']
+        elif 'WRITE' in reefcloud_projects_json:
             return reefcloud_projects_json['WRITE']
+        elif 'ADMIN' in reefcloud_projects_json:
+            return reefcloud_projects_json['ADMIN']
         else:
             return []
 
