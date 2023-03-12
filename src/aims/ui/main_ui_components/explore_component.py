@@ -5,7 +5,7 @@ import subprocess
 
 from PyQt5 import QtCore, uic, QtGui
 from PyQt5.QtCore import QModelIndex, QItemSelection, QSize, Qt
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QStandardItem
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QAction, QMenu, QInputDialog, QWidget, QTableView, QLabel, QListView, \
     QListWidget, QMessageBox
@@ -73,6 +73,11 @@ class ExploreComponent:
         self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui',
                                                      self.explore_widget.marks_tab)
 
+        self.info_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_info.ui', self.explore_widget.info_tab)
+        self.metadata_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_metadata.ui', self.explore_widget.metadata_tab)
+        self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui', self.explore_widget.marks_tab)
+
+        self.explore_widget.loadButton.clicked.connect(self.load_explore_surveys_tree)
         self.lookups()
         self.explore_widget.tabWidget.currentChanged.connect(self.tab_changed)
         self.explore_widget.renameFoldersButton.clicked.connect(self.rename_folders)
@@ -131,6 +136,14 @@ class ExploreComponent:
         self.metadata_widget.cb_vis.addItem("25-30")
         self.metadata_widget.cb_vis.addItem(">30")
 
+        self.metadata_widget.cb_reefcloud_project.addItem("")
+        for project in state.config.reefcloud_projects:
+            self.metadata_widget.cb_reefcloud_project.addItem(project)
+
+        self.metadata_widget.cb_reefcloud_site.addItem("")
+
+        self.metadata_widget.cb_reefcloud_project.currentIndexChanged.connect(self.cb_reefcloud_project_changed)
+
     def refresh(self):
         old_survey_id = self.survey_id
         self.ui_to_data()
@@ -140,6 +153,28 @@ class ExploreComponent:
         self.data_to_ui()
         print ("refresh done")
 
+
+
+
+    def cb_reefcloud_project_changed(self, index):
+        # figure out what project was selected.
+        project = self.metadata_widget.cb_reefcloud_project.currentText()
+        if project == "":
+            # No project was selected, site not meaningful.
+            # Valid sites are set on per project basis.
+            self.metadata_widget.cb_reefcloud_site.clear()
+            self.metadata_widget.cb_reefcloud_site.addItem("")
+            self.metadata_widget.cb_reefcloud_site.setCurrentText("")
+            self.metadata_widget.cb_reefcloud_site.setEnabled(False)
+        else:
+            # If it is not "", enable sites combo.
+            self.metadata_widget.cb_reefcloud_site.setEnabled(True)
+            # Clear old options
+            self.metadata_widget.cb_reefcloud_site.clear()
+            self.metadata_widget.cb_reefcloud_site.addItem("")
+            # Add sites for that project to the sites combo box
+            for site in state.config.reefcloud_sites[project]:
+                self.metadata_widget.cb_reefcloud_site.addItem(site)
     def rename_folders(self):
         old_survey_id = self.survey_id
         self.ui_to_data()
@@ -276,7 +311,9 @@ class ExploreComponent:
                self.survey_col("visibility") != self.metadata_widget.cb_vis.currentText() or \
                self.survey_col("comments") != self.metadata_widget.ed_comments.toPlainText() or \
                self.survey_col("tide") != self.metadata_widget.cb_tide.currentText() or \
-               self.survey_col("friendly_name") != self.metadata_widget.ed_name.text()
+               self.survey_col("friendly_name") != self.metadata_widget.ed_name.text() or \
+               self.survey_col("reefcloud_project") != self.metadata_widget.cb_reefcloud_project.currentText() or \
+               self.survey_col("reefcloud_site") != self.metadata_widget.cb_reefcloud_site.currentText()
 
     def ui_to_data(self):
         if self.thumbnail_model is not None:
@@ -294,6 +331,8 @@ class ExploreComponent:
             self.survey()["comments"] = self.metadata_widget.ed_comments.toPlainText()
             self.survey()["tide"] = self.metadata_widget.cb_tide.currentText()
             self.survey()["friendly_name"] = self.metadata_widget.ed_name.text()
+            self.survey()["reefcloud_project"] = self.metadata_widget.cb_reefcloud_project.currentText()
+            self.survey()["reefcloud_site"] = self.metadata_widget.cb_reefcloud_site.currentText()
 
             save_survey(self.survey(), state.config.data_folder, state.config.backup_data_folder)
 
@@ -309,6 +348,10 @@ class ExploreComponent:
             self.metadata_widget.cb_cloud.setCurrentText(self.survey_col("cloud"))
             self.metadata_widget.cb_vis.setCurrentText(self.survey_col("visibility"))
             self.metadata_widget.cb_tide.setCurrentText(self.survey_col("tide"))
+
+            self.metadata_widget.cb_reefcloud_project.setCurrentText(self.survey_col("reefcloud_project"))
+            self.metadata_widget.cb_reefcloud_site.setCurrentText(self.survey_col("reefcloud_site"))
+
             self.metadata_widget.ed_comments.setPlainText(self.survey_col("comments"))
 
             self.info_widget.lb_sequence_name.setText(self.survey_col("id"))

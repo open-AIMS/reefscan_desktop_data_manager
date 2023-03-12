@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import requests
 from reefscanner.basic_model.json_utils import write_json_file
 from reefscanner.basic_model.json_utils import read_json_file
 
@@ -10,6 +11,9 @@ class Config(object):
         super().__init__()
         self.config_folder = str(Path.home()) + "/.aims/reefscan"
         self.config_file_name = "config.json"
+        self.reefcloud_projects_filename = "reefcloud_projects.json"
+        self.reefcloud_sites_filename = "reefcloud_sites.json"
+
         self.config_file = f"{self.config_folder}/{self.config_file_name}"
         self.camera_connected = True
 
@@ -28,10 +32,19 @@ class Config(object):
         # self.camera_samba = False
 
         # Configuration for AWS
+        # Projects have write access
+        self.projects_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/user/access?min-level=WRITE"
+        self.sites_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/locations?org=REEFSCAN"
 
-        self.client_id = '4g2uk4maadbqvuoep86ov2mig8'
-        self.cognito_uri = 'https://reefscan1.auth.ap-southeast-2.amazoncognito.com'
-        #self.authorization_url = f'{self.cognito_uri}/authorize'
+        self.aws_region_id = 'ap-southeast-2'
+        # self.cognito_user_pool_id = 'ap-southeast-2_mX1uDv7na'
+        self.cognito_user_pool_id = 'ap-southeast-2_VpzWNPszV'
+        # self.client_id = '4g2uk4maadbqvuoep86ov2mig8'
+        self.client_id = '6m6rue95t1apbig6i68avk2dt7'
+        # self.cognito_uri = 'https://reefscan1.auth.ap-southeast-2.amazoncognito.com'
+        self.cognito_uri = 'https://login.dev.reefcloud.ai/'
+        self.cognito_token_key_url = f'https://cognito-idp.{self.aws_region_id}.amazonaws.com/{self.cognito_user_pool_id}/.well-known/jwks.json'
+        
         self.token = ""
 
 
@@ -69,5 +82,50 @@ class Config(object):
         self.hardware_data_folder = data_folder_json.get("hardware_data_folder", r"\\192.168.3.2\images")
         self.backup = data_folder_json.get("backup", True)
         self.time_zone = data_folder_json.get("time_zone", "")
-
+        self.load_reefcloud_projects()
+        self.load_reefcloud_sites()
         print(self)
+
+    def load_reefcloud_projects(self):
+        self.reefcloud_projects = self.read_reefcloud_projects()
+    def load_reefcloud_sites(self):
+        self.reefcloud_sites = self.read_reefcloud_sites()
+
+    def read_reefcloud_projects(self):
+        projects = []
+        try:
+            reefcloud_projects_json = read_json_file(self.config_folder + "/" + self.reefcloud_projects_filename)
+        except Exception as e:
+            reefcloud_projects_json = {}
+        if 'WRITE' in reefcloud_projects_json and 'ADMIN' in reefcloud_projects_json:
+            return reefcloud_projects_json['WRITE'] + reefcloud_projects_json['ADMIN']
+        elif 'WRITE' in reefcloud_projects_json:
+            return reefcloud_projects_json['WRITE']
+        elif 'ADMIN' in reefcloud_projects_json:
+            return reefcloud_projects_json['ADMIN']
+        else:
+            return []
+
+    def read_reefcloud_sites(self):
+        sites = {}
+        try:
+            reefcloud_sites_json = read_json_file(self.config_folder + "/" + self.reefcloud_sites_filename)
+        except:
+            reefcloud_sites_json = {}
+        for project in reefcloud_sites_json:
+            sites[project] = []
+            for site in reefcloud_sites_json[project]:
+                sites[project].append(site['name'])
+        return sites
+
+    def valid_reefcloud_project(self, project_name):
+        if project_name in self.reefcloud_projects:
+            return True
+        else:
+            return False
+
+    def valid_reefcloud_site(self, site_name):
+        if site_name in self.reefcloud_sites:
+            return True
+        else:
+            return False
