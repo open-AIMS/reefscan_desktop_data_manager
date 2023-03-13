@@ -20,9 +20,6 @@ class HardwareSyncModel(AimsAbstractTableModel):
         self.trips_lookup = {}
         self.trip = {}
         self.new_sites = []
-        self.default_project = ""
-        self.default_vessel = ""
-        self.default_operator = ""
 
     def data(self, index, role):
         if role == Qt.FontRole and index.column() == 3:
@@ -64,8 +61,8 @@ class HardwareSyncModel(AimsAbstractTableModel):
                 survey = {"id": survey_id, "name": survey_id, "photos": count_photos,
                           "start_date": start_date, "start_lat": start_lat, "start_lon": start_lon,
                           "finish_date": finish_date, "finish_lat": finish_lat, "finish_lon": finish_lon,
-                          "site": "", "project": self.default_project, "operator": self.default_operator,
-                          "vessel": self.default_vessel}
+                          "site": "", "operator": "",
+                          "vessel": ""}
                 self.data_array.append(survey)
 
     def new_site_for_survey(self, row, site_name):

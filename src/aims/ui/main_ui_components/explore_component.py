@@ -5,11 +5,12 @@ import subprocess
 
 from PyQt5 import QtCore, uic, QtGui
 from PyQt5.QtCore import QModelIndex, QItemSelection, QSize, Qt
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QStandardItem
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QAction, QMenu, QInputDialog, QWidget, QTableView, QLabel, QListView, \
     QListWidget, QMessageBox
 from pytz import utc
+from reefscanner.basic_model.model_helper import rename_folders
 from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
@@ -23,8 +24,8 @@ from aims.ui.main_ui_components.utils import setup_folder_tree, setup_file_syste
     update_data_folder_from_tree
 from aims.ui.map_html import map_html_str
 
-
 logger = logging.getLogger(__name__)
+
 
 def utc_to_local(utc_str, timezone):
     try:
@@ -53,16 +54,12 @@ class ExploreComponent:
         self.aims_status_dialog = None
 
         self.time_zone = None
-
+        self.site_lookup = {}
 
     def tab_changed(self, index):
         print(index)
         if index == 3:
             self.draw_map()
-
-    def explore_drive_selected(self, value):
-        print("combobox changed", value)
-        setup_folder_tree(value, self.explore_widget.folderTree)
 
     def load_explore_screen(self, fixed_drives, aims_status_dialog, time_zone):
 
@@ -70,22 +67,21 @@ class ExploreComponent:
 
         self.aims_status_dialog = aims_status_dialog
 
-        setup_file_system_tree_and_combo_box(drive_combo_box=self.explore_widget.driveComboBox,
-                                                  tree=self.explore_widget.folderTree,
-                                                  selected_folder=state.config.data_folder,
-                                                fixed_drives = fixed_drives
-                                             )
-
-        print ("file tree is set up")
-        self.explore_widget.driveComboBox.currentTextChanged.connect(self.explore_drive_selected)
+        self.info_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_info.ui',
+                                                    self.explore_widget.info_tab)
+        self.metadata_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_metadata.ui',
+                                                        self.explore_widget.metadata_tab)
+        self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui',
+                                                     self.explore_widget.marks_tab)
 
         self.info_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_info.ui', self.explore_widget.info_tab)
         self.metadata_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_metadata.ui', self.explore_widget.metadata_tab)
         self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui', self.explore_widget.marks_tab)
 
-        self.explore_widget.loadButton.clicked.connect(self.load_explore_surveys_tree)
         self.lookups()
         self.explore_widget.tabWidget.currentChanged.connect(self.tab_changed)
+        self.explore_widget.renameFoldersButton.clicked.connect(self.rename_folders)
+        self.explore_widget.refreshButton.clicked.connect(self.refresh)
 
         self.marks_widget.btnOpenMarkFolder.clicked.connect(self.open_mark_folder)
         self.marks_widget.btnOpenMark.clicked.connect(self.open_mark)
@@ -95,6 +91,8 @@ class ExploreComponent:
         self.survey_id = None
         self.metadata_widget.cancelButton.clicked.connect(self.data_to_ui)
         self.metadata_widget.saveButton.clicked.connect(self.ui_to_data)
+
+        self.load_explore_surveys_tree()
 
     def lookups(self):
 
@@ -138,7 +136,57 @@ class ExploreComponent:
         self.metadata_widget.cb_vis.addItem("25-30")
         self.metadata_widget.cb_vis.addItem(">30")
 
+        self.metadata_widget.cb_reefcloud_project.addItem("")
+        for project in state.config.reefcloud_projects:
+            self.metadata_widget.cb_reefcloud_project.addItem(project)
 
+        self.metadata_widget.cb_reefcloud_site.addItem("", userData="")
+
+        self.metadata_widget.cb_reefcloud_project.currentIndexChanged.connect(self.cb_reefcloud_project_changed)
+
+    def refresh(self):
+        old_survey_id = self.survey_id
+        self.ui_to_data()
+        self.survey_id = None
+        self.load_explore_surveys_tree()
+        self.survey_id = old_survey_id
+        self.data_to_ui()
+        print ("refresh done")
+
+
+
+
+    def cb_reefcloud_project_changed(self, index):
+        # figure out what project was selected.
+        project = self.metadata_widget.cb_reefcloud_project.currentText()
+        if project == "":
+            # No project was selected, site not meaningful.
+            # Valid sites are set on per project basis.
+            self.metadata_widget.cb_reefcloud_site.clear()
+            self.metadata_widget.cb_reefcloud_site.addItem("")
+            self.metadata_widget.cb_reefcloud_site.setCurrentText("")
+            self.metadata_widget.cb_reefcloud_site.setEnabled(False)
+        else:
+            # If it is not "", enable sites combo.
+            self.metadata_widget.cb_reefcloud_site.setEnabled(True)
+            # Clear old options
+            self.metadata_widget.cb_reefcloud_site.clear()
+            self.metadata_widget.cb_reefcloud_site.addItem("", userData="")
+            # Add sites for that project to the sites combo box
+            sites = state.config.reefcloud_sites[project]
+            for site in sites:
+                self.metadata_widget.cb_reefcloud_site.addItem(site["name"], userData=site["id"])
+                self.site_lookup[site["id"]] = site["name"]
+
+    def rename_folders(self):
+        old_survey_id = self.survey_id
+        self.ui_to_data()
+        self.survey_id = None
+        rename_folders(state.model, self.time_zone)
+        self.load_explore_surveys_tree()
+        self.survey_id = old_survey_id
+        self.data_to_ui()
+        print ("rename done")
 
     def load_sequence_frame(self, ui_file, parent_widget):
         clearLayout(parent_widget.layout())
@@ -164,8 +212,9 @@ class ExploreComponent:
         if self.marks_model is not None:
             self.mark_filename = self.marks_model.photo_file(index.row())
             self.marks_widget.lblFileName.setText(self.marks_model.photo_file_name(index.row()))
-            label:QLabel = self.marks_widget.lblPhoto
-            pixmap = QPixmap(self.mark_filename).scaled(label.size().width(), label.size().height(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            label: QLabel = self.marks_widget.lblPhoto
+            pixmap = QPixmap(self.mark_filename).scaled(label.size().width(), label.size().height(), Qt.KeepAspectRatio,
+                                                        Qt.SmoothTransformation)
             label.setPixmap(pixmap)
 
     def open_folder(self):
@@ -181,20 +230,21 @@ class ExploreComponent:
                 fname = self.mark_filename.replace("//", "/")
                 fname = fname.replace("/", "\\")
                 command = f'explorer.exe /select,"{fname}"'
-                print (command)
+                print(command)
                 subprocess.call(command)
             except:
                 os.startfile(self.mark_filename, "open")
 
-    def explore_tree_selection_changed(self,  item_selection:QItemSelection):
+    def explore_tree_selection_changed(self, item_selection: QItemSelection):
         if self.is_modified():
-            reply = QMessageBox.question(self.explore_widget, 'Save?', "Do you want to save your changes?", QMessageBox.Yes | QMessageBox.No)
+            reply = QMessageBox.question(self.explore_widget, 'Save?', "Do you want to save your changes?",
+                                         QMessageBox.Yes | QMessageBox.No)
 
             if reply == QMessageBox.Yes:
                 self.ui_to_data()
 
         if len(item_selection.indexes()) == 0:
-            return()
+            return ()
 
         for index in item_selection.indexes():
             self.survey_id = index.data(Qt.UserRole)
@@ -255,16 +305,18 @@ class ExploreComponent:
         if self.survey_id is None:
             return False
         return self.survey_col("site") != self.metadata_widget.ed_site.text() or \
-            self.survey_col("operator") != self.metadata_widget.ed_operator.text() or \
-            self.survey_col("observer") != self.metadata_widget.ed_observer.text() or \
-            self.survey_col("vessel") != self.metadata_widget.ed_vessel.text() or \
-            self.survey_col("sea") != self.metadata_widget.cb_sea.currentText() or \
-            self.survey_col("wind") != self.metadata_widget.cb_wind.currentText() or \
-            self.survey_col("cloud") != self.metadata_widget.cb_cloud.currentText() or \
-            self.survey_col("visibility") != self.metadata_widget.cb_vis.currentText() or \
-            self.survey_col("comments") != self.metadata_widget.ed_comments.toPlainText() or \
-            self.survey_col("tide") != self.metadata_widget.cb_tide.currentText() or \
-            self.survey_col("friendly_name") != self.metadata_widget.ed_name.text()
+               self.survey_col("operator") != self.metadata_widget.ed_operator.text() or \
+               self.survey_col("observer") != self.metadata_widget.ed_observer.text() or \
+               self.survey_col("vessel") != self.metadata_widget.ed_vessel.text() or \
+               self.survey_col("sea") != self.metadata_widget.cb_sea.currentText() or \
+               self.survey_col("wind") != self.metadata_widget.cb_wind.currentText() or \
+               self.survey_col("cloud") != self.metadata_widget.cb_cloud.currentText() or \
+               self.survey_col("visibility") != self.metadata_widget.cb_vis.currentText() or \
+               self.survey_col("comments") != self.metadata_widget.ed_comments.toPlainText() or \
+               self.survey_col("tide") != self.metadata_widget.cb_tide.currentText() or \
+               self.survey_col("friendly_name") != self.metadata_widget.ed_name.text() or \
+               self.survey_col("reefcloud_project") != self.metadata_widget.cb_reefcloud_project.currentText() or \
+               self.survey()["reefcloud_site"] != self.metadata_widget.cb_reefcloud_site.currentData()
 
     def ui_to_data(self):
         if self.thumbnail_model is not None:
@@ -282,6 +334,8 @@ class ExploreComponent:
             self.survey()["comments"] = self.metadata_widget.ed_comments.toPlainText()
             self.survey()["tide"] = self.metadata_widget.cb_tide.currentText()
             self.survey()["friendly_name"] = self.metadata_widget.ed_name.text()
+            self.survey()["reefcloud_project"] = self.metadata_widget.cb_reefcloud_project.currentText()
+            self.survey()["reefcloud_site"] = self.metadata_widget.cb_reefcloud_site.currentData()
 
             save_survey(self.survey(), state.config.data_folder, state.config.backup_data_folder)
 
@@ -297,6 +351,17 @@ class ExploreComponent:
             self.metadata_widget.cb_cloud.setCurrentText(self.survey_col("cloud"))
             self.metadata_widget.cb_vis.setCurrentText(self.survey_col("visibility"))
             self.metadata_widget.cb_tide.setCurrentText(self.survey_col("tide"))
+
+            self.metadata_widget.cb_reefcloud_project.setCurrentText(self.survey_col("reefcloud_project"))
+            self.cb_reefcloud_project_changed(None)
+
+            site_id = self.survey()["reefcloud_site"]
+            try:
+                site_name = self.site_lookup[site_id]
+            except:
+                site_name = ""
+            self.metadata_widget.cb_reefcloud_site.setCurrentText(site_name)
+
             self.metadata_widget.ed_comments.setPlainText(self.survey_col("comments"))
 
             self.info_widget.lb_sequence_name.setText(self.survey_col("id"))
@@ -316,7 +381,7 @@ class ExploreComponent:
         self.info_widget.lbl_missing_pressure.setText(str(survey_stats.missing_pressure_depth))
 
     def load_thumbnails(self):
-        list_thumbnails:QListView = self.explore_widget.lv_thumbnails
+        list_thumbnails: QListView = self.explore_widget.lv_thumbnails
         list_thumbnails.setViewMode(QListWidget.IconMode)
         list_thumbnails.setIconSize(QSize(200, 200))
         list_thumbnails.setResizeMode(QListWidget.Adjust)
@@ -324,17 +389,16 @@ class ExploreComponent:
             folder = self.survey_col('image_folder')
             samba = self.survey()["samba"]
             file_ops = get_file_ops(samba)
-            photos = [name for name in file_ops.listdir(folder) if name.lower().endswith(".jpg") or name.lower().endswith(".jpeg")]
+            photos = [name for name in file_ops.listdir(folder) if
+                      name.lower().endswith(".jpg") or name.lower().endswith(".jpeg")]
             self.thumbnail_model = LazyListModel(photos, folder, self.survey_id, samba)
             list_thumbnails.setModel(self.thumbnail_model)
 
-    def load_explore_surveys_tree(self, aims_status_dialog):
+    def load_explore_surveys_tree(self):
         self.ui_to_data()
-        update_data_folder_from_tree(self.explore_widget.folderTree)
 
         state.config.camera_connected = False
         state.load_data_model(aims_status_dialog=self.aims_status_dialog)
-        state.config.save_config_file()
         tree = self.explore_widget.surveysTree
         self.surveys_tree_model = make_tree_model(timezone=self.time_zone, include_camera=False, checkable=False)
         tree.setModel(self.surveys_tree_model)
@@ -348,7 +412,7 @@ class ExploreComponent:
             html_str = map_html_str(folder, False)
             # print (html_str)
             if html_str is not None:
-                view:QWebEngineView = self.explore_widget.mapView
+                view: QWebEngineView = self.explore_widget.mapView
                 view.setHtml(html_str)
 
     def non_survey_to_stats_ui(self, name):
@@ -357,5 +421,3 @@ class ExploreComponent:
         self.info_widget.lb_end_time.setText("")
         self.info_widget.lb_start_waypoint.setText("")
         self.info_widget.lb_end_waypoint.setText("")
-
-

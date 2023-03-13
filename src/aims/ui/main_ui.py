@@ -22,6 +22,7 @@ from aims.operations.aims_status_dialog import AimsStatusDialog
 from aims.operations.archive_checker import ArchiveChecker
 from aims.operations.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.ui.main_ui_components.archive_component import ArchiveComponent
+from aims.ui.main_ui_components.disk_drives_component import DiskDrivesComponent
 from aims.ui.main_ui_components.download_component import DownloadComponent
 from aims.ui.main_ui_components.explore_component import ExploreComponent
 from aims.ui.main_ui_components.upload_component import UploadComponent
@@ -70,6 +71,7 @@ class MainUi(QMainWindow):
         self.download_component = DownloadComponent(self)
         self.explore_component = ExploreComponent()
         self.upload_component = UploadComponent()
+        self.disk_drives_component = DiskDrivesComponent(self)
         self.archive_component = None
 
         self.workflow_widget = None
@@ -87,7 +89,8 @@ class MainUi(QMainWindow):
         self.aims_status_dialog = AimsStatusDialog(self.ui)
         self.archive_checker = ArchiveChecker()
         self.update_status()
-        self.connected = False
+        self.camera_connected = False
+        self.drives_connected = False
 
 
     def setup_timezone(self):
@@ -133,7 +136,6 @@ class MainUi(QMainWindow):
         if self.explore_component is not None:
             self.explore_component.time_zone = self.time_zone
 
-
     def setup_status(self):
         status_widget_file = f'{state.meipass}resources/status-bar.ui'
         self.status_widget: QWidget = uic.loadUi(status_widget_file)
@@ -141,16 +143,18 @@ class MainUi(QMainWindow):
         self.status_widget.refreshButton.clicked.connect(self.update_status)
 
     def highlight_button(self, button):
+        remove_button_border(self.workflow_widget.connectDisksButton)
+        self.workflow_widget.connectDisksButton.setEnabled(True)
         remove_button_border(self.workflow_widget.connectButton)
         self.workflow_widget.connectButton.setEnabled(True)
         remove_button_border(self.workflow_widget.downloadButton)
-        self.workflow_widget.downloadButton.setEnabled(self.connected)
+        self.workflow_widget.downloadButton.setEnabled(self.camera_connected and self.drives_connected)
         remove_button_border(self.workflow_widget.archiveButton)
-        self.workflow_widget.archiveButton.setEnabled(self.connected)
+        self.workflow_widget.archiveButton.setEnabled(self.camera_connected and self.drives_connected)
         remove_button_border(self.workflow_widget.exploreButton)
-        self.workflow_widget.exploreButton.setEnabled(True)
+        self.workflow_widget.exploreButton.setEnabled(self.drives_connected)
         remove_button_border(self.workflow_widget.uploadButton)
-        self.workflow_widget.uploadButton.setEnabled(True)
+        self.workflow_widget.uploadButton.setEnabled(self.drives_connected)
 
         add_button_border(button)
         button.setEnabled(False)
@@ -163,9 +167,12 @@ class MainUi(QMainWindow):
         self.workflow_widget.downloadButton.clicked.connect(self.load_download_screen)
         self.workflow_widget.downloadButton.setEnabled(False)
         self.workflow_widget.archiveButton.setEnabled(False)
+        self.workflow_widget.exploreButton.setEnabled(False)
+        self.workflow_widget.uploadButton.setEnabled(False)
         self.workflow_widget.exploreButton.clicked.connect(self.load_explore_screen)
         self.workflow_widget.uploadButton.clicked.connect(self.load_upload_screen)
         self.workflow_widget.archiveButton.clicked.connect(self.load_archive_screen)
+        self.workflow_widget.connectDisksButton.clicked.connect(self.load_connect_disks_screen)
 
     def ui_to_data(self):
         if self.current_screen == "explore":
@@ -187,9 +194,6 @@ class MainUi(QMainWindow):
         self.download_component.download_widget = self.load_main_frame(f'{state.meipass}resources/download.ui')
         self.download_component.load_download_screen(self.fixed_drives, time_zone=self.time_zone, aims_status_dialog=self.aims_status_dialog)
         self.highlight_button(self.workflow_widget.downloadButton)
-        self.download_component.download_widget.refreshPrimaryButton.clicked.connect(self.update_status)
-        self.download_component.download_widget.refreshSecondaryButton.clicked.connect(self.update_status)
-
 
     def load_start_screen(self):
         self.load_main_frame(f'{state.meipass}resources/start.ui')
@@ -202,7 +206,8 @@ class MainUi(QMainWindow):
         for d in drives:
             drive_type = win32file.GetDriveType(d)
             if drive_type == win32file.DRIVE_FIXED or drive_type == win32file.DRIVE_REMOVABLE:
-                self.fixed_drives.append(d)
+                label = win32api.GetVolumeInformation(d)[0]
+                self.fixed_drives.append({"letter": d, "label": label})
 
     def load_explore_screen(self):
         self.ui_to_data()
@@ -211,9 +216,6 @@ class MainUi(QMainWindow):
         self.explore_component.explore_widget = self.load_main_frame(f'{state.meipass}resources/explore.ui')
 
         self.explore_component.load_explore_screen(self.fixed_drives, self.aims_status_dialog, self.time_zone)
-        self.explore_component.explore_widget.refreshButton.clicked.connect(self.update_status)
-
-
 
     def load_archive_screen(self):
         self.ui_to_data()
@@ -231,13 +233,24 @@ class MainUi(QMainWindow):
         self.connect_widget.btnConnect.clicked.connect(self.connect)
         self.highlight_button(self.workflow_widget.connectButton)
 
+    def load_connect_disks_screen(self):
+        self.current_screen = "connect_disks"
+        self.disk_drives_component.widget = self.load_main_frame(f'{state.meipass}resources/disk_drives.ui')
+        self.highlight_button(self.workflow_widget.connectDisksButton)
+        self.disk_drives_component.load_screen(self.fixed_drives, self.aims_status_dialog)
+
+        self.disk_drives_component.widget.connectButton.clicked.connect(self.connect_disks)
+
+    def connect_disks(self):
+        self.drives_connected = self.disk_drives_component.connect()
+        if self.drives_connected:
+            self.load_connect_screen()
 
     def load_main_frame(self, ui_file):
         clearLayout(self.ui.mainFrame.layout())
         widget: QWidget = uic.loadUi(ui_file)
         self.ui.mainFrame.layout().addWidget(widget)
         return widget
-
 
     def connect(self):
         try:
@@ -254,11 +267,11 @@ class MainUi(QMainWindow):
         state.load_camera_data_model(aims_status_dialog=self.aims_status_dialog)
         if state.model.data_loaded:
             self.connect_widget.lblMessage.setText("Connected Successfully")
-            self.workflow_widget.downloadButton.setEnabled(True)
-            self.workflow_widget.archiveButton.setEnabled(True)
-            self.load_download_screen()
+            if self.drives_connected:
+                self.load_download_screen()
             state.reefscan_id = remove_control_characters(state.read_reefscan_id())
-            self.connected = True
+            self.camera_connected = True
+            self.update_status()
         else:
             self.connect_widget.lblMessage.setText(state.model.message)
 
@@ -276,9 +289,9 @@ class MainUi(QMainWindow):
         self.load_fixed_drives()
         local_space = ""
         for drive in self.fixed_drives:
-            du = shutil.disk_usage(drive)
+            du = shutil.disk_usage(drive["letter"])
             gbFree = round(du.free / 1000000000)
-            local_space = local_space + f"{drive} {gbFree} Gb Free \n"
+            local_space = local_space + f"{drive['letter']}({drive['label']}) {gbFree} Gb Free \n"
         self.status_widget.lblLocal.setText(local_space)
 
         if self.current_screen == "download":
