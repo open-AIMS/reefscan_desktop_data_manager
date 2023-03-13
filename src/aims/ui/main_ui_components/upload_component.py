@@ -24,17 +24,26 @@ class UploadComponent:
 
     def check_reefcloud_metadata(self, surveys):
         for survey_id, survey in surveys.items():
-            if not 'reefcloud_project' in survey:
-                raise Exception("Missing reefcloud project with " + survey["id"])
+            try:
+                best_name = survey("friendly_name")
+            except:
+                best_name = None
+            if best_name is None or best_name == "":
+                best_name = survey["id"]
 
-            if not state.config.valid_reefcloud_project(survey['reefcloud_project']):
-                raise Exception("Invalid reefcloud project with " + survey["id"])
+            if not 'reefcloud_project' in survey:
+                raise Exception(f"Missing reefcloud project for {best_name}")
+
+            project_ = survey['reefcloud_project']
+            if not state.config.valid_reefcloud_project(project_):
+                raise Exception(f"Invalid reefcloud project {project_} for {best_name}")
 
             if not 'reefcloud_site' in survey:
-                raise Exception("Missing reefcloud site with " + survey["id"])
+                raise Exception(f"Missing reefcloud site for {best_name}")
 
-            if not state.config.valid_reefcloud_site(survey['reefcloud_site']):
-                raise Exception("Invalid reefcloud site with " + survey["id"])
+            site_ = survey['reefcloud_site']
+            if not state.config.valid_reefcloud_site(site_, project_):
+                raise Exception(f"Invalid reefcloud site {site_} for {best_name}")
 
 
     def upload(self):
@@ -46,12 +55,12 @@ class UploadComponent:
 
         self.check_reefcloud_metadata(surveys)
 
-
         for survey_id, survey in surveys.items():
             survey_folder = survey["image_folder"]
-            selected_photo_infos = sub_sample_dir(survey_folder)
+            subsampled_image_folder = survey["image_folder"].replace("/reefscan/", "/reefscan_reefcloud/")
+
+            selected_photo_infos = sub_sample_dir(survey_folder, subsampled_image_folder)
             print (selected_photo_infos)
-            subsampled_image_folder = survey_folder + "/reefcloud"
             write_reefcloud_photos_json(survey_id=survey_id,
                                         outputfile=f"{subsampled_image_folder}/photos.json",
                                         selected_photo_infos=selected_photo_infos

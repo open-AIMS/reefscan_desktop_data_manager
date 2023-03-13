@@ -54,6 +54,7 @@ class ExploreComponent:
         self.aims_status_dialog = None
 
         self.time_zone = None
+        self.site_lookup = {}
 
     def tab_changed(self, index):
         print(index)
@@ -77,7 +78,6 @@ class ExploreComponent:
         self.metadata_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_metadata.ui', self.explore_widget.metadata_tab)
         self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui', self.explore_widget.marks_tab)
 
-        self.explore_widget.loadButton.clicked.connect(self.load_explore_surveys_tree)
         self.lookups()
         self.explore_widget.tabWidget.currentChanged.connect(self.tab_changed)
         self.explore_widget.renameFoldersButton.clicked.connect(self.rename_folders)
@@ -140,7 +140,7 @@ class ExploreComponent:
         for project in state.config.reefcloud_projects:
             self.metadata_widget.cb_reefcloud_project.addItem(project)
 
-        self.metadata_widget.cb_reefcloud_site.addItem("")
+        self.metadata_widget.cb_reefcloud_site.addItem("", userData="")
 
         self.metadata_widget.cb_reefcloud_project.currentIndexChanged.connect(self.cb_reefcloud_project_changed)
 
@@ -171,10 +171,13 @@ class ExploreComponent:
             self.metadata_widget.cb_reefcloud_site.setEnabled(True)
             # Clear old options
             self.metadata_widget.cb_reefcloud_site.clear()
-            self.metadata_widget.cb_reefcloud_site.addItem("")
+            self.metadata_widget.cb_reefcloud_site.addItem("", userData="")
             # Add sites for that project to the sites combo box
-            for site in state.config.reefcloud_sites[project]:
-                self.metadata_widget.cb_reefcloud_site.addItem(site)
+            sites = state.config.reefcloud_sites[project]
+            for site in sites:
+                self.metadata_widget.cb_reefcloud_site.addItem(site["name"], userData=site["id"])
+                self.site_lookup[site["id"]] = site["name"]
+
     def rename_folders(self):
         old_survey_id = self.survey_id
         self.ui_to_data()
@@ -313,7 +316,7 @@ class ExploreComponent:
                self.survey_col("tide") != self.metadata_widget.cb_tide.currentText() or \
                self.survey_col("friendly_name") != self.metadata_widget.ed_name.text() or \
                self.survey_col("reefcloud_project") != self.metadata_widget.cb_reefcloud_project.currentText() or \
-               self.survey_col("reefcloud_site") != self.metadata_widget.cb_reefcloud_site.currentText()
+               self.survey()["reefcloud_site"] != self.metadata_widget.cb_reefcloud_site.currentData()
 
     def ui_to_data(self):
         if self.thumbnail_model is not None:
@@ -332,7 +335,7 @@ class ExploreComponent:
             self.survey()["tide"] = self.metadata_widget.cb_tide.currentText()
             self.survey()["friendly_name"] = self.metadata_widget.ed_name.text()
             self.survey()["reefcloud_project"] = self.metadata_widget.cb_reefcloud_project.currentText()
-            self.survey()["reefcloud_site"] = self.metadata_widget.cb_reefcloud_site.currentText()
+            self.survey()["reefcloud_site"] = self.metadata_widget.cb_reefcloud_site.currentData()
 
             save_survey(self.survey(), state.config.data_folder, state.config.backup_data_folder)
 
@@ -350,7 +353,14 @@ class ExploreComponent:
             self.metadata_widget.cb_tide.setCurrentText(self.survey_col("tide"))
 
             self.metadata_widget.cb_reefcloud_project.setCurrentText(self.survey_col("reefcloud_project"))
-            self.metadata_widget.cb_reefcloud_site.setCurrentText(self.survey_col("reefcloud_site"))
+            self.cb_reefcloud_project_changed(None)
+
+            site_id = self.survey()["reefcloud_site"]
+            try:
+                site_name = self.site_lookup[site_id]
+            except:
+                site_name = ""
+            self.metadata_widget.cb_reefcloud_site.setCurrentText(site_name)
 
             self.metadata_widget.ed_comments.setPlainText(self.survey_col("comments"))
 

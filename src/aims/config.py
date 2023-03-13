@@ -115,7 +115,7 @@ class Config(object):
         for project in reefcloud_sites_json:
             sites[project] = []
             for site in reefcloud_sites_json[project]:
-                sites[project].append(site['name'])
+                sites[project].append({"name": site['name'], "id": site["id"]})
         return sites
 
     def valid_reefcloud_project(self, project_name):
@@ -124,8 +124,9 @@ class Config(object):
         else:
             return False
 
-    def valid_reefcloud_site(self, site_name):
-        if site_name in self.reefcloud_sites:
-            return True
-        else:
-            return False
+    def valid_reefcloud_site(self, site_id, project_name):
+        for site in self.reefcloud_sites[project_name]:
+            if site_id == site["id"]:
+                return True
+
+        return False

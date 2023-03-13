@@ -22,8 +22,7 @@ def should_keep(wp, old_wp, target_distance):
 target_distance = 5
 
 
-def sub_sample_dir(image_dir):
-    sample_dir = f"{image_dir}/reefcloud"
+def sub_sample_dir(image_dir, sample_dir):
     if os.path.exists (sample_dir):
         shutil.rmtree(sample_dir)
     os.makedirs(sample_dir, exist_ok=True)
