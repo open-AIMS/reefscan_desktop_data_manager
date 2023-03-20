@@ -14,4 +14,4 @@ class SyncFromHardwareOperation(AbstractOperation):
         self.surveys = surveys
 
     def _run(self):
-        return self.sync.sync(survey_ids=self.surveys)
+        return self.sync.sync(survey_infos=self.surveys)

@@ -6,13 +6,13 @@ from aims import state
 
 class SurveyStats:
     def __init__(self):
-        self.photos = None
+        self.photos = 0
         self.missing_ping_depth = 0
         self.missing_pressure_depth = 0
         self.missing_gps = 0
 
     def calculate(self, survey):
-        folder = survey["image_folder"]
+        folder = survey.folder
         csv_file_name = folder + "/photo_log.csv"
         if os.path.exists(csv_file_name):
             with open(csv_file_name, mode="r") as file:
@@ -31,9 +31,10 @@ class SurveyStats:
             except:
                 pass
 
-    def calculate_surveys(self, survey_ids):
-        for survey_id in survey_ids:
-            survey = state.model.surveys_data[survey_id]
+    def calculate_surveys(self, survey_infos):
+        self.photos = 0
+        for survey_info in survey_infos:
+            survey = state.model.surveys_data[survey_info["survey_id"]]
             survey_stats = SurveyStats()
             survey_stats.calculate(survey)
             self.photos += survey_stats.photos

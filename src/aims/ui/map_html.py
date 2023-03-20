@@ -95,7 +95,11 @@ stupid = """
 
 
 def map_html_str(folder, samba):
-    track_str = str(track(folder, samba))
-    if track_str is None:
-        return None
-    return html_str.replace("___PASTE_TRACK_HERE___", track_str)
+    try:
+        track_str = str(track(folder, samba))
+        if track_str is None:
+            return None
+        return html_str.replace("___PASTE_TRACK_HERE___", track_str)
+    except Exception as e:
+        raise UserWarning(e)
+

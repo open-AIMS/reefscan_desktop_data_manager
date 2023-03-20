@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QProgressDialog
 from PyQt5.QtCore import Qt
 import logging
-from threading import RLock
+from threading import RLock, Timer
 from multiprocessing.pool import ThreadPool
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,7 @@ class AimsStatusDialog(object):
         self.progress_dialog.setValue(1)
         self.progress_dialog.setMinimumDuration(10)
         self.progress_dialog.setWindowModality(Qt.WindowModal)
+        # self.progress_dialog.setAutoClose(True)
         self.progress_dialog.setAttribute(Qt.WA_DeleteOnClose, True);
 
     def set_progress_value(self, params):
@@ -54,6 +55,8 @@ class AimsStatusDialog(object):
 
     def close(self):
         self.progress_dialog.close()
+        # timer = Timer(0.5, self.progress_dialog.close)
+        # timer.start()
 
     def throw_exception(self, e):
         logger.info("throw exception")

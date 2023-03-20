@@ -9,22 +9,21 @@ from aims.operations.abstract_operation import AbstractOperation
 logger = logging.getLogger(__name__)
 
 
-class LoadDataOperation(AbstractOperation):
+class LoadArchiveDataOperation(AbstractOperation):
 
-    def __init__(self, model: BasicModel, camera_connected):
+    def __init__(self, model: BasicModel):
         super().__init__()
         self.model = model
         self.finished=False
         self.success=False
         self.message = ""
-        self.camera_connected = camera_connected
 
     def _run(self):
         self.finished=False
         self.success = False
         logger.info("start load data")
         try:
-            self.model.read_from_files(self.progress_queue, self.camera_connected)
+            self.model.load_camera_archive_data(self.progress_queue)
             self.success = True
         except Exception as e:
             logger.error("ERROR ERROR")

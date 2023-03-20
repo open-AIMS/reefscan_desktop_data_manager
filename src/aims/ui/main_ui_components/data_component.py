@@ -1,9 +1,13 @@
 import datetime
 import logging
 import os
+import shutil
 import subprocess
+import time
+from time import process_time
+from fabric import Connection
 
-from PyQt5 import QtCore, uic, QtGui
+from PyQt5 import QtCore, uic, QtGui, QtWidgets, QtTest
 from PyQt5.QtCore import QModelIndex, QItemSelection, QSize, Qt
 from PyQt5.QtGui import QPixmap, QStandardItem
 from PyQt5.QtWebEngineWidgets import QWebEngineView
@@ -37,15 +41,16 @@ def utc_to_local(utc_str, timezone):
         return utc_str
 
 
-class ExploreComponent:
-    def __init__(self):
-        self.explore_widget = None
+class DataComponent:
+    def __init__(self, hint_function):
+        self.data_widget = None
         self.metadata_widget = None
         self.info_widget = None
         self.marks_widget = None
 
         self.camera_model = None
         self.survey_id = None
+        self.survey_list = None
         self.thumbnail_model = None
 
         self.marks_table: None
@@ -55,55 +60,200 @@ class ExploreComponent:
 
         self.time_zone = None
         self.site_lookup = {}
+        self.hint_function = hint_function
 
     def tab_changed(self, index):
         print(index)
-        if index == 3:
+        if index == 2:
             self.draw_map()
 
-    def load_explore_screen(self, fixed_drives, aims_status_dialog, time_zone):
+    def load_data_screen(self, fixed_drives, aims_status_dialog, time_zone):
 
         self.time_zone = time_zone
 
         self.aims_status_dialog = aims_status_dialog
 
         self.info_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_info.ui',
-                                                    self.explore_widget.info_tab)
+                                                    self.data_widget.info_tab)
         self.metadata_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_metadata.ui',
-                                                        self.explore_widget.metadata_tab)
+                                                        self.data_widget.metadata_tab)
         self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui',
-                                                     self.explore_widget.marks_tab)
+                                                     self.data_widget.marks_tab)
 
         self.info_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_info.ui',
-                                                    self.explore_widget.info_tab)
+                                                    self.data_widget.info_tab)
         self.metadata_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_metadata.ui',
-                                                        self.explore_widget.metadata_tab)
+                                                        self.data_widget.metadata_tab)
         self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui',
-                                                     self.explore_widget.marks_tab)
+                                                     self.data_widget.marks_tab)
 
         self.lookups()
-        self.explore_widget.tabWidget.currentChanged.connect(self.tab_changed)
-        self.explore_widget.renameFoldersButton.clicked.connect(self.rename_folders)
-        self.explore_widget.refreshButton.clicked.connect(self.refresh)
+        self.data_widget.tabWidget.currentChanged.connect(self.tab_changed)
+        self.data_widget.renameFoldersButton.clicked.connect(self.rename_folders)
+        self.data_widget.refreshButton.clicked.connect(self.refresh)
 
         self.marks_widget.btnOpenMarkFolder.clicked.connect(self.open_mark_folder)
         self.marks_widget.btnOpenMark.clicked.connect(self.open_mark)
-        self.explore_widget.open_folder_button.clicked.connect(self.open_folder)
-        self.explore_widget.tabWidget.setCurrentIndex(0)
-        self.explore_widget.tabWidget.setEnabled(False)
+        self.data_widget.open_folder_button.clicked.connect(self.open_folder)
+        self.data_widget.tabWidget.setCurrentIndex(0)
+        self.data_widget.tabWidget.setEnabled(False)
         self.survey_id = None
         self.metadata_widget.cancelButton.clicked.connect(self.data_to_ui)
         self.metadata_widget.saveButton.clicked.connect(self.ui_to_data)
 
         self.load_explore_surveys_tree()
 
+
+        self.setup_camera_tree()
+        self.data_widget.downloadButton.clicked.connect(self.download)
+        self.data_widget.showDownloadedCheckBox.stateChanged.connect(self.show_downloaded_changed)
+        self.data_widget.deleteDownloadedButton.clicked.connect(self.delete_downloaded)
+
+        if state.model.camera_data_loaded:
+            self.data_widget.camera_not_connected_label.setVisible(False)
+            self.data_widget.camera_panel.setVisible(True)
+        else:
+            self.data_widget.camera_not_connected_label.setVisible(True)
+            self.data_widget.camera_panel.setVisible(False)
+
+        self.initial_disables()
+        self.set_hint()
+
+    def disable_save_cancel(self):
+        self.metadata_widget.saveButton.setEnabled(False)
+        self.metadata_widget.cancelButton.setEnabled(False)
+        self.metadata_widget.ed_site.textChanged.connect(self.enable_save_cancel)
+        self.metadata_widget.ed_operator.textChanged.connect(self.enable_save_cancel)
+        self.metadata_widget.ed_operator.textChanged.connect(self.enable_save_cancel)
+        self.metadata_widget.ed_observer.textChanged.connect(self.enable_save_cancel)
+        self.metadata_widget.ed_vessel.textChanged.connect(self.enable_save_cancel)
+        self.metadata_widget.cb_sea.currentTextChanged.connect(self.enable_save_cancel)
+        self.metadata_widget.cb_wind.currentTextChanged.connect(self.enable_save_cancel)
+        self.metadata_widget.cb_cloud.currentTextChanged.connect(self.enable_save_cancel)
+        self.metadata_widget.cb_vis.currentTextChanged.connect(self.enable_save_cancel)
+        self.metadata_widget.ed_comments.textChanged.connect(self.enable_save_cancel)
+        self.metadata_widget.cb_tide.currentTextChanged.connect(self.enable_save_cancel)
+        self.metadata_widget.ed_name.textChanged.connect(self.enable_save_cancel)
+        self.metadata_widget.cb_reefcloud_project.currentTextChanged.connect(self.enable_save_cancel)
+        self.metadata_widget.cb_reefcloud_site.currentTextChanged.connect(self.enable_save_cancel)
+
+
+    def enable_save_cancel(self):
+        self.metadata_widget.saveButton.setEnabled(True)
+        self.metadata_widget.cancelButton.setEnabled(True)
+
+    def initial_disables(self):
+        self.disable_all_tabs(0)
+        self.data_widget.downloadButton.setEnabled(False)
+        self.data_widget.deleteDownloadedButton.setEnabled(False)
+        self.data_widget.showDownloadedCheckBox.setChecked(False)
+        self.data_widget.showDownloadedCheckBox.setEnabled(len(state.model.archived_surveys) > 0)
+
+    def checked_surveys(self, parent: QModelIndex = QModelIndex()):
+        model = self.camera_model
+        surveys = []
+        for r in range(model.rowCount(parent)):
+            index: QModelIndex = model.index(r, 0, parent)
+            model_item = model.itemFromIndex(index)
+            if model_item.isCheckable() and model_item.checkState() == Qt.Checked:
+                survey_id = index.data(Qt.UserRole)
+                if survey_id is not None:
+                    surveys.append(survey_id)
+
+            if model.hasChildren(index):
+                child_surveys = self.checked_surveys(parent=index)
+                surveys = surveys + child_surveys
+
+        return surveys
+
+    def show_downloaded_changed(self):
+        self.setup_camera_tree()
+        self.data_widget.deleteDownloadedButton.setEnabled(self.data_widget.showDownloadedCheckBox.isChecked())
+
+
+    def delete_downloaded(self):
+        reply = QMessageBox.question(self.data_widget, 'Delete?', "Are you sure you want to delete the downloaded surveys from the camera?",
+                                     QMessageBox.Yes | QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            archive_folder = "/media/jetson/*/images/archive"
+            conn = Connection(
+                "jetson@" + state.config.camera_ip,
+                connect_kwargs={"password": "jetson"}
+            )
+            conn.run("rm -r " + archive_folder)
+
+        state.model.archived_data_loaded = False
+        self.setup_camera_tree()
+
+    def download(self):
+        self.check_save()
+        self.survey_id = None
+        self.data_widget.surveysTree.selectionModel().clearSelection()
+        self.data_widget.cameraTree.selectionModel().clearSelection()
+
+        start = process_time()
+        surveys = self.checked_surveys()
+        self.check_space(surveys)
+
+        if len(surveys) == 0:
+            raise Exception("Please select at least one survey")
+
+        operation = SyncFromHardwareOperation(state.config.hardware_data_folder, state.primary_folder, state.backup_folder, surveys, state.config.camera_samba)
+        operation.update_interval = 1
+        self.aims_status_dialog.set_operation_connections(operation)
+        # # operation.after_run.connect(self.after_sync)
+        logger.info("done connections")
+        result = self.aims_status_dialog.threadPool.apply_async(operation.run)
+        logger.info("thread started")
+        while not result.ready():
+            QApplication.processEvents()
+        logger.info("thread finished")
+        self.aims_status_dialog.close()
+
+        state.load_camera_data_model(aims_status_dialog=self.aims_status_dialog)
+
+        state.model.archived_data_loaded = False
+        self.setup_camera_tree()
+        self.load_explore_surveys_tree()
+
+        end = process_time()
+        minutes = (end-start)/60
+
+        print(f"Download Finished in {minutes} minutes")
+        errorbox = QtWidgets.QMessageBox()
+        errorbox.setText("Download finished")
+        errorbox.setDetailedText(f"Finished in {minutes} minutes")
+        self.aims_status_dialog.progress_dialog.close()
+        QtTest.QTest.qWait(1000)
+        errorbox.exec_()
+        self.initial_disables()
+
+    def setup_camera_tree(self):
+        show_downloaded = self.data_widget.showDownloadedCheckBox.isChecked()
+        state.load_archive_data_model(aims_status_dialog=self.aims_status_dialog)
+        camera_tree = self.data_widget.cameraTree
+        self.camera_model = make_tree_model(timezone=self.time_zone, include_local=False, include_archives=show_downloaded)
+        camera_tree.setModel(self.camera_model)
+        self.camera_model.itemChanged.connect(self.camera_on_itemChanged)
+        self.data_widget.cameraTree.selectionModel().selectionChanged.connect(self.camera_tree_selection_changed)
+        camera_tree.expandRecursively(self.camera_model.invisibleRootItem().index(), 3)
+
+    def camera_on_itemChanged(self, item):
+        print ("Item change")
+        item.cascade_check()
+        surveys = self.checked_surveys()
+        self.data_widget.downloadButton.setEnabled(len(surveys) > 0)
+        self.set_hint()
+
+
     def lookups(self):
 
         self.metadata_widget.cb_tide.addItem("")
-        self.metadata_widget.cb_tide.addItem("Falling")
-        self.metadata_widget.cb_tide.addItem("High")
-        self.metadata_widget.cb_tide.addItem("Low")
-        self.metadata_widget.cb_tide.addItem("Rising")
+        self.metadata_widget.cb_tide.addItem("falling")
+        self.metadata_widget.cb_tide.addItem("high")
+        self.metadata_widget.cb_tide.addItem("low")
+        self.metadata_widget.cb_tide.addItem("rising")
 
         self.metadata_widget.cb_sea.addItem("")
         self.metadata_widget.cb_sea.addItem("calm")
@@ -121,6 +271,7 @@ class ExploreComponent:
         self.metadata_widget.cb_wind.addItem(">30")
 
         self.metadata_widget.cb_cloud.addItem("")
+        self.metadata_widget.cb_cloud.addItem("0")
         self.metadata_widget.cb_cloud.addItem("1")
         self.metadata_widget.cb_cloud.addItem("2")
         self.metadata_widget.cb_cloud.addItem("3")
@@ -152,6 +303,7 @@ class ExploreComponent:
         self.ui_to_data()
         self.survey_id = None
         self.load_explore_surveys_tree()
+        self.setup_camera_tree()
         self.survey_id = old_survey_id
         self.data_to_ui()
         print("refresh done")
@@ -235,24 +387,80 @@ class ExploreComponent:
             except:
                 os.startfile(self.mark_filename, "open")
 
-    def explore_tree_selection_changed(self, item_selection: QItemSelection):
-        if self.is_modified():
-            reply = QMessageBox.question(self.explore_widget, 'Save?', "Do you want to save your changes?",
-                                         QMessageBox.Yes | QMessageBox.No)
+    def camera_tree_selection_changed(self, item_selection: QItemSelection):
+        print("camera tree changed")
+        self.check_save()
+        self.data_widget.surveysTree.selectionModel().clearSelection()
+        if len(item_selection.indexes()) == 0:
+            return ()
 
-            if reply == QMessageBox.Yes:
-                self.ui_to_data()
+        selected_index = self.find_selected_tree_index(item_selection)
+        self.set_survey_id_and_list_from_selected_index(selected_index)
+
+        print(f"survey_id {self.survey_id}")
+        print(f"survey {self.survey()}")
+
+        if self.survey_id is None:
+            self.disable_all_tabs(0)
+        else:
+            self.enable_metadata_tab_only()
+
+        self.data_to_ui()
+        self.set_hint()
+
+
+    def set_survey_id_and_list_from_selected_index(self, selected_index):
+        selected_index_data = selected_index.data(Qt.UserRole)
+        if selected_index_data == None:
+            self.survey_id = None
+            self.survey_list = None
+        else:
+            self.survey_id = selected_index_data["survey_id"]
+            if selected_index_data["branch"] == "New Sequences":
+                self.survey_list = state.model.camera_surveys
+            elif selected_index_data["branch"] == "Downloaded Sequences":
+                self.survey_list = state.model.archived_surveys
+            else:
+                self.survey_list = state.model.surveys_data
+
+    def enable_metadata_tab_only(self):
+        self.data_widget.tabWidget.setEnabled(True)
+        self.data_widget.tabWidget.setTabEnabled(0, False)
+        self.data_widget.tabWidget.setTabEnabled(1, False)
+        self.data_widget.tabWidget.setTabEnabled(2, True)
+        self.data_widget.tabWidget.setTabEnabled(3, False)
+        self.data_widget.tabWidget.setTabEnabled(4, False)
+        self.data_widget.tabWidget.setTabEnabled(5, False)
+        self.data_widget.tabWidget.setCurrentIndex(2)
+
+    def disable_all_tabs(self, index):
+        self.data_widget.tabWidget.setEnabled(False)
+        self.data_widget.tabWidget.setCurrentIndex(index)
+
+
+    def enable_all_tabs(self):
+        self.data_widget.tabWidget.setEnabled(True)
+        self.data_widget.tabWidget.setTabEnabled(0, False)
+        self.data_widget.tabWidget.setTabEnabled(1, True)
+        self.data_widget.tabWidget.setTabEnabled(2, True)
+        self.data_widget.tabWidget.setTabEnabled(3, True)
+        self.data_widget.tabWidget.setTabEnabled(4, True)
+        self.data_widget.tabWidget.setTabEnabled(5, True)
+        self.data_widget.tabWidget.setCurrentIndex(2)
+
+
+    def explore_tree_selection_changed(self, item_selection: QItemSelection):
+        self.check_save()
+        self.data_widget.cameraTree.selectionModel().clearSelection()
 
         if len(item_selection.indexes()) == 0:
             return ()
 
-        for index in item_selection.indexes():
-            self.survey_id = index.data(Qt.UserRole)
-            selected_index = index
+        selected_index = self.find_selected_tree_index(item_selection)
+        self.set_survey_id_and_list_from_selected_index(selected_index)
 
         if self.survey_id is None:
-            self.explore_widget.tabWidget.setCurrentIndex(1)
-            self.explore_widget.tabWidget.setEnabled(False)
+            self.disable_all_tabs(1)
             print(selected_index.data(Qt.DisplayRole))
             print("columns " + str(selected_index.model().columnCount()))
             print("rows " + str(selected_index.model().rowCount()))
@@ -267,14 +475,27 @@ class ExploreComponent:
             print(descendant_surveys)
 
         else:
-            if self.explore_widget.tabWidget.currentIndex() == 0:
-                self.explore_widget.tabWidget.setCurrentIndex(1)
-            self.explore_widget.tabWidget.setEnabled(True)
+            self.enable_all_tabs()
 
             self.data_to_ui()
             self.draw_map()
             self.load_thumbnails()
             self.load_marks()
+
+        self.set_hint()
+
+    def find_selected_tree_index(self, item_selection):
+        for index in item_selection.indexes():
+            selected_index = index
+        return selected_index
+
+    def check_save(self):
+        if self.is_modified():
+            reply = QMessageBox.question(self.data_widget, 'Save?', "Do you want to save your changes?",
+                                         QMessageBox.Yes | QMessageBox.No)
+
+            if reply == QMessageBox.Yes:
+                self.ui_to_data()
 
     def get_all_descendants(self, selected_index):
         if selected_index.data(Qt.UserRole) is not None:
@@ -296,7 +517,12 @@ class ExploreComponent:
         return str(s)
 
     def survey(self):
-        return state.model.surveys_data[self.survey_id]
+        if self.survey_list is None:
+            return None
+        else:
+            return self.survey_list.get(self.survey_id)
+
+
 
     def is_modified(self):
         if self.survey_id is None:
@@ -366,10 +592,12 @@ class ExploreComponent:
             self.info_widget.lb_end_time.setText(utc_to_local(self.survey().finish_date, timezone=self.time_zone))
             self.info_widget.lb_start_waypoint.setText(f"{self.survey().start_lon} {self.survey().start_lat}")
             self.info_widget.lb_end_waypoint.setText(f"{self.survey().finish_lon} {self.survey().finish_lat}")
-            self.explore_widget.folder_label.setText(self.survey().folder)
+            self.data_widget.folder_label.setText(self.survey().folder)
             survey_stats = SurveyStats()
             survey_stats.calculate(self.survey())
             self.survey_stats_to_ui(survey_stats)
+
+            self.disable_save_cancel()
 
     def survey_stats_to_ui(self, survey_stats):
         self.info_widget.lb_number_images.setText(str(survey_stats.photos))
@@ -378,7 +606,7 @@ class ExploreComponent:
         self.info_widget.lbl_missing_pressure.setText(str(survey_stats.missing_pressure_depth))
 
     def load_thumbnails(self):
-        list_thumbnails: QListView = self.explore_widget.lv_thumbnails
+        list_thumbnails: QListView = self.data_widget.lv_thumbnails
         list_thumbnails.setViewMode(QListWidget.IconMode)
         list_thumbnails.setIconSize(QSize(200, 200))
         list_thumbnails.setResizeMode(QListWidget.Adjust)
@@ -396,11 +624,11 @@ class ExploreComponent:
 
         state.config.camera_connected = False
         state.load_data_model(aims_status_dialog=self.aims_status_dialog)
-        tree = self.explore_widget.surveysTree
+        tree = self.data_widget.surveysTree
         self.surveys_tree_model = make_tree_model(timezone=self.time_zone, include_camera=False)
         tree.setModel(self.surveys_tree_model)
         tree.expandRecursively(self.surveys_tree_model.invisibleRootItem().index(), 3)
-        self.explore_widget.surveysTree.selectionModel().selectionChanged.connect(self.explore_tree_selection_changed)
+        self.data_widget.surveysTree.selectionModel().selectionChanged.connect(self.explore_tree_selection_changed)
         self.survey_id = None
 
     def draw_map(self):
@@ -409,7 +637,7 @@ class ExploreComponent:
             html_str = map_html_str(folder, False)
             # print (html_str)
             if html_str is not None:
-                view: QWebEngineView = self.explore_widget.mapView
+                view: QWebEngineView = self.data_widget.mapView
                 view.setHtml(html_str)
 
     def non_survey_to_stats_ui(self, name):
@@ -418,3 +646,68 @@ class ExploreComponent:
         self.info_widget.lb_end_time.setText("")
         self.info_widget.lb_start_waypoint.setText("")
         self.info_widget.lb_end_waypoint.setText("")
+
+    def set_hint(self):
+        ready_to_edit = self.survey_id is not None
+        ready_to_download = len(self.checked_surveys()) > 0
+        if ready_to_edit and ready_to_download:
+            self.hint_function("Edit the metadata or Click the download button")
+
+        if ready_to_edit and not ready_to_download:
+            self.hint_function("Edit the metadata")
+
+        if not ready_to_edit and ready_to_download:
+            self.hint_function("Click the download button")
+
+        if not ready_to_edit and not ready_to_download:
+            self.hint_function("Click on a survey name to edit metadata or check the surveys that you want to download")
+
+    def check_space(self, surveys):
+
+        total_kilo_bytes_used = 0
+        for survey in surveys:
+            if survey['branch'] == "New Sequences":
+                command = f'du -s /media/jetson/*/images/{survey["survey_id"]}'
+            else:
+                command = f'du -s /media/jetson/*/images/archive/{survey["survey_id"]}'
+
+            conn = Connection(
+                "jetson@" + state.config.camera_ip,
+                connect_kwargs={"password": "jetson"}
+            )
+            result = conn.run(command)
+            kilo_bytes_used = int(result.stdout.split()[0])
+            print(f"Bytes used: {kilo_bytes_used}")
+            total_kilo_bytes_used += kilo_bytes_used
+
+        print(f"total Bytes used: {total_kilo_bytes_used}")
+
+        print(state.primary_drive)
+        print(state.backup_drive)
+
+        du = shutil.disk_usage(state.primary_drive)
+        if total_kilo_bytes_used > du.free * 1000:
+            gb_used = total_kilo_bytes_used / 1000000
+            free_gb = du.free / 1000000000
+            message = f"""
+                Not enough disk space available on the primary disk.\n
+                Selected sequences require {gb_used:.2f Gb}
+                Space available on {state.primary_drive} is {free_gb:.2f} Gb
+                """
+            raise Exception(message)
+
+        if state.backup_drive is not None:
+            if total_kilo_bytes_used > du.free * 1000:
+                du = shutil.disk_usage(state.backup_drive)
+                gb_used = total_kilo_bytes_used / 1000000
+                free_gb = du.free / 1000000000
+                message = f"""
+                    Not enough disk space available on the backup disk.\n
+                    Selected sequences require {gb_used:.2f} Gb
+                    Space available on {state.backup_drive} is {free_gb: .2f} Gb
+                    """
+                raise Exception(message)
+
+
+
+

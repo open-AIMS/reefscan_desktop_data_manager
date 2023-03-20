@@ -27,12 +27,28 @@ class DownloadComponent:
         self.aims_status_dialog = aims_status_dialog
         self.time_zone = time_zone
 
-        self.setup_camera_tree()
+        self.setup_camera_tree(False)
         self.download_widget.downloadButton.clicked.connect(self.download)
+        self.download_widget.showDownloadedCheckBox.stateChanged.connect(self.show_downloaded_changed)
+        self.download_widget.deleteDownloadedButton.clicked.connect(self.delete_downloaded)
+
+    def show_downloaded_changed(self):
+        show_downloaded = self.download_widget.showDownloadedCheckBox.isChecked()
+        print(f"show_downloaded {show_downloaded}")
+
+        if show_downloaded:
+            if not state.model.archived_data_loaded:
+                state.load_archive_data_model(aims_status_dialog=self.aims_status_dialog)
+
+        self.setup_camera_tree(show_downloaded)
+
+
+
+    def delete_downloaded(self):
+        print("delete")
 
 
     def download(self):
-
         surveys = self.checked_surveys()
         if len(surveys) == 0:
             raise Exception("Please select at least one survey")
@@ -61,9 +77,9 @@ class DownloadComponent:
         errorbox.setDetailedText(f"Finished in {minutes} minutes")
         errorbox.exec_()
 
-    def setup_camera_tree(self):
+    def setup_camera_tree(self, archives: bool):
         camera_tree = self.download_widget.cameraTree
-        self.camera_model = make_tree_model(timezone=self.time_zone, include_local=False)
+        self.camera_model = make_tree_model(timezone=self.time_zone, include_local=False, include_archives=archives)
         camera_tree.setModel(self.camera_model)
         self.camera_model.itemChanged.connect(self.on_itemChanged)
         camera_tree.expandRecursively(self.camera_model.invisibleRootItem().index(), 3)

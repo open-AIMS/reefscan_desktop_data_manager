@@ -3,6 +3,7 @@ import os
 
 from PyQt5.QtWidgets import QMessageBox
 from reefscanner.basic_model.reader_writer import save_survey
+from reefscanner.basic_model.survey_reefcloud_info import ReefcloudUploadInfo
 
 from aims import state
 from reefcloud.sub_sample import sub_sample_dir
@@ -24,24 +25,19 @@ class UploadComponent:
 
     def check_reefcloud_metadata(self, surveys):
         for survey_id, survey in surveys.items():
-            try:
-                best_name = survey("friendly_name")
-            except:
-                best_name = None
-            if best_name is None or best_name == "":
-                best_name = survey["id"]
+            best_name = survey.best_name()
 
-            if not 'reefcloud_project' in survey:
+            if survey.reefcloud_project is None:
                 raise Exception(f"Missing reefcloud project for {best_name}")
 
-            project_ = survey['reefcloud_project']
+            project_ = survey.reefcloud_project
             if not state.config.valid_reefcloud_project(project_):
                 raise Exception(f"Invalid reefcloud project {project_} for {best_name}")
 
-            if not 'reefcloud_site' in survey:
+            if survey.reefcloud_site is None:
                 raise Exception(f"Missing reefcloud site for {best_name}")
 
-            site_ = survey['reefcloud_site']
+            site_ = survey.reefcloud_site
             if not state.config.valid_reefcloud_site(site_, project_):
                 raise Exception(f"Invalid reefcloud site {site_} for {best_name}")
 
@@ -56,8 +52,8 @@ class UploadComponent:
         self.check_reefcloud_metadata(surveys)
 
         for survey_id, survey in surveys.items():
-            survey_folder = survey["image_folder"]
-            subsampled_image_folder = survey["image_folder"].replace("/reefscan/", "/reefscan_reefcloud/")
+            survey_folder = survey.folder
+            subsampled_image_folder = survey.folder.replace("/reefscan/", "/reefscan_reefcloud/")
 
             selected_photo_infos = sub_sample_dir(survey_folder, subsampled_image_folder)
             print (selected_photo_infos)
@@ -66,31 +62,29 @@ class UploadComponent:
                                         selected_photo_infos=selected_photo_infos
                                         )
 
-            survey["reefcloud"] = {"uploaded_date": datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S"),
-                                 "uploaded_photo_count": 0}
+            survey.reefcloud = ReefcloudUploadInfo({"uploaded_date": datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S"),
+                                 "uploaded_photo_count": 0})
+
 
             # upload subsampled images
             for file in sorted(os.listdir(subsampled_image_folder)):
                 upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=subsampled_image_folder, file_name=file)
-                if "first_file_uploaded" not in survey["reefcloud"]:
-                    survey["reefcloud"]["first_photo_uploaded"] = file
-                survey["reefcloud"]["last_photo_uploaded"] = file
                 if file.lower().endswith(".jpg"):
-                    survey["reefcloud"]["uploaded_photo_count"] += 1
-                    if "first_photo_uploaded" not in survey["reefcloud"]:
-                        survey["reefcloud"]["first_photo_uploaded"] = file
-                    survey["reefcloud"]["last_photo_uploaded"] = file
+                    if survey.reefcloud.first_photo_uploaded is None:
+                        survey.reefcloud.first_photo_uploaded = file
+                    survey.reefcloud.last_photo_uploaded = file
+                    survey.reefcloud.uploaded_photo_count += 1
 
-                save_survey(survey, state.config.data_folder, state.config.backup_data_folder)
+                save_survey(survey, state.config.data_folder, state.config.backup_data_folder, False)
 
 
-            # upload other files (images or not survey.json)
+            # upload other files (not images or survey.json)
             for file in os.listdir(survey_folder):
                 if (not file.lower().endswith(".jpg")) and file!="survey.json":
                     upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=survey_folder, file_name=file)
 
-            survey["reefcloud"]["total_photo_count"] = survey["photos"]
-            save_survey(survey, state.config.data_folder, state.config.backup_data_folder)
+            survey.reefcloud.total_photo_count = survey.photos
+            save_survey(survey, state.config.data_folder, state.config.backup_data_folder, False)
 
             # upload survey.json last
             upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=survey_folder, file_name="survey.json")

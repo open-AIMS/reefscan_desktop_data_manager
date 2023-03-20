@@ -2,7 +2,8 @@ import logging
 import sys
 import traceback
 
-from aims.gui_model.model import GuiModel
+from reefscanner.basic_model.basic_model import BasicModel
+
 from aims.operations.abstract_operation import AbstractOperation
 
 logger = logging.getLogger(__name__)
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class LoadCameraDataOperation(AbstractOperation):
 
-    def __init__(self, model: GuiModel):
+    def __init__(self, model: BasicModel):
         super().__init__()
         self.model = model
         self.finished=False

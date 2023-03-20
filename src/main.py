@@ -14,7 +14,7 @@ import glob
 from aims import state
 from aims.ui.main_ui import MainUi
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 logger_smb = logging.getLogger('smbprotocol')
 logger_smb.setLevel(level=logging.WARNING)
@@ -28,10 +28,13 @@ def gui_except_hook(exc_class, exc_value, tb):
     print (error_message)
     print(traceback1)
 
-    errorbox = QtWidgets.QMessageBox()
-    errorbox.setText(error_message)
-    errorbox.setDetailedText(traceback1)
-    errorbox.exec_()
+    print (exc_class)
+
+    if exc_class is not UserWarning:
+        errorbox = QtWidgets.QMessageBox()
+        errorbox.setText(error_message)
+        # errorbox.setDetailedText(traceback1)
+        errorbox.exec_()
 
 
 sys.excepthook = gui_except_hook
@@ -100,7 +103,7 @@ if __name__ == "__main__":
     except Exception:
         logger.exception("Error")
 
-    if state.model.data_loaded:
+    if state.model.local_data_loaded:
         print("will export")
         state.model.export()
 

@@ -30,7 +30,7 @@ class SyncFromHardware(Synchroniser):
         self.folder_message = ""
         self.cancelled = False
 
-    def sync(self, survey_ids):
+    def sync(self, survey_infos):
 
         if not self.camera_os.isdir(self.hardware_folder):
             raise Exception(f"Hardware not found at {self.hardware_folder}")
@@ -51,11 +51,13 @@ class SyncFromHardware(Synchroniser):
 
         #   Copy all surveys from hardware to local. Then Archive
         # self.copytree_parallel(h_surveys_folder, l_surveys_folder)
-        tot_surveys = len(survey_ids)
+        tot_surveys = len(survey_infos)
         i=0
-        for survey_id in survey_ids:
+        for survey_info in survey_infos:
+            survey_id = survey_info["survey_id"]
+            already_archived = (survey_info["branch"] == "Downloaded Sequences")
             try:
-                friendly_name = state.model.camera_surveys[survey_id]["friendly_name"]
+                friendly_name = state.model.camera_surveys[survey_id].friendly_name
             except:
                 friendly_name = survey_id
 
@@ -63,9 +65,12 @@ class SyncFromHardware(Synchroniser):
                 i += 1
                 self.progress_queue.reset()
                 self.folder_message = f"Survey {friendly_name}. {i} of {tot_surveys}"
-                h_survey_folder = h_surveys_folder + "/" + survey_id
-                # archive_survey_folder = archive_folder + "/" + survey_id
                 l_survey_folder = self.find_local_survey_folder(survey_id)
+                if already_archived:
+                    h_survey_folder = archive_folder + "/" + survey_id
+                else:
+                    h_survey_folder = h_surveys_folder + "/" + survey_id
+
 
                 self.copytree_parallel(h_survey_folder, l_survey_folder)
                 try:
@@ -128,11 +133,11 @@ class SyncFromHardware(Synchroniser):
     def copy2_verbose(self, src, dst):
         logger.debug(f"copy2 {src}")
 
+        already_archived = "archive" in src
+
         l_dst = dst
         dst_last_part = dst[len(self.local_folder): ].replace("\\", "/")
         src_last_part = src[len(self.hardware_folder): ].replace("\\", "/")
-        if (self.backup):
-            b_dst = f"{self.backup_folder}/{dst_last_part}"
 
         a_dst = f"{self.hardware_folder}/archive/{src_last_part}"
 
@@ -142,7 +147,7 @@ class SyncFromHardware(Synchroniser):
             message = f'copying  {src}'
             logger.debug(message)
             try:
-                if os.path.exists(l_dst):
+                if os.path.exists(l_dst) and not src.endswith("survey.json"):
                     message = f'skipping {src}'
                     # print(message)
                     self.set_progress_label(message)
@@ -152,21 +157,23 @@ class SyncFromHardware(Synchroniser):
                     self.camera_os.copyfile(src, l_dst)
 
                 if self.backup:
-                    if os.path.exists(b_dst):
+                    b_dst = f"{self.backup_folder}/{dst_last_part}"
+                    if os.path.exists(b_dst) and not src.endswith("survey.json"):
                         message = f'skipping {src}'
                     else:
                         logger.debug(f"will copy backup {src}")
                         os.makedirs(os.path.dirname(b_dst), exist_ok=True)
                         shutil.copyfile(l_dst, b_dst)
 
-                archive_dir = os.path.dirname(a_dst)
-                if not self.camera_os.exists(archive_dir):
-                    self.camera_os.mkdir(archive_dir)
+                if not already_archived:
+                    archive_dir = os.path.dirname(a_dst)
+                    if not self.camera_os.exists(archive_dir):
+                        self.camera_os.mkdir(archive_dir)
 
-                if self.camera_os.exists(a_dst):
-                    self.camera_os.remove(src)
-                else:
-                    self.camera_os.move(src, a_dst)
+                    if self.camera_os.exists(a_dst):
+                        self.camera_os.remove(src)
+                    else:
+                        self.camera_os.move(src, a_dst)
 
                 self.set_progress_label(message)
             except Exception as e:
