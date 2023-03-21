@@ -9,7 +9,7 @@ PyQtWebEngine
 reefscanner @ file:///C:/aa_git_root/techdev/reef_scanner_data_model/dist/reefscanner-1.0.0s-py3-none-any.whl
 pandas
 smbprotocol
-fabric
+fabric2
 pywin32
 tzlocal
 boto3

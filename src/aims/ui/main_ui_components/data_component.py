@@ -181,7 +181,7 @@ class DataComponent:
                 "jetson@" + state.config.camera_ip,
                 connect_kwargs={"password": "jetson"}
             )
-            conn.run("rm -r " + archive_folder)
+            conn.run("rm -r " + archive_folder, hide=True)
 
         state.model.archived_data_loaded = False
         self.setup_camera_tree()
@@ -675,7 +675,7 @@ class DataComponent:
                 "jetson@" + state.config.camera_ip,
                 connect_kwargs={"password": "jetson"}
             )
-            result = conn.run(command)
+            result = conn.run(command, hide=True)
             kilo_bytes_used = int(result.stdout.split()[0])
             print(f"Bytes used: {kilo_bytes_used}")
             total_kilo_bytes_used += kilo_bytes_used

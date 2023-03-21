@@ -52,7 +52,7 @@ class ArchiveUi(QMainWindow):
             "jetson@" + state.config.camera_ip,
             connect_kwargs={"password": "jetson"}
         )
-        conn.run("rm -r " + archive_folder)
+        conn.run("rm -r " + archive_folder, hide=True)
 
         # self.files_deleted = 0
         # if self.samba_file_ops.isdir(archive_folder):

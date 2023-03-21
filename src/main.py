@@ -14,7 +14,7 @@ import glob
 from aims import state
 from aims.ui.main_ui import MainUi
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger_smb = logging.getLogger('smbprotocol')
 logger_smb.setLevel(level=logging.WARNING)

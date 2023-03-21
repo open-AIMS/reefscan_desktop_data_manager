@@ -43,7 +43,7 @@ def read_reefscan_id():
             connect_kwargs={"password": "jetson"}
         )
 
-        r = conn.run("cat ~/reefscan_id.txt")
+        r = conn.run("cat ~/reefscan_id.txt", hide=True)
         reefscan_id = r.stdout
         return reefscan_id
     except:
