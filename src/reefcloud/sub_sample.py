@@ -19,8 +19,6 @@ def should_keep(wp, old_wp, target_distance):
     return d > target_distance
 
 
-target_distance = 5
-
 
 def sub_sample_dir(image_dir, sample_dir):
     if os.path.exists (sample_dir):
@@ -31,11 +29,15 @@ def sub_sample_dir(image_dir, sample_dir):
     listdir.sort()
     old_wp = None
     selected_photo_infos = []
+    target_distance = None
     for f in listdir:
         if f.lower().endswith(".jpg"):
             fname = image_dir + "/" + f
             try:
                 exif = get_exif_data(fname, False)
+                if target_distance is None:
+                    target_distance = exif["subject_distance"]
+
                 wp = exif["latitude"], exif["longitude"]
                 keep = should_keep(wp, old_wp, target_distance)
                 # Ignore photos with bad geolocation in exif data.

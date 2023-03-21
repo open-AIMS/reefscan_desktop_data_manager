@@ -560,7 +560,7 @@ class DataComponent:
             self.survey().reefcloud_project = self.metadata_widget.cb_reefcloud_project.currentText()
             self.survey().reefcloud_site = self.metadata_widget.cb_reefcloud_site.currentData()
 
-            save_survey(self.survey(), state.config.data_folder, state.config.backup_data_folder, False)
+            save_survey(self.survey(), state.primary_folder, state.backup_folder, False)
 
     def data_to_ui(self):
         if self.survey_id is not None:

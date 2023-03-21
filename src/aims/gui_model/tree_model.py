@@ -1,7 +1,6 @@
 from PyQt5.QtGui import QStandardItemModel
 
 from aims.gui_model.SurveyTreeModelByDate import SurveyTreeModelByDate
-from aims.stats.survey_stats import SurveyStats
 from aims.ui.checked_tree_item import CheckTreeitem
 from PyQt5.QtCore import QItemSelection, Qt, QModelIndex, QSize, QEvent
 from aims import state
@@ -52,10 +51,8 @@ def make_branch(survey_data, top_level_name, checkable, timezone, grey=False):
                 if site is None:
                     site = ""
 
-                survey_stats = SurveyStats()
-                survey_stats.calculate(survey)
-                if survey_stats.photos is not None:
-                    photos = f"({survey_stats.photos} photos)"
+                if survey.photos is not None:
+                    photos = f"({survey.photos} photos)"
                 else:
                     photos = ""
 
