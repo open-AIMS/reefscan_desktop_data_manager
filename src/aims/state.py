@@ -9,10 +9,11 @@ model = BasicModel()
 meipass = None
 surveys_tree = None
 reefscan_id = ""
-primary_drive = ""
-backup_drive = ""
-primary_folder = ""
-backup_folder = ""
+primary_drive = None
+backup_drive = None
+primary_folder = None
+backup_folder = None
+reefcloud_session = None
 
 
 def meipass_linux():

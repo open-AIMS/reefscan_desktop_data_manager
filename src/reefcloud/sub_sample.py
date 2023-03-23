@@ -5,74 +5,88 @@ import shutil
 from reefscanner.basic_model.exif_utils import get_exif_data
 
 import geopy.distance
+from reefscanner.basic_model.progress_queue import ProgressQueue
 
 
-def should_keep(wp, old_wp, target_distance):
-    if old_wp is None:
-        return True
-
-    if wp is None:
-        return False
-
-    d = geopy.distance.distance(old_wp, wp).meters
-
-    return d > target_distance
+class SubSampler:
+    def __init__(self):
+        self.canceled = False
 
 
+    def should_keep(self, wp, old_wp, target_distance):
+        if old_wp is None:
+            return True
 
-def sub_sample_dir(image_dir, sample_dir):
-    if os.path.exists (sample_dir):
-        shutil.rmtree(sample_dir)
-    os.makedirs(sample_dir, exist_ok=True)
+        if wp is None:
+            return False
 
-    listdir = os.listdir(image_dir)
-    listdir.sort()
-    old_wp = None
-    selected_photo_infos = []
-    target_distance = None
-    for f in listdir:
-        if f.lower().endswith(".jpg"):
-            fname = image_dir + "/" + f
-            try:
-                exif = get_exif_data(fname, False)
-                if target_distance is None:
-                    target_distance = exif["subject_distance"]
+        d = geopy.distance.distance(old_wp, wp).meters
 
-                wp = exif["latitude"], exif["longitude"]
-                keep = should_keep(wp, old_wp, target_distance)
-                # Ignore photos with bad geolocation in exif data.
-                if exif["latitude"] is None or exif["longitude"] is None or "altitude" not in exif:
+        return d > target_distance
+
+
+    def sub_sample_dir(self, image_dir, sample_dir, progress_queue: ProgressQueue):
+
+        progress_queue.reset()
+        progress_queue.set_progress_label(f"Subsampling folder {image_dir}")
+
+        if os.path.exists (sample_dir):
+            shutil.rmtree(sample_dir)
+        os.makedirs(sample_dir, exist_ok=True)
+
+        listdir = os.listdir(image_dir)
+        listdir.sort()
+        old_wp = None
+        selected_photo_infos = []
+        target_distance = None
+        progress_queue.set_progress_max(len(listdir-1))
+        for f in listdir:
+            if self.canceled:
+                return None
+
+            if f.lower().endswith(".jpg"):
+                fname = image_dir + "/" + f
+                try:
+                    exif = get_exif_data(fname, False)
+                    if target_distance is None:
+                        target_distance = exif["subject_distance"]
+
+                    wp = exif["latitude"], exif["longitude"]
+                    keep = self.should_keep(wp, old_wp, target_distance)
+                    # Ignore photos with bad geolocation in exif data.
+                    if exif["latitude"] is None or exif["longitude"] is None or "altitude" not in exif:
+                        keep = False
+                except Exception as e:
+                    print (e)
                     keep = False
-            except Exception as e:
-                print (e)
-                keep = False
-            if keep:
-                shutil.copy2(fname, sample_dir)
-                old_wp = wp
-                exif = get_exif_data(fname, True)
-                exif["filename"] = f
-                selected_photo_infos.append(exif)
-
-    return selected_photo_infos
+                if keep:
+                    shutil.copy2(fname, sample_dir)
+                    old_wp = wp
+                    exif = get_exif_data(fname, True)
+                    exif["filename"] = f
+                    selected_photo_infos.append(exif)
+                    target_distance = None
+            progress_queue.set_progress_value()
+        return selected_photo_infos
 
 
 
-def sub_sample_dir_simple(image_dir):
-    good_dir = f"{image_dir}/good"
-    sample_dir = f"{image_dir}/sample"
-
-    os.makedirs(sample_dir, exist_ok=True)
-
-    listdir = os.listdir(good_dir)
-    listdir.sort()
-    i = 1
-    for f in listdir:
-        if f.lower().endswith(".jpg"):
-            fname = good_dir + "/" + f
-            if i % 15 == 0:
-                shutil.copy2(fname, sample_dir)
-            i+=1
-
+# def sub_sample_dir_simple(image_dir):
+#     good_dir = f"{image_dir}/good"
+#     sample_dir = f"{image_dir}/sample"
+#
+#     os.makedirs(sample_dir, exist_ok=True)
+#
+#     listdir = os.listdir(good_dir)
+#     listdir.sort()
+#     i = 1
+#     for f in listdir:
+#         if f.lower().endswith(".jpg"):
+#             fname = good_dir + "/" + f
+#             if i % 15 == 0:
+#                 shutil.copy2(fname, sample_dir)
+#             i+=1
+#
 # def count_dir(good_dir):
 #     sample_dir = good_dir.replace("/all/", "/sample/")
 #     os.makedirs(sample_dir, exist_ok=True)

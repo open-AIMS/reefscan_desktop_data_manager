@@ -112,6 +112,12 @@ class LoginWorker(Thread):
         print("LoginWorker __init__() end")
 
         self.oauth_session = None
+        self.cancelled = False
+
+    def cancel(self):
+        print ("worker cancelled")
+        self.cancelled = True
+        requests.get("http://localhost:4200")
 
     def run(self):
         global oauth2_code, oauth2_state
@@ -130,7 +136,7 @@ class LoginWorker(Thread):
         self.web_server = HTTPServer((self.host_name, self.port), TokenServer)
         logger.debug(f"Server starting http://{self.host_name}:{self.port}")
         print(f"Server starting http://{self.host_name}:{self.port}")
-        while oauth2_code is None:
+        while oauth2_code is None and not self.cancelled:
             print("Handling")
             self.web_server.handle_request()
 
@@ -188,15 +194,21 @@ class ReefCloudSession():
         self.cognito_uri = cognito_uri
         self.current_user = None
         self.is_logged_in = False
+        self.login_worker = None
+        self.finished = False
 
+    def cancel(self):
+        print ("session cancelled")
+        if self.login_worker is not None:
+            self.login_worker.cancel()
 
 
     def login(self):
         global oauth2_code, oauth2_state
-        login_worker = LoginWorker(self.client_id, self.cognito_uri)
-        login_worker.start()
-        login_worker.join()
-        self.oauth2_session = login_worker.get_session()
+        self.login_worker = LoginWorker(self.client_id, self.cognito_uri)
+        self.login_worker.start()
+        self.login_worker.join()
+        self.oauth2_session = self.login_worker.get_session()
 
         token_url = f'{self.cognito_uri}/oauth2/token'
         self.tokens = self.oauth2_session.fetch_token(token_url,
@@ -210,7 +222,7 @@ class ReefCloudSession():
         self.is_logged_in = True
         # Set code to none so if the user clicks the login page a second time, the web server waits for the new code
         code = None
-        return self.tokens
+        self.finished = True
 
     def get(self, url, **kwargs):
         return self.oauth2_session.get(url, **kwargs)

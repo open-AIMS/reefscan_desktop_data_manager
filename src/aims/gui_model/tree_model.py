@@ -6,11 +6,11 @@ from PyQt5.QtCore import QItemSelection, Qt, QModelIndex, QSize, QEvent
 from aims import state
 
 
-def make_tree_model(timezone, include_camera=True, include_local=True, include_archives=False):
+def make_tree_model(timezone, include_camera=True, include_local=True, include_archives=False, checkable=True):
     tree_model = QStandardItemModel()
 
     if include_camera:
-        camera_branch = make_branch(state.model.camera_surveys, 'New Sequences', checkable=True, timezone=timezone)
+        camera_branch = make_branch(state.model.camera_surveys, 'New Sequences', checkable=checkable, timezone=timezone)
         # if not include_local:
         #     for i in range(camera_branch.rowCount()):
         #         child_item = camera_branch.child(i)
@@ -18,11 +18,11 @@ def make_tree_model(timezone, include_camera=True, include_local=True, include_a
         # else:
         tree_model.appendRow(camera_branch)
         if include_archives:
-            archive_branch = make_branch(state.model.archived_surveys, 'Downloaded Sequences', checkable=True, timezone=timezone, grey=True)
+            archive_branch = make_branch(state.model.archived_surveys, 'Downloaded Sequences', checkable=checkable, timezone=timezone, grey=True)
             tree_model.appendRow(archive_branch)
 
     if include_local:
-        local_branch = make_branch(state.model.surveys_data, 'Local Drive', checkable=False, timezone=timezone)
+        local_branch = make_branch(state.model.surveys_data, 'Local Drive', checkable=checkable, timezone=timezone)
         # if not include_camera:
         #     for i in range(local_branch.rowCount()):
         #         child_item = local_branch.child(i)
@@ -78,3 +78,20 @@ def best_name(survey, survey_id):
         name = survey_id
 
     return name
+
+
+def checked_surveys(model, parent: QModelIndex = QModelIndex()):
+    surveys = []
+    for r in range(model.rowCount(parent)):
+        index: QModelIndex = model.index(r, 0, parent)
+        model_item = model.itemFromIndex(index)
+        if model_item.isCheckable() and model_item.checkState() == Qt.Checked:
+            survey_id = index.data(Qt.UserRole)
+            if survey_id is not None:
+                surveys.append(survey_id)
+
+        if model.hasChildren(index):
+            child_surveys = checked_surveys(model, parent=index)
+            surveys = surveys + child_surveys
+
+    return surveys

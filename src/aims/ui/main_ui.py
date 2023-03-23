@@ -132,7 +132,7 @@ class MainUi(QMainWindow):
         self.current_screen = "upload"
 
         self.upload_component.login_widget = self.load_main_frame(f'{state.meipass}resources/cloud-log-in.ui')
-        self.upload_component.load_login_screen(aims_status_dialog=self.aims_status_dialog)
+        self.upload_component.load_login_screen(aims_status_dialog=self.aims_status_dialog, time_zone=self.time_zone)
         self.highlight_button(self.workflow_widget.uploadButton)
 
     def load_start_screen(self):

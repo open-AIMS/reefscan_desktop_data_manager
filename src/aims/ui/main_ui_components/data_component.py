@@ -21,7 +21,7 @@ from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 from aims import state
 from aims.gui_model.lazy_list_model import LazyListModel
 from aims.gui_model.marks_model import MarksModel
-from aims.gui_model.tree_model import make_tree_model
+from aims.gui_model.tree_model import make_tree_model, checked_surveys
 from aims.operations.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.stats.survey_stats import SurveyStats
 from aims.ui.main_ui_components.utils import setup_folder_tree, setup_file_system_tree_and_combo_box, clearLayout, \
@@ -149,22 +149,6 @@ class DataComponent:
         self.data_widget.showDownloadedCheckBox.setChecked(False)
         self.data_widget.showDownloadedCheckBox.setEnabled(len(state.model.archived_surveys) > 0)
 
-    def checked_surveys(self, parent: QModelIndex = QModelIndex()):
-        model = self.camera_model
-        surveys = []
-        for r in range(model.rowCount(parent)):
-            index: QModelIndex = model.index(r, 0, parent)
-            model_item = model.itemFromIndex(index)
-            if model_item.isCheckable() and model_item.checkState() == Qt.Checked:
-                survey_id = index.data(Qt.UserRole)
-                if survey_id is not None:
-                    surveys.append(survey_id)
-
-            if model.hasChildren(index):
-                child_surveys = self.checked_surveys(parent=index)
-                surveys = surveys + child_surveys
-
-        return surveys
 
     def show_downloaded_changed(self):
         self.setup_camera_tree()
@@ -193,7 +177,8 @@ class DataComponent:
         self.data_widget.cameraTree.selectionModel().clearSelection()
 
         start = process_time()
-        surveys = self.checked_surveys()
+        surveys = checked_surveys(self.camera_model)
+
         self.check_space(surveys)
 
         if len(surveys) == 0:
@@ -233,7 +218,7 @@ class DataComponent:
         show_downloaded = self.data_widget.showDownloadedCheckBox.isChecked()
         state.load_archive_data_model(aims_status_dialog=self.aims_status_dialog)
         camera_tree = self.data_widget.cameraTree
-        self.camera_model = make_tree_model(timezone=self.time_zone, include_local=False, include_archives=show_downloaded)
+        self.camera_model = make_tree_model(timezone=self.time_zone, include_local=False, include_archives=show_downloaded, checkable=True)
         camera_tree.setModel(self.camera_model)
         self.camera_model.itemChanged.connect(self.camera_on_itemChanged)
         self.data_widget.cameraTree.selectionModel().selectionChanged.connect(self.camera_tree_selection_changed)
@@ -242,7 +227,7 @@ class DataComponent:
     def camera_on_itemChanged(self, item):
         print ("Item change")
         item.cascade_check()
-        surveys = self.checked_surveys()
+        surveys = checked_surveys(self.camera_model)
         self.data_widget.downloadButton.setEnabled(len(surveys) > 0)
         self.set_hint()
 
@@ -625,7 +610,7 @@ class DataComponent:
         state.config.camera_connected = False
         state.load_data_model(aims_status_dialog=self.aims_status_dialog)
         tree = self.data_widget.surveysTree
-        self.surveys_tree_model = make_tree_model(timezone=self.time_zone, include_camera=False)
+        self.surveys_tree_model = make_tree_model(timezone=self.time_zone, include_camera=False, checkable=False)
         tree.setModel(self.surveys_tree_model)
         tree.expandRecursively(self.surveys_tree_model.invisibleRootItem().index(), 3)
         self.data_widget.surveysTree.selectionModel().selectionChanged.connect(self.explore_tree_selection_changed)
@@ -649,7 +634,7 @@ class DataComponent:
 
     def set_hint(self):
         ready_to_edit = self.survey_id is not None
-        ready_to_download = len(self.checked_surveys()) > 0
+        ready_to_download = len(checked_surveys(self.camera_model)) > 0
         if ready_to_edit and ready_to_download:
             self.hint_function("Edit the metadata or Click the download button")
 

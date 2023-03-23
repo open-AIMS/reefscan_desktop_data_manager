@@ -26,7 +26,7 @@ class Config(object):
 
         self.aws_region_id = 'ap-southeast-2'
         self.cognito_user_pool_id = 'ap-southeast-2_VpzWNPszV'
-        self.client_id = '6m6rue95t1apbig6i68avk2dt7'
+        self.client_id = '7866phkrj600o9c0aulgmqpi21'
         self.cognito_uri = 'https://login.dev.reefcloud.ai/'
         self.cognito_token_key_url = f'https://cognito-idp.{self.aws_region_id}.amazonaws.com/{self.cognito_user_pool_id}/.well-known/jwks.json'
         
