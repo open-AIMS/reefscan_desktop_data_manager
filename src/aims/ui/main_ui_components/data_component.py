@@ -104,12 +104,12 @@ class DataComponent:
         self.load_explore_surveys_tree()
 
 
-        self.setup_camera_tree()
         self.data_widget.downloadButton.clicked.connect(self.download)
         self.data_widget.showDownloadedCheckBox.stateChanged.connect(self.show_downloaded_changed)
         self.data_widget.deleteDownloadedButton.clicked.connect(self.delete_downloaded)
 
         if state.model.camera_data_loaded:
+            self.setup_camera_tree()
             self.data_widget.camera_not_connected_label.setVisible(False)
             self.data_widget.camera_panel.setVisible(True)
         else:
@@ -436,7 +436,8 @@ class DataComponent:
 
     def explore_tree_selection_changed(self, item_selection: QItemSelection):
         self.check_save()
-        self.data_widget.cameraTree.selectionModel().clearSelection()
+        if self.data_widget.cameraTree.selectionModel() is not None:
+            self.data_widget.cameraTree.selectionModel().clearSelection()
 
         if len(item_selection.indexes()) == 0:
             return ()

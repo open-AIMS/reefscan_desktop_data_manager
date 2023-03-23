@@ -39,7 +39,7 @@ class SubSampler:
         old_wp = None
         selected_photo_infos = []
         target_distance = None
-        progress_queue.set_progress_max(len(listdir-1))
+        progress_queue.set_progress_max(len(listdir)-1)
         for f in listdir:
             if self.canceled:
                 return None

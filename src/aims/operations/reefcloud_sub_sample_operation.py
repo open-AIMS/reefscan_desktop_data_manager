@@ -20,13 +20,14 @@ class ReefcloudSubSampleOperation(AbstractOperation):
         self.sample_dir = sample_dir
         self.message = ""
         self.sub_sampler = SubSampler()
+        self.selected_photo_infos = None
 
     def _run(self):
         self.finished=False
         self.success = False
         logger.info("start subsample")
         try:
-            self.sub_sampler.sub_sample_dir(image_dir=self.image_dir, sample_dir=self.sample_dir, progress_queue=self.progress_queue)
+            self.selected_photo_infos = self.sub_sampler.sub_sample_dir(image_dir=self.image_dir, sample_dir=self.sample_dir, progress_queue=self.progress_queue)
             self.success = True
         except Exception as e:
             logger.error("ERROR ERROR")

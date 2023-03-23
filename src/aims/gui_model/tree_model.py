@@ -81,6 +81,8 @@ def best_name(survey, survey_id):
 
 
 def checked_surveys(model, parent: QModelIndex = QModelIndex()):
+    if model is None:
+        return []
     surveys = []
     for r in range(model.rowCount(parent)):
         index: QModelIndex = model.index(r, 0, parent)

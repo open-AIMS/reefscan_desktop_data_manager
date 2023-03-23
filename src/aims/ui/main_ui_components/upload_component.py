@@ -7,6 +7,7 @@ from reefscanner.basic_model.survey_reefcloud_info import ReefcloudUploadInfo
 
 from aims import state
 from aims.gui_model.tree_model import make_tree_model, checked_surveys
+from aims.operations.load_data import reefcloud_subsample
 from reefcloud.reefcloud_utils import upload_file, write_reefcloud_photos_json, update_reefcloud_projects, update_reefcloud_sites
 from reefcloud.logon import ReefCloudSession
 
@@ -71,39 +72,40 @@ class UploadComponent:
             survey_folder = survey.folder
             subsampled_image_folder = survey.folder.replace("/reefscan/", "/reefscan_reefcloud/")
 
-            selected_photo_infos = reefcloud_subsample(survey_folder, subsampled_image_folder)
-            print (selected_photo_infos)
-            write_reefcloud_photos_json(survey_id=survey_id,
-                                        outputfile=f"{subsampled_image_folder}/photos.json",
-                                        selected_photo_infos=selected_photo_infos
-                                        )
+            success, selected_photo_infos = reefcloud_subsample(survey_folder, subsampled_image_folder, self.aims_status_dialog)
+            if success:
+                print(selected_photo_infos)
+                write_reefcloud_photos_json(survey_id=survey_id,
+                                            outputfile=f"{subsampled_image_folder}/photos.json",
+                                            selected_photo_infos=selected_photo_infos
+                                            )
 
-            survey.reefcloud = ReefcloudUploadInfo({"uploaded_date": datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S"),
-                                 "uploaded_photo_count": 0})
+                survey.reefcloud = ReefcloudUploadInfo({"uploaded_date": datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S"),
+                                     "uploaded_photo_count": 0})
 
 
-            # upload subsampled images
-            for file in sorted(os.listdir(subsampled_image_folder)):
-                upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=subsampled_image_folder, file_name=file)
-                if file.lower().endswith(".jpg"):
-                    if survey.reefcloud.first_photo_uploaded is None:
-                        survey.reefcloud.first_photo_uploaded = file
-                    survey.reefcloud.last_photo_uploaded = file
-                    survey.reefcloud.uploaded_photo_count += 1
+                # upload subsampled images
+                for file in sorted(os.listdir(subsampled_image_folder)):
+                    upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=subsampled_image_folder, file_name=file)
+                    if file.lower().endswith(".jpg"):
+                        if survey.reefcloud.first_photo_uploaded is None:
+                            survey.reefcloud.first_photo_uploaded = file
+                        survey.reefcloud.last_photo_uploaded = file
+                        survey.reefcloud.uploaded_photo_count += 1
 
+                    save_survey(survey, state.primary_folder, state.backup_folder, False)
+
+
+                # upload other files (not images or survey.json)
+                for file in os.listdir(survey_folder):
+                    if (not file.lower().endswith(".jpg")) and file!="survey.json":
+                        upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=survey_folder, file_name=file)
+
+                survey.reefcloud.total_photo_count = survey.photos
                 save_survey(survey, state.primary_folder, state.backup_folder, False)
 
-
-            # upload other files (not images or survey.json)
-            for file in os.listdir(survey_folder):
-                if (not file.lower().endswith(".jpg")) and file!="survey.json":
-                    upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=survey_folder, file_name=file)
-
-            survey.reefcloud.total_photo_count = survey.photos
-            save_survey(survey, state.primary_folder, state.backup_folder, False)
-
-            # upload survey.json last
-            upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=survey_folder, file_name="survey.json")
+                # upload survey.json last
+                upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=survey_folder, file_name="survey.json")
 
     def login(self):
         print("*******************************************About to attempt login")

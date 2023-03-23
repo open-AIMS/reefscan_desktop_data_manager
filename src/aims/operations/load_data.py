@@ -37,7 +37,7 @@ def reefcloud_subsample(image_dir, sample_dir, aims_status_dialog: AimsStatusDia
     logger.info("Close the status dialog")
     aims_status_dialog.close()
     print (operation.message)
-    return operation.success, operation.message
+    return operation.success, operation.selected_photo_infos
 
 
 def load_camera_data(model, aims_status_dialog: AimsStatusDialog):
