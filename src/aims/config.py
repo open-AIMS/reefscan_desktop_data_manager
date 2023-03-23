@@ -133,8 +133,8 @@ class Config(object):
         else:
             return False
 
-    def valid_reefcloud_site(self, site_name):
-        if site_name in self.reefcloud_sites:
+    def valid_reefcloud_site(self, project_name, site_name):
+        if site_name in self.reefcloud_sites[project_name]:
             return True
         else:
             return False

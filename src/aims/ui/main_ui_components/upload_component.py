@@ -33,7 +33,7 @@ class UploadComponent:
             if not 'reefcloud_site' in survey:
                 raise Exception("Missing reefcloud site with " + survey["id"])
 
-            if not state.config.valid_reefcloud_site(survey['reefcloud_site']):
+            if not state.config.valid_reefcloud_site(survey['reefcloud_project'], survey['reefcloud_site']):
                 raise Exception("Invalid reefcloud site with " + survey["id"])
 
 
