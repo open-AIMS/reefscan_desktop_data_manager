@@ -87,13 +87,13 @@ class ThumbnailMaker(QThread):
             if self.interrupted:
                 return
             full_path = self.folder + "/" + photo
-            # try:
-            thumbnail = thumbnail_from_disk_cache(self.folder, self.id, photo, self.samba)
-            pixmap = QPixmap()
-            pixmap.loadFromData(thumbnail)
-            icon = QIcon(pixmap)
-            # except:
-            #     icon = None
+            try:
+                thumbnail = thumbnail_from_disk_cache(self.folder, self.id, photo, self.samba)
+                pixmap = QPixmap()
+                pixmap.loadFromData(thumbnail)
+                icon = QIcon(pixmap)
+            except:
+                icon = None
             name_and_icon = NameAndIcon(photo, icon, full_path)
             self.add_thumbnail.emit(name_and_icon)
 
@@ -119,6 +119,7 @@ class LazyListModel (QAbstractListModel):
     def interrupt(self):
         self.thumbnailMaker.interrupted = True
         self.thumbnailMaker.quit()
+        self.thumbnailMaker.terminate()
 
 
     @pyqtSlot(NameAndIcon)

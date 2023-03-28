@@ -62,6 +62,9 @@ class DataComponent:
         self.site_lookup = {}
         self.hint_function = hint_function
 
+    def map_load_finished(self, success):
+        print (f"Map loaded success:{success}")
+
     def tab_changed(self, index):
         print(index)
         if index == 2:
@@ -108,8 +111,7 @@ class DataComponent:
         self.data_widget.showDownloadedCheckBox.stateChanged.connect(self.show_downloaded_changed)
         self.data_widget.deleteDownloadedButton.clicked.connect(self.delete_downloaded)
 
-        if state.model.camera_data_loaded:
-            self.setup_camera_tree()
+        if self.setup_camera_tree():
             self.data_widget.camera_not_connected_label.setVisible(False)
             self.data_widget.camera_panel.setVisible(True)
         else:
@@ -118,6 +120,8 @@ class DataComponent:
 
         self.initial_disables()
         self.set_hint()
+        self.data_widget.mapView.loadFinished.connect(self.map_load_finished)
+
 
     def disable_save_cancel(self):
         self.metadata_widget.saveButton.setEnabled(False)
@@ -151,8 +155,8 @@ class DataComponent:
 
 
     def show_downloaded_changed(self):
-        self.setup_camera_tree()
-        self.data_widget.deleteDownloadedButton.setEnabled(self.data_widget.showDownloadedCheckBox.isChecked())
+        if self.setup_camera_tree():
+            self.data_widget.deleteDownloadedButton.setEnabled(self.data_widget.showDownloadedCheckBox.isChecked())
 
 
     def delete_downloaded(self):
@@ -215,14 +219,18 @@ class DataComponent:
         self.initial_disables()
 
     def setup_camera_tree(self):
-        show_downloaded = self.data_widget.showDownloadedCheckBox.isChecked()
-        state.load_archive_data_model(aims_status_dialog=self.aims_status_dialog)
-        camera_tree = self.data_widget.cameraTree
-        self.camera_model = make_tree_model(timezone=self.time_zone, include_local=False, include_archives=show_downloaded, checkable=True)
-        camera_tree.setModel(self.camera_model)
-        self.camera_model.itemChanged.connect(self.camera_on_itemChanged)
-        self.data_widget.cameraTree.selectionModel().selectionChanged.connect(self.camera_tree_selection_changed)
-        camera_tree.expandRecursively(self.camera_model.invisibleRootItem().index(), 3)
+        if state.model.camera_data_loaded:
+            show_downloaded = self.data_widget.showDownloadedCheckBox.isChecked()
+            state.load_archive_data_model(aims_status_dialog=self.aims_status_dialog)
+            camera_tree = self.data_widget.cameraTree
+            self.camera_model = make_tree_model(timezone=self.time_zone, include_local=False, include_archives=show_downloaded, checkable=True)
+            camera_tree.setModel(self.camera_model)
+            self.camera_model.itemChanged.connect(self.camera_on_itemChanged)
+            self.data_widget.cameraTree.selectionModel().selectionChanged.connect(self.camera_tree_selection_changed)
+            camera_tree.expandRecursively(self.camera_model.invisibleRootItem().index(), 3)
+            return True
+        else:
+            return False
 
     def camera_on_itemChanged(self, item):
         print ("Item change")
@@ -283,15 +291,6 @@ class DataComponent:
 
         self.metadata_widget.cb_reefcloud_project.currentIndexChanged.connect(self.cb_reefcloud_project_changed)
 
-    def refresh(self):
-        old_survey_id = self.survey_id
-        self.ui_to_data()
-        self.survey_id = None
-        self.load_explore_surveys_tree()
-        self.setup_camera_tree()
-        self.survey_id = old_survey_id
-        self.data_to_ui()
-        print("refresh done")
 
     def cb_reefcloud_project_changed(self, index):
         # figure out what project was selected.
@@ -316,14 +315,32 @@ class DataComponent:
                 self.site_lookup[site["id"]] = site["name"]
 
     def rename_folders(self):
+        self.check_save()
         old_survey_id = self.survey_id
         self.ui_to_data()
         self.survey_id = None
-        rename_folders(state.model, self.time_zone)
+        try:
+            rename_folders(state.model, self.time_zone)
+        except:
+            raise Exception("Error renaming folders. Maybe you have a file or folder open in another window.")
+
         self.load_explore_surveys_tree()
+        self.setup_camera_tree()
         self.survey_id = old_survey_id
         self.data_to_ui()
+
         print("rename done")
+
+    def refresh(self):
+        self.check_save()
+        old_survey_id = self.survey_id
+        self.ui_to_data()
+        self.survey_id = None
+        self.load_explore_surveys_tree()
+        self.setup_camera_tree()
+        self.survey_id = old_survey_id
+        self.data_to_ui()
+        print("refresh done")
 
     def load_sequence_frame(self, ui_file, parent_widget):
         clearLayout(parent_widget.layout())
@@ -355,7 +372,7 @@ class DataComponent:
             label.setPixmap(pixmap)
 
     def open_folder(self):
-        os.startfile(self.survey().json_folder)
+        os.startfile(self.survey().folder)
 
     def open_mark(self):
         if self.mark_filename is not None:
@@ -431,7 +448,7 @@ class DataComponent:
         self.data_widget.tabWidget.setTabEnabled(3, True)
         self.data_widget.tabWidget.setTabEnabled(4, True)
         self.data_widget.tabWidget.setTabEnabled(5, True)
-        self.data_widget.tabWidget.setCurrentIndex(2)
+        # self.data_widget.tabWidget.setCurrentIndex(2)
 
 
     def explore_tree_selection_changed(self, item_selection: QItemSelection):
@@ -592,6 +609,8 @@ class DataComponent:
         self.info_widget.lbl_missing_pressure.setText(str(survey_stats.missing_pressure_depth))
 
     def load_thumbnails(self):
+        if self.thumbnail_model is not None:
+            self.thumbnail_model.interrupt()
         list_thumbnails: QListView = self.data_widget.lv_thumbnails
         list_thumbnails.setViewMode(QListWidget.IconMode)
         list_thumbnails.setIconSize(QSize(200, 200))
@@ -621,7 +640,7 @@ class DataComponent:
         if self.survey_id is not None:
             folder = self.survey().folder
             html_str = map_html_str(folder, False)
-            # print (html_str)
+            print(len(html_str))
             if html_str is not None:
                 view: QWebEngineView = self.data_widget.mapView
                 view.setHtml(html_str)
@@ -646,7 +665,11 @@ class DataComponent:
             self.hint_function("Click the download button")
 
         if not ready_to_edit and not ready_to_download:
-            self.hint_function("Click on a survey name to edit metadata or check the surveys that you want to download")
+            if state.model.camera_data_loaded:
+                self.hint_function("Click on a survey name to edit metadata or check the surveys that you want to download")
+            else:
+                self.hint_function("Click on a survey name to edit metadata")
+
 
     def check_space(self, surveys):
 

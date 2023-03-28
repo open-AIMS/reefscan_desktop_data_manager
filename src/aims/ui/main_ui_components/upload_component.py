@@ -13,10 +13,12 @@ from reefcloud.logon import ReefCloudSession
 
 
 class UploadComponent:
-    def __init__(self):
+    def __init__(self, hint_function):
         self.login_widget = None
         self.aims_status_dialog = None
         self.time_zone = None
+        self.hint_function = hint_function
+        self.logged_in = False
 
     def load_login_screen(self, aims_status_dialog, time_zone):
         self.aims_status_dialog = aims_status_dialog
@@ -31,6 +33,7 @@ class UploadComponent:
         self.login_widget.update_button.setEnabled(False)
         self.login_widget.treeView.setEnabled(False)
         self.load_tree()
+        self.hint_function("Press the login button")
 
     def cancel(self):
         print("cancel")
@@ -86,6 +89,17 @@ class UploadComponent:
             if not success:
                 raise Exception(message)
 
+    def set_hint(self):
+        if not self.logged_in:
+            self.hint_function("Press the login button")
+
+        surveys = checked_surveys(self.surveys_tree_model)
+        if len(surveys) == 0:
+            self.hint_function("Press 'Download Projects and Sites' or check the surveys that you want to upload to reefcloud")
+        else:
+            self.hint_function("Press the 'Upload Selected Surveys'")
+
+
 
 
     def login(self):
@@ -116,6 +130,8 @@ class UploadComponent:
                 self.login_widget.update_button.setEnabled(True)
                 self.login_widget.treeView.setEnabled(True)
 
+        self.set_hint()
+
     def update(self):
         update_reefcloud_projects(state.reefcloud_session)
         update_reefcloud_sites(state.reefcloud_session)
@@ -135,6 +151,6 @@ class UploadComponent:
         item.cascade_check()
         surveys = checked_surveys(self.surveys_tree_model)
         self.login_widget.upload_button.setEnabled(len(surveys) > 0)
-        # self.set_hint()
+        self.set_hint()
 
 

@@ -62,7 +62,7 @@ class MainUi(QMainWindow):
         self.ui.setWindowState(self.ui.windowState() | Qt.WindowMaximized)
 
         self.data_component = DataComponent(hint_function=self.hint)
-        self.upload_component = UploadComponent()
+        self.upload_component = UploadComponent(hint_function=self.hint)
         self.disk_drives_component = DiskDrivesComponent(hint_function=self.hint)
 
         self.workflow_widget = None

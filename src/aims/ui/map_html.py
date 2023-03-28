@@ -89,9 +89,6 @@ html_str = """
 </html>
 
 """
-stupid = """
-    file:///D:/COTS_Control_whitsunday_december_2022/20211211_022527_Seq01/20211211_022658_000_0308.jpg
-"""
 
 
 def map_html_str(folder, samba):

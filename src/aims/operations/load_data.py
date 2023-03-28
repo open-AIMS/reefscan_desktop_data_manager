@@ -1,4 +1,5 @@
 import logging
+import time
 
 from PyQt5.QtWidgets import QApplication
 from reefscanner.basic_model.survey import Survey
