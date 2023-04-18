@@ -9,7 +9,7 @@ from reefscanner.archive_stats.archive_stats import ArchiveStats
 from aims import state
 from PyQt5 import QtCore
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("")
 
 
 class ArchiveChecker(QObject):

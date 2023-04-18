@@ -13,7 +13,7 @@ from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
 from aims.sync.synchroniser import Synchroniser
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("")
 
 
 class SyncFromHardware(Synchroniser):

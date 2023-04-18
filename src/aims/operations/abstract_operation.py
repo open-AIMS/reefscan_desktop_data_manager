@@ -5,7 +5,7 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import QObject
 from reefscanner.basic_model.progress_queue import ProgressQueue
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("")
 
 
 class AbstractOperation(QObject):

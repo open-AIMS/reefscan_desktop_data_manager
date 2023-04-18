@@ -1,6 +1,7 @@
 import logging
 import multiprocessing
 import traceback
+from logging.handlers import RotatingFileHandler
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
@@ -15,9 +16,15 @@ from aims import state
 from aims.ui.main_ui import MainUi
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("")
 logger_smb = logging.getLogger('smbprotocol')
 logger_smb.setLevel(level=logging.WARNING)
+path = f"{state.config.config_folder}/reefscan.log"
+formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
+handler = RotatingFileHandler(path, maxBytes=1000000,
+                              backupCount=5)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 def gui_except_hook(exc_class, exc_value, tb):
@@ -65,7 +72,7 @@ if __name__ == "__main__":
     except:
         state.meipass= file_path + os.sep
         state.meipass2 = file_path + os.sep
-    print(state.meipass)
+    logger.info(state.meipass)
     files = glob.glob(state.meipass + '**/*', recursive=True)
     print(files)
 
@@ -96,7 +103,8 @@ if __name__ == "__main__":
     try:
         main_ui = MainUi()
         # main_ui = ConfigUi()
-
+        dev = len(sys.argv) > 1 and sys.argv[1].lower() == "dev"
+        state.config.set_dev(dev)
         main_ui.show()
         app.exec()
 

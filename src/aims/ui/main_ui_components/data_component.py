@@ -8,7 +8,7 @@ from time import process_time
 from fabric import Connection
 
 from PyQt5 import QtCore, uic, QtGui, QtWidgets, QtTest
-from PyQt5.QtCore import QModelIndex, QItemSelection, QSize, Qt
+from PyQt5.QtCore import QModelIndex, QItemSelection, QSize, Qt, QTimer
 from PyQt5.QtGui import QPixmap, QStandardItem
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QAction, QMenu, QInputDialog, QWidget, QTableView, QLabel, QListView, \
@@ -21,14 +21,14 @@ from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 from aims import state
 from aims.gui_model.lazy_list_model import LazyListModel
 from aims.gui_model.marks_model import MarksModel
-from aims.gui_model.tree_model import make_tree_model, checked_surveys
+from aims.gui_model.tree_model import make_tree_model, checked_survey_ids
 from aims.operations.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.stats.survey_stats import SurveyStats
 from aims.ui.main_ui_components.utils import setup_folder_tree, setup_file_system_tree_and_combo_box, clearLayout, \
     update_data_folder_from_tree
 from aims.ui.map_html import map_html_str
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("")
 
 
 def utc_to_local(utc_str, timezone):
@@ -61,9 +61,6 @@ class DataComponent:
         self.time_zone = None
         self.site_lookup = {}
         self.hint_function = hint_function
-
-    def map_load_finished(self, success):
-        print (f"Map loaded success:{success}")
 
     def tab_changed(self, index):
         print(index)
@@ -181,7 +178,7 @@ class DataComponent:
         self.data_widget.cameraTree.selectionModel().clearSelection()
 
         start = process_time()
-        surveys = checked_surveys(self.camera_model)
+        surveys = checked_survey_ids(self.camera_model)
 
         self.check_space(surveys)
 
@@ -235,7 +232,7 @@ class DataComponent:
     def camera_on_itemChanged(self, item):
         print ("Item change")
         item.cascade_check()
-        surveys = checked_surveys(self.camera_model)
+        surveys = checked_survey_ids(self.camera_model)
         self.data_widget.downloadButton.setEnabled(len(surveys) > 0)
         self.set_hint()
 
@@ -637,13 +634,20 @@ class DataComponent:
         self.survey_id = None
 
     def draw_map(self):
+        print("draw map")
         if self.survey_id is not None:
             folder = self.survey().folder
             html_str = map_html_str(folder, False)
-            print(len(html_str))
+            # print(html_str)
             if html_str is not None:
                 view: QWebEngineView = self.data_widget.mapView
+                view.stop()
                 view.setHtml(html_str)
+
+        print("finished draw map")
+
+    def map_load_finished(self, success):
+        print (f"Map loaded success:{success}")
 
     def non_survey_to_stats_ui(self, name):
         self.info_widget.lb_sequence_name.setText(name)
@@ -654,7 +658,7 @@ class DataComponent:
 
     def set_hint(self):
         ready_to_edit = self.survey_id is not None
-        ready_to_download = len(checked_surveys(self.camera_model)) > 0
+        ready_to_download = len(checked_survey_ids(self.camera_model)) > 0
         if ready_to_edit and ready_to_download:
             self.hint_function("Edit the metadata or Click the download button")
 

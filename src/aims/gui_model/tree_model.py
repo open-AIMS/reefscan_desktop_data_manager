@@ -1,4 +1,5 @@
 from PyQt5.QtGui import QStandardItemModel
+from reefscanner.basic_model.survey import Survey
 
 from aims.gui_model.SurveyTreeModelByDate import SurveyTreeModelByDate
 from aims.ui.checked_tree_item import CheckTreeitem
@@ -43,6 +44,7 @@ def make_branch(survey_data, top_level_name, checkable, timezone, grey=False):
         branch.appendRow(first_level_branch)
 
         surveys = first_level_branches[first_level_branch_name]
+        surveys = sorted(surveys, key=lambda s: s.best_name())
         for survey in surveys:
             survey_id = survey.id
             if survey_id != "archive":
@@ -80,7 +82,7 @@ def best_name(survey, survey_id):
     return name
 
 
-def checked_surveys(model, parent: QModelIndex = QModelIndex()):
+def checked_survey_ids(model, parent: QModelIndex = QModelIndex()):
     if model is None:
         return []
     surveys = []
@@ -88,12 +90,25 @@ def checked_surveys(model, parent: QModelIndex = QModelIndex()):
         index: QModelIndex = model.index(r, 0, parent)
         model_item = model.itemFromIndex(index)
         if model_item.isCheckable() and model_item.checkState() == Qt.Checked:
-            survey_id = index.data(Qt.UserRole)
-            if survey_id is not None:
-                surveys.append(survey_id)
+            survey_info = index.data(Qt.UserRole)
+            if survey_info is not None:
+                surveys.append(survey_info)
 
         if model.hasChildren(index):
-            child_surveys = checked_surveys(model, parent=index)
+            child_surveys = checked_survey_ids(model, parent=index)
             surveys = surveys + child_surveys
 
     return surveys
+
+
+def checked_surveys(model) -> list[Survey]:
+    survey_infos = checked_survey_ids(model)
+    surveys = []
+    for survey_info in survey_infos:
+        survey_id = survey_info["survey_id"]
+        survey = state.model.surveys_data[survey_id]
+        surveys.append(survey)
+
+    surveys = sorted(surveys, key=lambda s: s.best_name())
+    return surveys
+

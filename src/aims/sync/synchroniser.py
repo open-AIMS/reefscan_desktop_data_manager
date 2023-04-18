@@ -5,7 +5,7 @@ from datetime import datetime
 from joblib import Parallel, delayed
 from reefscanner.basic_model.progress_queue import ProgressQueue
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("")
 
 
 class Synchroniser:

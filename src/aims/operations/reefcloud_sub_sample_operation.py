@@ -7,7 +7,7 @@ from reefscanner.basic_model.basic_model import BasicModel
 from aims.operations.abstract_operation import AbstractOperation
 from reefcloud.sub_sample import SubSampler
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("")
 
 
 class ReefcloudSubSampleOperation(AbstractOperation):
@@ -28,7 +28,7 @@ class ReefcloudSubSampleOperation(AbstractOperation):
         logger.info("start subsample")
         try:
             self.selected_photo_infos = self.sub_sampler.sub_sample_dir(image_dir=self.image_dir, sample_dir=self.sample_dir, progress_queue=self.progress_queue)
-            self.success = True
+            self.success = self.selected_photo_infos is not None
         except Exception as e:
             logger.error("ERROR ERROR")
             traceback.print_exc()

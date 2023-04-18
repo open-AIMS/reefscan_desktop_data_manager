@@ -11,7 +11,7 @@ from aims.operations.load_data_operation import LoadDataOperation
 from aims.operations.reefcloud_sub_sample_operation import ReefcloudSubSampleOperation
 from aims.operations.reefcloud_upload_operation import ReefcloudUploadOperation
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("")
 
 
 def load_data(model, camera_connected, aims_status_dialog: AimsStatusDialog):
@@ -26,7 +26,6 @@ def load_data(model, camera_connected, aims_status_dialog: AimsStatusDialog):
     aims_status_dialog.close()
     print (operation.message)
     return operation.success, operation.message
-
 
 
 def reefcloud_subsample(image_dir, sample_dir, aims_status_dialog: AimsStatusDialog):

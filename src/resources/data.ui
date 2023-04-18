@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1336</width>
+    <width>1360</width>
     <height>849</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Reefscan Data Manager</string>
   </property>
   <property name="styleSheet">
    <string notr="true"/>

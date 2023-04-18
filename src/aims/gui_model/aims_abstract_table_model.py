@@ -5,7 +5,7 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QModelIndex
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("")
 
 
 class AimsAbstractTableModel(QtCore.QAbstractTableModel):

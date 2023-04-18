@@ -28,7 +28,7 @@ from tzlocal import get_localzone
 import unicodedata
 from aims.ui import deselectable_tree_view
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("")
 
 def remove_control_characters(s):
     return "".join(ch for ch in s if unicodedata.category(ch)[0]!="C")
@@ -57,7 +57,7 @@ class MainUi(QMainWindow):
         self.current_screen = "start"
         self.app = QtWidgets.QApplication(sys.argv)
         self.start_ui = f'{state.meipass}resources/main.ui'
-        self.ui = uic.loadUi(self.start_ui)
+        self.ui: QWidget = uic.loadUi(self.start_ui)
 
         self.ui.setWindowState(self.ui.windowState() | Qt.WindowMaximized)
 
@@ -229,6 +229,8 @@ class MainUi(QMainWindow):
             self.load_connect_disks_screen()
 
     def show(self):
+        if state.config.dev:
+            self.ui.setWindowTitle(self.ui.windowTitle() + " - DEV")
         self.ui.show()
 
 

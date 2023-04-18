@@ -10,7 +10,7 @@ from aims.operations.abstract_operation import AbstractOperation
 from reefcloud.reefcloud_uploader import ReefcloudUploader
 from reefcloud.sub_sample import SubSampler
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("")
 
 
 class ReefcloudUploadOperation(AbstractOperation):
@@ -19,7 +19,7 @@ class ReefcloudUploadOperation(AbstractOperation):
         super().__init__()
         self.finished=False
         self.success=False
-        self.message = ""
+        self.message = None
         self.uploader = ReefcloudUploader()
         self.selected_photo_infos = None
         self.survey = survey
@@ -33,8 +33,7 @@ class ReefcloudUploadOperation(AbstractOperation):
         self.success = False
         logger.info("start subsample")
         try:
-            self.uploader.upload_survey(self.survey, self.survey_id, self.survey_folder, self.subsampled_image_folder, self.progress_queue)
-            self.success = True
+            self.success = self.uploader.upload_survey(self.survey, self.survey_id, self.survey_folder, self.subsampled_image_folder, self.progress_queue)
         except Exception as e:
             logger.error("ERROR ERROR")
             traceback.print_exc()
@@ -50,5 +49,5 @@ class ReefcloudUploadOperation(AbstractOperation):
     def cancel(self):
         if not self.finished:
             logger.info("I will cancel")
-            self.sub_sampler.canceled = True
+            self.uploader.canceled = True
 

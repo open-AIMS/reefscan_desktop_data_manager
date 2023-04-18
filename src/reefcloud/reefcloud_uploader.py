@@ -25,6 +25,8 @@ class ReefcloudUploader:
         files = os.listdir(subsampled_image_folder)
         progress_queue.set_progress_max(len(files))
         for file in sorted(files):
+            if self.canceled:
+                return False
             upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=subsampled_image_folder,
                         file_name=file)
             if file.lower().endswith(".jpg"):
@@ -32,8 +34,8 @@ class ReefcloudUploader:
                     survey.reefcloud.first_photo_uploaded = file
                 survey.reefcloud.last_photo_uploaded = file
                 survey.reefcloud.uploaded_photo_count += 1
+                save_survey(survey, state.primary_folder, state.backup_folder, False)
 
-            save_survey(survey, state.primary_folder, state.backup_folder, False)
             progress_queue.set_progress_value()
         # upload other files (not images or survey.json)
         for file in os.listdir(survey_folder):
@@ -45,3 +47,5 @@ class ReefcloudUploader:
         # upload survey.json last
         upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=survey_folder,
                     file_name="survey.json")
+
+        return True

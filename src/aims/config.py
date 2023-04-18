@@ -24,11 +24,12 @@ class Config(object):
         self.projects_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/user/access?min-level=WRITE"
         self.sites_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/locations?org=REEFSCAN"
 
-        self.aws_region_id = 'ap-southeast-2'
-        self.cognito_user_pool_id = 'ap-southeast-2_VpzWNPszV'
-        self.client_id = '7866phkrj600o9c0aulgmqpi21'
-        self.cognito_uri = 'https://login.dev.reefcloud.ai/'
-        self.cognito_token_key_url = f'https://cognito-idp.{self.aws_region_id}.amazonaws.com/{self.cognito_user_pool_id}/.well-known/jwks.json'
+        self.dev = False
+        self.aws_region_id = ''
+        self.cognito_user_pool_id = ''
+        self.client_id = ''
+        self.cognito_uri = ''
+        self.cognito_token_key_url = ''
         
         self.token = ""
 
@@ -38,9 +39,23 @@ class Config(object):
 
         self.read_config_file()
 
+    def set_dev(self, dev):
+        self.dev = dev
+        if dev:
+            self.aws_region_id = 'ap-southeast-2'
+            self.cognito_user_pool_id = 'ap-southeast-2_VpzWNPszV'
+            self.client_id = '7866phkrj600o9c0aulgmqpi21'
+            self.cognito_uri = 'https://login.dev.reefcloud.ai/'
+            self.cognito_token_key_url = f'https://cognito-idp.{self.aws_region_id}.amazonaws.com/{self.cognito_user_pool_id}/.well-known/jwks.json'
+        else:
+            self.aws_region_id = 'ap-southeast-2'
+            self.cognito_user_pool_id = 'ap-southeast-2_VpzWNPszV'
+            self.client_id = '7866phkrj600o9c0aulgmqpi21'
+            self.cognito_uri = 'https://login.dev.reefcloud.ai/'
+            self.cognito_token_key_url = f'https://cognito-idp.{self.aws_region_id}.amazonaws.com/{self.cognito_user_pool_id}/.well-known/jwks.json'
+
     def save_config_file(self):
         data_folder_json = {
-            "time_zone": self.time_zone,
             "backup": self.backup
         }
         write_json_file(self.config_folder, self.config_file_name, data_folder_json)
@@ -52,7 +67,6 @@ class Config(object):
             data_folder_json = {}
 
         home = str(Path.home())
-        self.time_zone = data_folder_json.get("time_zone", "")
         self.backup = data_folder_json.get("backup", True)
         self.load_reefcloud_projects()
         self.load_reefcloud_sites()

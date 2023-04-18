@@ -1,3 +1,5 @@
+import time
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import cgi
 
@@ -22,7 +24,7 @@ from jwt import (
 )
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("")
 
 
 oauth2_code = None
@@ -68,23 +70,34 @@ otherhtml = """
 tokens=None
 
 class TokenServer(BaseHTTPRequestHandler):
+    def log_message(self, format, *args):
+        return
+
     def do_GET(self):
         global oauth2_code
-        print(self.path)
+        logger.info(f"do_Get {self.path}")
         params = parse_qs(urlparse(self.path).query)
         if 'code' in params:
             oauth2_code = params['code'][0]
-            print(f"code: {oauth2_code}")
+            logger.info(f"code: {oauth2_code}")
 
+        logger.info("gonna send response")
         self.send_response(200)
+        logger.info("response sent")
         self.send_header("Content-type", "text/html")
         self.end_headers()
+        logger.info("headers sent")
         if oauth2_code:
+            logger.info("otherhtml")
             self.wfile.write(bytes(otherhtml, "UTF-8"))
         else:
+            logger.info("html")
             self.wfile.write(bytes(html, "UTF-8"))
+        logger.info("do_get done")
 
     def do_POST(self):
+
+        logger.info(f"do_Post {self.path}")
         global oauth2_code
         form = cgi.FieldStorage(
             fp=self.rfile,
@@ -97,7 +110,7 @@ class TokenServer(BaseHTTPRequestHandler):
 
 class LoginWorker(Thread):
     def __init__(self, client_id, cognito_uri, host_name="localhost", port=4200, path="/app/", launch_browser=True):
-        print("LoginWorker __init__() start")
+        logger.info("LoginWorker __init__() start")
 
         super().__init__()
         self.host_name = host_name
@@ -109,40 +122,40 @@ class LoginWorker(Thread):
         self.client = WebApplicationClient(client_id=self.client_id)
         # self.client = BackendApplicationClient(client_id=self.client_id)
         self.web_server = None
-        print("LoginWorker __init__() end")
+        logger.info("LoginWorker __init__() end")
 
         self.oauth_session = None
         self.cancelled = False
 
     def cancel(self):
-        print ("worker cancelled")
+        logger.info ("worker cancelled")
         self.cancelled = True
         requests.get("http://localhost:4200")
 
     def run(self):
         global oauth2_code, oauth2_state
-        print("LoginWorker run() start")
+        logger.info("LoginWorker run() start")
         self.oauth_session = OAuth2Session(client=self.client,
                                            redirect_uri=f"http://{self.host_name}:{self.port}{self.path}")
-        print(f"http://{self.host_name}:{self.port}{self.path}")
+        logger.info(f"http://{self.host_name}:{self.port}{self.path}")
         authorization_url, oauth2_state = self.oauth_session.authorization_url(f"{self.cognito_uri}/login")
         logger.info(f"{authorization_url}")
-        print(f"{authorization_url}")
+        logger.info(f"{authorization_url}")
         if self.launch_browser:
             webbrowser.open(authorization_url)
         else:
-            print(f"Please authorize rdp upload here: {authorization_url}")
+            logger.info(f"Please authorize rdp upload here: {authorization_url}")
 
         self.web_server = HTTPServer((self.host_name, self.port), TokenServer)
         logger.debug(f"Server starting http://{self.host_name}:{self.port}")
-        print(f"Server starting http://{self.host_name}:{self.port}")
+        logger.info(f"Server starting http://{self.host_name}:{self.port}")
         while oauth2_code is None and not self.cancelled:
-            print("Handling")
+            logger.info("Handling")
             self.web_server.handle_request()
 
         self.web_server.server_close()
-        print("After webserver close")
-        print("LoginWorker run() end")
+        logger.info("After webserver close")
+        logger.info("LoginWorker run() end")
 
         logger.info("Configured access token and shutdown server")
 
@@ -163,8 +176,8 @@ class UserInfo():
 
         response = requests.get(cognito_token_key_url)
         if response.status_code == 200 and 'application/json' in response.headers.get('Content-Type', ''):
-            print(response.json())
-            print(type(response.json()))
+            logger.info(response.json())
+            logger.info(type(response.json()))
             return response.json()
 
     @classmethod
@@ -184,7 +197,7 @@ class UserInfo():
         else:
             authorized = False
             message = str(response.content.decode('UTF-8'))
-            print(message)
+            logger.info(message)
         return cls(cognito_token_key_url, decoded['name'], decoded['email'], authorized=authorized, message=message)
 
 
@@ -198,9 +211,23 @@ class ReefCloudSession():
         self.finished = False
 
     def cancel(self):
-        print ("session cancelled")
+        logger.info ("session cancelled")
         if self.login_worker is not None:
             self.login_worker.cancel()
+
+    def check_refresh(self):
+        expire_time = self.tokens["expires_at"]
+        now = datetime.timestamp(datetime.now())
+        expires_in_secs = expire_time - now
+        # if the tokens expire less than a minute from now then refresh
+        if expires_in_secs < 60:
+            token_url = f'{self.cognito_uri}/oauth2/token'
+            tokens = self.oauth2_session.refresh_token(token_url,
+                                                          refresh_token=self.tokens["refresh_token"],
+                                                       client_id=self.client_id,
+                                                       include_client_id=True
+                                                       )
+            self.tokens = tokens
 
 
     def login(self):
@@ -216,6 +243,7 @@ class ReefCloudSession():
                                                       state=oauth2_state,
                                                       client_id=self.client_id,
                                                       include_client_id=True)
+        print(self.tokens)
         self.id_token = self.tokens['id_token']
         self.access_token = self.tokens['access_token']
         self.current_user = UserInfo.from_id_token(state.config.cognito_token_key_url, self.id_token, self.access_token)

@@ -3,7 +3,7 @@ import logging
 from aims.operations.abstract_operation import AbstractOperation
 from aims.sync.sync_from_hardware import SyncFromHardware
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("")
 
 
 class SyncFromHardwareOperation(AbstractOperation):

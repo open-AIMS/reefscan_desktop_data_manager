@@ -6,7 +6,7 @@ from reefscanner.basic_model.basic_model import BasicModel
 
 from aims.operations.abstract_operation import AbstractOperation
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("")
 
 
 class LoadDataOperation(AbstractOperation):

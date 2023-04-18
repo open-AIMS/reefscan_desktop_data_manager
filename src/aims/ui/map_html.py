@@ -93,9 +93,12 @@ html_str = """
 
 def map_html_str(folder, samba):
     try:
-        track_str = str(track(folder, samba))
-        if track_str is None:
-            return None
+        _track = track(folder, samba)
+        print(len(_track))
+        if _track is None or len(_track) < 2:
+            return "<html>No Map</html"
+
+        track_str = str(_track)
         return html_str.replace("___PASTE_TRACK_HERE___", track_str)
     except Exception as e:
         raise UserWarning(e)
