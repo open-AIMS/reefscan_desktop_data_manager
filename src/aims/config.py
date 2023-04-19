@@ -37,7 +37,15 @@ class Config(object):
         self.time_zone = ""
         self.camera_samba = True
 
+        self.deep = False
+
         self.read_config_file()
+
+    def set_deep(self, deep):
+        self.deep = deep
+        if deep:
+            self.camera_ip = "192.168.Ican'tremember"
+            self.hardware_data_folder = r"\\192.168.Ican'tremember\images"
 
     def set_dev(self, dev):
         self.dev = dev

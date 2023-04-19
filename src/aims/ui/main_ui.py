@@ -229,6 +229,11 @@ class MainUi(QMainWindow):
             self.load_connect_disks_screen()
 
     def show(self):
+        if state.config.deep:
+            self.ui.setWindowTitle("Reefscan Deep Data Manager")
+        else:
+            self.ui.setWindowTitle("Reefscan Transom Data Manager")
+
         if state.config.dev:
             self.ui.setWindowTitle(self.ui.windowTitle() + " - DEV")
         self.ui.show()

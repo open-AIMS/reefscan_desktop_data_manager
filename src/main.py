@@ -103,6 +103,8 @@ if __name__ == "__main__":
     try:
         main_ui = MainUi()
         # main_ui = ConfigUi()
+        state.config.set_deep(sys.argv[0].lower().endswith("reefscan-deep.exe"))
+
         dev = len(sys.argv) > 1 and sys.argv[1].lower() == "dev"
         state.config.set_dev(dev)
         main_ui.show()
