@@ -74,7 +74,16 @@ html_str = """
 
 
 	// zoom the map to the polyline
-	mymap.fitBounds(markersLayer.getBounds());
+	bounds = markersLayer.getBounds()
+	if ((bounds._northEast.lat - bounds._southWest.lat) < 0.00001) {
+		bounds._southWest.lat = bounds._southWest.lat + 0.00001
+	}
+	if ((bounds._northEast.lng - bounds._southWest.lng) < 0.00001) {
+		bounds._southWest.lng = bounds._southWest.lng + 0.00001
+	}
+
+	mymap.fitBounds(bounds);
+	
 	if (mymap.getZoom() > 14) {
 	    mymap.setZoom(14)
 	}

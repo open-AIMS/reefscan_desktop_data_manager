@@ -638,10 +638,10 @@ class DataComponent:
         if self.survey_id is not None:
             folder = self.survey().folder
             html_str = map_html_str(folder, False)
-            # print(html_str)
+            print(html_str)
             if html_str is not None:
                 view: QWebEngineView = self.data_widget.mapView
-                view.stop()
+                # view.stop()
                 view.setHtml(html_str)
 
         print("finished draw map")
@@ -676,29 +676,32 @@ class DataComponent:
 
 
     def check_space(self, surveys):
+        try:
+            total_kilo_bytes_used = 0
+            for survey in surveys:
+                if survey['branch'] == "New Sequences":
+                    command = f'du -s /media/jetson/*/images/{survey["survey_id"]}'
+                else:
+                    command = f'du -s /media/jetson/*/images/archive/{survey["survey_id"]}'
 
-        total_kilo_bytes_used = 0
-        for survey in surveys:
-            if survey['branch'] == "New Sequences":
-                command = f'du -s /media/jetson/*/images/{survey["survey_id"]}'
-            else:
-                command = f'du -s /media/jetson/*/images/archive/{survey["survey_id"]}'
+                conn = Connection(
+                    "jetson@" + state.config.camera_ip,
+                    connect_kwargs={"password": "jetson"}
+                )
+                result = conn.run(command, hide=True)
+                kilo_bytes_used = int(result.stdout.split()[0])
+                print(f"Bytes used: {kilo_bytes_used}")
+                total_kilo_bytes_used += kilo_bytes_used
 
-            conn = Connection(
-                "jetson@" + state.config.camera_ip,
-                connect_kwargs={"password": "jetson"}
-            )
-            result = conn.run(command, hide=True)
-            kilo_bytes_used = int(result.stdout.split()[0])
-            print(f"Bytes used: {kilo_bytes_used}")
-            total_kilo_bytes_used += kilo_bytes_used
+            print(f"total Bytes used: {total_kilo_bytes_used}")
 
-        print(f"total Bytes used: {total_kilo_bytes_used}")
+            print(state.primary_drive)
+            print(state.backup_drive)
 
-        print(state.primary_drive)
-        print(state.backup_drive)
-
-        du = shutil.disk_usage(state.primary_drive)
+            du = shutil.disk_usage(state.primary_drive)
+        except Exception as e:
+            logger.error(self, "Error calulating disk usage or space. ", exc_info=True)
+            return
         if total_kilo_bytes_used > du.free * 1000:
             gb_used = total_kilo_bytes_used / 1000000
             free_gb = du.free / 1000000000
