@@ -37,5 +37,12 @@ On Linux:
 `pyinstaller -p src --noconsole --name reefscan-transom --add-data src/resources/*:resources --icon src\resources\aims_fish.ico --onefile src/main.py`
 
 
-
 pip install ..\reef_scanner_data_model\dist\reefscanner-0.2.0-py3-none-any.whl
+
+# Language stuff
+Create or update ts files
+`pylupdate5 src/aims/ui/main_ui_components/data_component.py ^
+src/resources/data.ui ^
+src/resources/connect.ui ^
+-ts src/resources/eng-backward.ts`
+

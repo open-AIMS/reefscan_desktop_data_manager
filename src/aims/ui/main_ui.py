@@ -27,6 +27,7 @@ from pytz import common_timezones, all_timezones, timezone, utc
 from tzlocal import get_localzone
 import unicodedata
 from aims.ui import deselectable_tree_view
+from generated import connect_qt_ui
 
 logger = logging.getLogger("")
 
@@ -84,6 +85,15 @@ class MainUi(QMainWindow):
         self.drives_connected = False
 
         self.hint('Choose "Connect Disks" from the workflow bar')
+
+        self.trans = QtCore.QTranslator(self)
+        if self.trans.load(f'{state.meipass}resources/eng-backward.ts', ):
+            logger.info("translations loaded")
+        else:
+            logger.warn("translations not loaded")
+
+        QtWidgets.QApplication.instance().installTranslator(self.trans)
+
 
     def hint(self, text):
         self.ui.hint_label.setText(text)
@@ -159,7 +169,9 @@ class MainUi(QMainWindow):
 
     def load_connect_screen(self):
         self.current_screen = "connect"
-        self.connect_widget = self.load_main_frame(f'{state.meipass}resources/connect.ui')
+        # self.connect_widget = self.load_main_frame(f'{state.meipass}resources/connect.ui')
+        self.connect_widget = connect_qt_ui.Ui_Form()
+        self.load_main_frame2(self.connect_widget)
         html = self.connect_widget.textBrowser.toHtml()
         html = html.replace("XXX_DIR_XXX", state.meipass2)
         self.connect_widget.textBrowser.setHtml(html)
@@ -183,6 +195,15 @@ class MainUi(QMainWindow):
     def load_main_frame(self, ui_file):
         clearLayout(self.ui.mainFrame.layout())
         widget: QWidget = uic.loadUi(ui_file)
+        self.ui.mainFrame.layout().addWidget(widget)
+        return widget
+
+    def load_main_frame2(self, form):
+        widget = QWidget()
+        form.setupUi(widget)
+        form.retranslateUi(self)
+
+        clearLayout(self.ui.mainFrame.layout())
         self.ui.mainFrame.layout().addWidget(widget)
         return widget
 

@@ -64,6 +64,9 @@ sys.excepthook = gui_except_hook
 
 
 if __name__ == "__main__":
+    translate = QtCore.QCoreApplication.translate
+
+
     multiprocessing.freeze_support()
     file_path = os.path.dirname(os.path.realpath(__file__))
     try:
@@ -102,6 +105,8 @@ if __name__ == "__main__":
 
     try:
         main_ui = MainUi()
+
+
         # main_ui = ConfigUi()
         state.config.set_deep(sys.argv[0].lower().endswith("reefscan-deep.exe"))
 
