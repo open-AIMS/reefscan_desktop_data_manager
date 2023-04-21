@@ -40,9 +40,9 @@ On Linux:
 pip install ..\reef_scanner_data_model\dist\reefscanner-0.2.0-py3-none-any.whl
 
 # Language stuff
-Create or update ts files
-`pylupdate5 src/aims/ui/main_ui_components/data_component.py ^
-src/resources/data.ui ^
-src/resources/connect.ui ^
--ts src/resources/eng-backward.ts`
 
+Create or update ts files
+ensure reefscan.pro is up to date
+`pylupdate5 reefscan.pro src/resources/eng-vi.ts`
+
+Install QT and use QT linguist to edit and release the file. That will create a .qm file 

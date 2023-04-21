@@ -87,7 +87,9 @@ class MainUi(QMainWindow):
         self.hint('Choose "Connect Disks" from the workflow bar')
 
         self.trans = QtCore.QTranslator(self)
-        if self.trans.load(f'{state.meipass}resources/eng-backward.ts', ):
+        dir = f'{state.meipass}resources'
+        print(dir)
+        if self.trans.load('eng-vi', directory=dir):
             logger.info("translations loaded")
         else:
             logger.warn("translations not loaded")
