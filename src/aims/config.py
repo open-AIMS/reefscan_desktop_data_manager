@@ -1,9 +1,11 @@
+import locale
+import os
 from pathlib import Path
 
 import requests
 from reefscanner.basic_model.json_utils import write_json_file
 from reefscanner.basic_model.json_utils import read_json_file
-
+import ctypes
 
 class Config(object):
 
@@ -40,6 +42,15 @@ class Config(object):
         self.deep = False
 
         self.read_config_file()
+        self.language = os.getenv("LANG")
+        if self.language is None:
+            windll = ctypes.windll.kernel32
+            windll.GetUserDefaultUILanguage()
+            self.language = locale.windows_locale[windll.GetUserDefaultUILanguage()]
+
+        self.vietnemese = self.language == "vi_VN"
+
+        print(self.language)
 
     def set_deep(self, deep):
         self.deep = deep
