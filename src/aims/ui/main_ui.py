@@ -158,7 +158,10 @@ class MainUi(QMainWindow):
         for d in drives:
             drive_type = win32file.GetDriveType(d)
             if drive_type == win32file.DRIVE_FIXED or drive_type == win32file.DRIVE_REMOVABLE:
-                label = win32api.GetVolumeInformation(d)[0]
+                try:
+                    label = win32api.GetVolumeInformation(d)[0]
+                except:
+                    label = "Dont know"
                 self.fixed_drives.append({"letter": d.replace("\\", ""), "label": label})
 
     def load_data_screen(self):
@@ -239,10 +242,13 @@ class MainUi(QMainWindow):
 
         self.load_fixed_drives()
         local_space = ""
-        for drive in self.fixed_drives:
-            du = shutil.disk_usage(drive["letter"])
-            gbFree = round(du.free / 1000000000)
-            local_space = local_space + f"{drive['letter']}({drive['label']}) {gbFree} Gb Free \n"
+        try:
+            for drive in self.fixed_drives:
+                du = shutil.disk_usage(drive["letter"])
+                gbFree = round(du.free / 1000000000)
+                local_space = local_space + f"{drive['letter']}({drive['label']}) {gbFree} Gb Free \n"
+        except:
+            pass
         self.status_widget.lblLocal.setText(local_space)
 
         # if self.current_screen == "data":
