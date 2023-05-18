@@ -2,7 +2,7 @@ import os
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QMainWindow
 
 from aims import state
 from aims.operations.disk_drive_sync import compare
@@ -24,8 +24,9 @@ def has_secondary_folder(disk):
     return os.path.exists(get_secondary_folder(disk))
 
 
-class DiskDrivesComponent:
+class DiskDrivesComponent(QMainWindow):
     def __init__(self, hint_function):
+        super().__init__()
         self.widget = None
         self.aims_status_dialog = None
         self.hint_function = hint_function
@@ -58,13 +59,13 @@ class DiskDrivesComponent:
 
     def set_hint(self):
         if self.widget.driveComboBox.currentData() is None:
-            self.hint_function("Choose the primary disk drive to store your data")
+            self.hint_function(self.tr("Choose the primary disk drive to store your data"))
             return
         if self.widget.secondDriveComboBox.currentData() is None:
-            self.hint_function("Choose the secondary disk drive to store a backup of your data")
+            self.hint_function(self.tr("Choose the secondary disk drive to store a backup of your data"))
             return
 
-        self.hint_function("Press the connect button")
+        self.hint_function(self.tr("Press the connect button"))
 
 
     def change_backup(self):
@@ -105,11 +106,11 @@ class DiskDrivesComponent:
     def compare_disks(self, primary_folder, secondary_folder):
         total_differences, messages, message_str = compare(primary_folder, secondary_folder, False, self.aims_status_dialog)
         if total_differences > 0:
-            message = f"""
+            message = self.tr("""
                 Contents of the primary and seconday drives do not match.\n
                 Do you want to copy all the missing and modified files from the primary to the secondary drive? \n
-                {message_str} 
-            """
+            """)
+            message = message + message_str
 
             self.widget.messageText.setText(message_str)
             self.widget.error_label1.setVisible(True)

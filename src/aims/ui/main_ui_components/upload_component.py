@@ -3,19 +3,19 @@ import os
 from time import process_time
 
 from PyQt5 import QtWidgets, QtTest
-from PyQt5.QtWidgets import QMessageBox, QApplication
+from PyQt5.QtWidgets import QMessageBox, QApplication, QMainWindow
 from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.survey import Survey
 from reefscanner.basic_model.survey_reefcloud_info import ReefcloudUploadInfo
 
 from aims import state
-from aims.gui_model.tree_model import make_tree_model, checked_survey_ids, checked_surveys
+from aims.gui_model.tree_model import TreeModelMaker, checked_survey_ids, checked_surveys
 from aims.operations.load_data import reefcloud_subsample, reefcloud_upload
 from reefcloud.reefcloud_utils import upload_file, write_reefcloud_photos_json, update_reefcloud_projects, update_reefcloud_sites
 from reefcloud.logon import ReefCloudSession
 
 
-class UploadComponent:
+class UploadComponent():
     def __init__(self, hint_function):
         self.login_widget = None
         self.aims_status_dialog = None
@@ -173,7 +173,7 @@ class UploadComponent:
         state.config.camera_connected = False
         state.load_data_model(aims_status_dialog=self.aims_status_dialog)
         tree = self.login_widget.treeView
-        self.surveys_tree_model = make_tree_model(timezone=self.time_zone, include_camera=False, checkable=True)
+        self.surveys_tree_model = TreeModelMaker().make_tree_model(timezone=self.time_zone, include_camera=False, checkable=True)
         tree.setModel(self.surveys_tree_model)
         tree.expandRecursively(self.surveys_tree_model.invisibleRootItem().index(), 3)
         self.surveys_tree_model.itemChanged.connect(self.on_itemChanged)

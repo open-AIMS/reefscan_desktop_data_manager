@@ -12,7 +12,7 @@ from PyQt5.QtCore import QModelIndex, QItemSelection, QSize, Qt, QTimer
 from PyQt5.QtGui import QPixmap, QStandardItem
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QAction, QMenu, QInputDialog, QWidget, QTableView, QLabel, QListView, \
-    QListWidget, QMessageBox
+    QListWidget, QMessageBox, QMainWindow
 from pytz import utc
 from reefscanner.basic_model.model_helper import rename_folders
 from reefscanner.basic_model.reader_writer import save_survey
@@ -21,7 +21,8 @@ from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 from aims import state
 from aims.gui_model.lazy_list_model import LazyListModel
 from aims.gui_model.marks_model import MarksModel
-from aims.gui_model.tree_model import make_tree_model, checked_survey_ids
+from aims.gui_model.tree_model import TreeModelMaker, checked_survey_ids
+from aims.operations.kml_maker import make_kml
 from aims.operations.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.stats.survey_stats import SurveyStats
 from aims.ui.main_ui_components.utils import setup_folder_tree, setup_file_system_tree_and_combo_box, clearLayout, \
@@ -41,8 +42,9 @@ def utc_to_local(utc_str, timezone):
         return utc_str
 
 
-class DataComponent:
+class DataComponent(QMainWindow):
     def __init__(self, hint_function):
+        super().__init__()
         self.data_widget = None
         self.metadata_widget = None
         self.info_widget = None
@@ -91,6 +93,8 @@ class DataComponent:
         self.data_widget.tabWidget.currentChanged.connect(self.tab_changed)
         self.data_widget.renameFoldersButton.clicked.connect(self.rename_folders)
         self.data_widget.refreshButton.clicked.connect(self.refresh)
+        self.data_widget.kmlForAllButton.clicked.connect(self.kml_for_all)
+        self.data_widget.kmlForOneButton.clicked.connect(self.kml_for_one)
 
         self.marks_widget.btnOpenMarkFolder.clicked.connect(self.open_mark_folder)
         self.marks_widget.btnOpenMark.clicked.connect(self.open_mark)
@@ -157,7 +161,7 @@ class DataComponent:
 
 
     def delete_downloaded(self):
-        reply = QMessageBox.question(self.data_widget, 'Delete?', "Are you sure you want to delete the downloaded surveys from the camera?",
+        reply = QMessageBox.question(self.data_widget, self.tr('Delete?'), self.tr("Are you sure you want to delete the downloaded surveys from the camera?"),
                                      QMessageBox.Yes | QMessageBox.No)
 
         if reply == QMessageBox.Yes:
@@ -208,8 +212,8 @@ class DataComponent:
 
         print(f"Download Finished in {minutes} minutes")
         errorbox = QtWidgets.QMessageBox()
-        errorbox.setText("Download finished")
-        errorbox.setDetailedText(f"Finished in {minutes} minutes")
+        errorbox.setText(self.tr("Download finished"))
+        errorbox.setDetailedText(self.tr("Finished in ") + str(minutes) + self.tr(" minutes"))
         self.aims_status_dialog.progress_dialog.close()
         QtTest.QTest.qWait(1000)
         errorbox.exec_()
@@ -220,7 +224,7 @@ class DataComponent:
             show_downloaded = self.data_widget.showDownloadedCheckBox.isChecked()
             state.load_archive_data_model(aims_status_dialog=self.aims_status_dialog)
             camera_tree = self.data_widget.cameraTree
-            self.camera_model = make_tree_model(timezone=self.time_zone, include_local=False, include_archives=show_downloaded, checkable=True)
+            self.camera_model = TreeModelMaker().make_tree_model(timezone=self.time_zone, include_local=False, include_archives=show_downloaded, checkable=True)
             camera_tree.setModel(self.camera_model)
             self.camera_model.itemChanged.connect(self.camera_on_itemChanged)
             self.data_widget.cameraTree.selectionModel().selectionChanged.connect(self.camera_tree_selection_changed)
@@ -239,17 +243,17 @@ class DataComponent:
 
     def lookups(self):
 
-        self.metadata_widget.cb_tide.addItem("")
-        self.metadata_widget.cb_tide.addItem("falling")
-        self.metadata_widget.cb_tide.addItem("high")
-        self.metadata_widget.cb_tide.addItem("low")
-        self.metadata_widget.cb_tide.addItem("rising")
+        self.metadata_widget.cb_tide.addItem("", userData="")
+        self.metadata_widget.cb_tide.addItem(self.tr("falling"), userData="falling")
+        self.metadata_widget.cb_tide.addItem(self.tr("high"), userData="high")
+        self.metadata_widget.cb_tide.addItem(self.tr("low"), userData="low")
+        self.metadata_widget.cb_tide.addItem(self.tr("rising"), userData="rising")
 
-        self.metadata_widget.cb_sea.addItem("")
-        self.metadata_widget.cb_sea.addItem("calm")
-        self.metadata_widget.cb_sea.addItem("slight")
-        self.metadata_widget.cb_sea.addItem("moderate")
-        self.metadata_widget.cb_sea.addItem("rough")
+        self.metadata_widget.cb_sea.addItem("", userData="")
+        self.metadata_widget.cb_sea.addItem(self.tr("calm"), userData="calm")
+        self.metadata_widget.cb_sea.addItem(self.tr("slight"), userData="slight")
+        self.metadata_widget.cb_sea.addItem(self.tr("moderate"), userData="moderate")
+        self.metadata_widget.cb_sea.addItem(self.tr("rough"), userData="rough")
 
         self.metadata_widget.cb_wind.addItem("")
         self.metadata_widget.cb_wind.addItem("<5")
@@ -328,6 +332,15 @@ class DataComponent:
 
         print("rename done")
 
+    def kml_for_all(self):
+        for survey in state.model.surveys_data.values():
+            make_kml(survey)
+
+    def kml_for_one(self):
+        if self.survey() is None:
+            raise Exception ("Choose a survey first")
+        make_kml(survey=self.survey())
+
     def refresh(self):
         self.check_save()
         old_survey_id = self.survey_id
@@ -356,7 +369,7 @@ class DataComponent:
         else:
             label: QLabel = self.marks_widget.lblPhoto
             label.clear()
-            self.marks_widget.lblFileName.setText("There are no marks for this survey")
+            self.marks_widget.lblFileName.setText(self.tr("There are no marks for this sequence"))
 
     def marks_table_clicked(self, selected, deselected):
         index = selected
@@ -415,9 +428,9 @@ class DataComponent:
             self.survey_list = None
         else:
             self.survey_id = selected_index_data["survey_id"]
-            if selected_index_data["branch"] == "New Sequences":
+            if selected_index_data["branch"] == self.tr("New Sequences"):
                 self.survey_list = state.model.camera_surveys
-            elif selected_index_data["branch"] == "Downloaded Sequences":
+            elif selected_index_data["branch"] == self.tr("Downloaded Sequences"):
                 self.survey_list = state.model.archived_surveys
             else:
                 self.survey_list = state.model.surveys_data
@@ -491,7 +504,7 @@ class DataComponent:
 
     def check_save(self):
         if self.is_modified():
-            reply = QMessageBox.question(self.data_widget, 'Save?', "Do you want to save your changes?",
+            reply = QMessageBox.question(self.data_widget, self.tr('Save?'), self.tr("Do you want to save your changes?"),
                                          QMessageBox.Yes | QMessageBox.No)
 
             if reply == QMessageBox.Yes:
@@ -531,12 +544,12 @@ class DataComponent:
                self.xstr(self.survey().operator) != self.metadata_widget.ed_operator.text() or \
                self.xstr(self.survey().observer) != self.metadata_widget.ed_observer.text() or \
                self.xstr(self.survey().vessel) != self.metadata_widget.ed_vessel.text() or \
-               self.xstr(self.survey().sea) != self.metadata_widget.cb_sea.currentText() or \
+               self.xstr(self.survey().sea) != self.metadata_widget.cb_sea.currentData() or \
                self.xstr(self.survey().wind) != self.metadata_widget.cb_wind.currentText() or \
                self.xstr(self.survey().cloud) != self.metadata_widget.cb_cloud.currentText() or \
                self.xstr(self.survey().visibility) != self.metadata_widget.cb_vis.currentText() or \
                self.xstr(self.survey().comments) != self.metadata_widget.ed_comments.toPlainText() or \
-               self.xstr(self.survey().tide) != self.metadata_widget.cb_tide.currentText() or \
+               self.xstr(self.survey().tide) != self.metadata_widget.cb_tide.currentData() or \
                self.xstr(self.survey().friendly_name) != self.metadata_widget.ed_name.text() or \
                self.xstr(self.survey().reefcloud_project) != self.metadata_widget.cb_reefcloud_project.currentText() or \
                self.survey().reefcloud_site != self.metadata_widget.cb_reefcloud_site.currentData()
@@ -550,12 +563,12 @@ class DataComponent:
             self.survey().operator = self.metadata_widget.ed_operator.text()
             self.survey().observer = self.metadata_widget.ed_observer.text()
             self.survey().vessel = self.metadata_widget.ed_vessel.text()
-            self.survey().sea = self.metadata_widget.cb_sea.currentText()
+            self.survey().sea = self.metadata_widget.cb_sea.currentData()
             self.survey().wind = self.metadata_widget.cb_wind.currentText()
             self.survey().cloud = self.metadata_widget.cb_cloud.currentText()
             self.survey().visibility = self.metadata_widget.cb_vis.currentText()
             self.survey().comments = self.metadata_widget.ed_comments.toPlainText()
-            self.survey().tide = self.metadata_widget.cb_tide.currentText()
+            self.survey().tide = self.metadata_widget.cb_tide.currentData()
             self.survey().friendly_name = self.metadata_widget.ed_name.text()
             self.survey().reefcloud_project = self.metadata_widget.cb_reefcloud_project.currentText()
             self.survey().reefcloud_site = self.metadata_widget.cb_reefcloud_site.currentData()
@@ -627,7 +640,7 @@ class DataComponent:
         state.config.camera_connected = False
         state.load_data_model(aims_status_dialog=self.aims_status_dialog)
         tree = self.data_widget.surveysTree
-        self.surveys_tree_model = make_tree_model(timezone=self.time_zone, include_camera=False, checkable=False)
+        self.surveys_tree_model = TreeModelMaker().make_tree_model(timezone=self.time_zone, include_camera=False, checkable=False)
         tree.setModel(self.surveys_tree_model)
         tree.expandRecursively(self.surveys_tree_model.invisibleRootItem().index(), 3)
         self.data_widget.surveysTree.selectionModel().selectionChanged.connect(self.explore_tree_selection_changed)
@@ -660,26 +673,26 @@ class DataComponent:
         ready_to_edit = self.survey_id is not None
         ready_to_download = len(checked_survey_ids(self.camera_model)) > 0
         if ready_to_edit and ready_to_download:
-            self.hint_function("Edit the metadata or Click the download button")
+            self.hint_function(self.tr("Edit the metadata or Click the download button"))
 
         if ready_to_edit and not ready_to_download:
-            self.hint_function("Edit the metadata")
+            self.hint_function(self.tr("Edit the metadata"))
 
         if not ready_to_edit and ready_to_download:
-            self.hint_function("Click the download button")
+            self.hint_function(self.tr("Click the download button"))
 
         if not ready_to_edit and not ready_to_download:
             if state.model.camera_data_loaded:
-                self.hint_function("Click on a survey name to edit metadata or check the surveys that you want to download")
+                self.hint_function(self.tr("Click on a survey name to edit metadata or check the surveys that you want to download"))
             else:
-                self.hint_function("Click on a survey name to edit metadata")
+                self.hint_function(self.tr("Click on a survey name to edit metadata"))
 
 
     def check_space(self, surveys):
         try:
             total_kilo_bytes_used = 0
             for survey in surveys:
-                if survey['branch'] == "New Sequences":
+                if survey['branch'] == self.tr("New Sequences"):
                     command = f'du -s /media/jetson/*/images/{survey["survey_id"]}'
                 else:
                     command = f'du -s /media/jetson/*/images/archive/{survey["survey_id"]}'
@@ -690,10 +703,10 @@ class DataComponent:
                 )
                 result = conn.run(command, hide=True)
                 kilo_bytes_used = int(result.stdout.split()[0])
-                print(f"Bytes used: {kilo_bytes_used}")
+                print(self.tr("Bytes used: ") + f"{kilo_bytes_used}")
                 total_kilo_bytes_used += kilo_bytes_used
 
-            print(f"total Bytes used: {total_kilo_bytes_used}")
+            print(self.tr("total Bytes used: ") + f"{total_kilo_bytes_used}")
 
             print(state.primary_drive)
             print(state.backup_drive)
@@ -702,13 +715,21 @@ class DataComponent:
         except Exception as e:
             logger.error(self, "Error calulating disk usage or space. ", exc_info=True)
             return
+
+        not_enough_disk = self.tr("Not enough disk space available on the primary disk.")
+        not_enough_disk_back = self.tr("Not enough disk space available on the backup disk.")
+        required = self.tr("Selected sequences require")
+        avaliable = self.tr("Space available on")
+        _is_ = self.tr("is")
+
         if total_kilo_bytes_used > du.free * 1000:
             gb_used = total_kilo_bytes_used / 1000000
             free_gb = du.free / 1000000000
+
             message = f"""
-                Not enough disk space available on the primary disk.\n
-                Selected sequences require {gb_used:.2f Gb}
-                Space available on {state.primary_drive} is {free_gb:.2f} Gb
+                {not_enough_disk}\n
+                {required} {gb_used:.2f Gb}
+                {avaliable} {state.primary_drive} {_is_} {free_gb:.2f} Gb
                 """
             raise Exception(message)
 
@@ -718,9 +739,9 @@ class DataComponent:
                 gb_used = total_kilo_bytes_used / 1000000
                 free_gb = du.free / 1000000000
                 message = f"""
-                    Not enough disk space available on the backup disk.\n
-                    Selected sequences require {gb_used:.2f} Gb
-                    Space available on {state.backup_drive} is {free_gb: .2f} Gb
+                    {not_enough_disk_back}\n
+                    {required} {gb_used:.2f Gb}
+                    {avaliable} {state.primary_drive} {_is_} {free_gb:.2f} Gb
                     """
                 raise Exception(message)
 

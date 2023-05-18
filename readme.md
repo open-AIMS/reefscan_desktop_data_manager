@@ -46,3 +46,5 @@ ensure reefscan.pro is up to date
 `pylupdate5 reefscan.pro src/resources/eng-vi.ts`
 
 Install QT and use QT linguist to edit and release the file. That will create a .qm file 
+
+Test in vietnamese by running mani.py with a command line parameter "viet"

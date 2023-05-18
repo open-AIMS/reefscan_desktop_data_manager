@@ -104,15 +104,14 @@ if __name__ == "__main__":
 
 
     try:
-        main_ui = MainUi()
-
-
-        # main_ui = ConfigUi()
         state.config.set_deep(sys.argv[0].lower().endswith("reefscan-deep.exe"))
 
         dev = len(sys.argv) > 1 and "dev" in sys.argv
-        state.config.vietnemese = len(sys.argv) > 1 and "viet" in sys.argv
+        if len(sys.argv) > 1 and "viet" in sys.argv:
+            state.config.vietnemese=True
         state.config.set_dev(dev)
+
+        main_ui = MainUi()
         main_ui.show()
         app.exec()
 

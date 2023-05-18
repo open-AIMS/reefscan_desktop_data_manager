@@ -1,14 +1,7 @@
-import datetime
-import os
 import shutil
-import time
 
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QMainWindow, QWidget, QFileSystemModel, QComboBox, QAction, QMenu, QInputDialog, \
-    QApplication, QMessageBox, QListView, QListWidget, QLabel, QTableView
+from PyQt5.QtWidgets import QMainWindow, QWidget, QTextBrowser
 from PyQt5 import QtWidgets, uic, QtCore
-from reefscanner.basic_model.reader_writer import save_survey
-from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
 from aims import state
 import sys
@@ -23,16 +16,14 @@ from aims.ui.main_ui_components.upload_component import UploadComponent
 from aims.ui.main_ui_components.utils import clearLayout, setup_file_system_tree_and_combo_box
 import win32file
 import win32api
-from pytz import common_timezones, all_timezones, timezone, utc
 from tzlocal import get_localzone
 import unicodedata
-from aims.ui import deselectable_tree_view
-from generated import connect_qt_ui
 
 logger = logging.getLogger("")
 
+
 def remove_control_characters(s):
-    return "".join(ch for ch in s if unicodedata.category(ch)[0]!="C")
+    return "".join(ch for ch in s if unicodedata.category(ch)[0] != "C")
 
 
 workflow_button_border = ";border: 5px solid red;"
@@ -57,6 +48,18 @@ class MainUi(QMainWindow):
         super().__init__()
         self.current_screen = "start"
         self.app = QtWidgets.QApplication(sys.argv)
+
+        if state.config.vietnemese:
+            self.trans = QtCore.QTranslator(self)
+            dir = f'{state.meipass}resources'
+            print(dir)
+            if self.trans.load('eng-vi', directory=dir):
+                logger.info("translations loaded")
+            else:
+                logger.warn("translations not loaded")
+
+            QtWidgets.QApplication.instance().installTranslator(self.trans)
+
         self.start_ui = f'{state.meipass}resources/main.ui'
         self.ui: QWidget = uic.loadUi(self.start_ui)
 
@@ -84,18 +87,7 @@ class MainUi(QMainWindow):
         self.camera_connected = False
         self.drives_connected = False
 
-        self.hint('Choose "Connect Disks" from the workflow bar')
-
-        self.trans = QtCore.QTranslator(self)
-        dir = f'{state.meipass}resources'
-        print(dir)
-        if self.trans.load('eng-vi', directory=dir):
-            logger.info("translations loaded")
-        else:
-            logger.warn("translations not loaded")
-
-        QtWidgets.QApplication.instance().installTranslator(self.trans)
-
+        self.hint(self.tr('Choose "Connect Disks" from the workflow bar'))
 
     def hint(self, text):
         self.ui.hint_label.setText(text)
@@ -105,7 +97,7 @@ class MainUi(QMainWindow):
         self.time_zone = localzone
 
     def setup_status(self):
-        status_widget_file = f'{state.meipass}resources/status-bar.ui'
+        status_widget_file = f'{state.meipass}resources/status_bar.ui'
         self.status_widget: QWidget = uic.loadUi(status_widget_file)
         self.ui.statusFrame.layout().addWidget(self.status_widget)
         self.status_widget.refreshButton.clicked.connect(self.update_status)
@@ -124,7 +116,7 @@ class MainUi(QMainWindow):
         button.setEnabled(False)
 
     def setup_workflow(self):
-        workflow_widget_file = f'{state.meipass}resources/workflow-bar.ui'
+        workflow_widget_file = f'{state.meipass}resources/workflow_bar.ui'
         self.workflow_widget: QWidget = uic.loadUi(workflow_widget_file)
         self.ui.workflowFrame.layout().addWidget(self.workflow_widget)
         self.workflow_widget.connectButton.clicked.connect(self.load_connect_screen)
@@ -148,7 +140,21 @@ class MainUi(QMainWindow):
         self.highlight_button(self.workflow_widget.uploadButton)
 
     def load_start_screen(self):
-        self.load_main_frame(f'{state.meipass}resources/start.ui')
+        widget = self.load_main_frame(f'{state.meipass}resources/start.ui')
+        s1 = self.tr("To download and process images off the ReefScan System use the work flow in the left hand 'Workflow' bar.")
+        s2 = self.tr("Click on 'Connect Disks' to first connect to your local disks.")
+        s3 = self.tr("Click on 'Connect Camera' to connect to your reefscan camera.")
+        s4 = self.tr("Click on 'Data' to download photos from the camera, browse your photos or edit metadata.")
+        s5 = self.tr("Click on Reefcloud to upload your photos to reefcloud.")
+        text_browser:QTextBrowser = widget.textBrowser
+        html = text_browser.toHtml()
+        html = html.replace("__s1__", s1)
+        html = html.replace("__s2__", s2)
+        html = html.replace("__s3__", s3)
+        html = html.replace("__s4__", s4)
+        html = html.replace("__s5__", s5)
+        text_browser.setHtml(html)
+
 
     def load_fixed_drives(self):
         drives = win32api.GetLogicalDriveStrings()
@@ -174,15 +180,25 @@ class MainUi(QMainWindow):
 
     def load_connect_screen(self):
         self.current_screen = "connect"
-        # self.connect_widget = self.load_main_frame(f'{state.meipass}resources/connect.ui')
-        self.connect_widget = connect_qt_ui.Ui_Form()
-        self.load_main_frame2(self.connect_widget)
+        self.connect_widget = self.load_main_frame(f'{state.meipass}resources/connect.ui')
+        head = self.tr("Follow the Steps below to connect to the ReefScan Device:")
+
+        s1 = self.tr("Plug an Ethernet cable from your Laptop or computer to the ReefScan device.")
+        s2 = self.tr("Turn the ReefScan unit on via the power switch")
+        s3 = self.tr("Wait until the ReefScan unit has started (about 5 minutes)")
+        s4 = self.tr("Press the 'Connect' button below")
+
         html = self.connect_widget.textBrowser.toHtml()
         html = html.replace("XXX_DIR_XXX", state.meipass2)
+        html = html.replace("__head__", head)
+        html = html.replace("__s1__", s1)
+        html = html.replace("__s2__", s2)
+        html = html.replace("__s3__", s3)
+        html = html.replace("__s4__", s4)
         self.connect_widget.textBrowser.setHtml(html)
         self.connect_widget.btnConnect.clicked.connect(self.connect)
         self.highlight_button(self.workflow_widget.connectButton)
-        self.hint("Press the red connect button below")
+        self.hint(self.tr("Press the red connect button below"))
 
     def load_connect_disks_screen(self):
         self.current_screen = "connect_disks"
@@ -203,15 +219,6 @@ class MainUi(QMainWindow):
         self.ui.mainFrame.layout().addWidget(widget)
         return widget
 
-    def load_main_frame2(self, form):
-        widget = QWidget()
-        form.setupUi(widget)
-        form.retranslateUi(self)
-
-        clearLayout(self.ui.mainFrame.layout())
-        self.ui.mainFrame.layout().addWidget(widget)
-        return widget
-
     def connect(self):
         try:
             state.set_data_folders()
@@ -220,7 +227,7 @@ class MainUi(QMainWindow):
 
         data_loaded, message = state.load_camera_data_model(aims_status_dialog=self.aims_status_dialog)
         if data_loaded:
-            self.connect_widget.lblMessage.setText("Connected Successfully")
+            self.connect_widget.lblMessage.setText(self.tr("Connected Successfully"))
             if self.drives_connected:
                 self.load_data_screen()
             state.reefscan_id = remove_control_characters(state.read_reefscan_id())
@@ -234,11 +241,11 @@ class MainUi(QMainWindow):
             self.archive_checker.check()
             bytes_available = self.archive_checker.archive_stats.space.actual_available_size
             gb_available = round(bytes_available / 1000000000)
-            self.status_widget.lblDevice.setText(f"{state.reefscan_id}: {gb_available}  Gb Free")
-            self.status_widget.lblSequences.setText(f"{len(state.model.camera_surveys)} sequences")
+            self.status_widget.lblDevice.setText(f"{state.reefscan_id}: {gb_available}  " + self.tr("Gb Free"))
+            self.status_widget.lblSequences.setText(f"{len(state.model.camera_surveys)} " + self.tr("sequences"))
         else:
-            self.status_widget.lblDevice.setText("camera not connected")
-            self.status_widget.lblSequences.setText("camera not connected")
+            self.status_widget.lblDevice.setText(self.tr("camera not connected"))
+            self.status_widget.lblSequences.setText(self.tr("camera not connected"))
 
         self.load_fixed_drives()
         local_space = ""
@@ -246,7 +253,7 @@ class MainUi(QMainWindow):
             for drive in self.fixed_drives:
                 du = shutil.disk_usage(drive["letter"])
                 gbFree = round(du.free / 1000000000)
-                local_space = local_space + f"{drive['letter']}({drive['label']}) {gbFree} Gb Free \n"
+                local_space = local_space + f"{drive['letter']}({drive['label']}) {gbFree} " + self.tr("Gb Free") + "\n"
         except:
             pass
         self.status_widget.lblLocal.setText(local_space)
@@ -259,9 +266,9 @@ class MainUi(QMainWindow):
 
     def show(self):
         if state.config.deep:
-            self.ui.setWindowTitle("Reefscan Deep Data Manager")
+            self.ui.setWindowTitle("Reefscan Deep " + self.tr("Data Manager"))
         else:
-            self.ui.setWindowTitle("Reefscan Transom Data Manager")
+            self.ui.setWindowTitle("Reefscan Transom " + self.tr("Data Manager"))
 
         if state.config.dev:
             self.ui.setWindowTitle(self.ui.windowTitle() + " - DEV")
