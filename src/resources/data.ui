@@ -443,6 +443,12 @@ QGroupBox::title{
       </attribute>
       <layout class="QGridLayout" name="gridLayout_7"/>
      </widget>
+     <widget class="QWidget" name="enhance_tab">
+      <attribute name="title">
+       <string>Enhance</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_8"/>
+     </widget>
     </widget>
    </item>
   </layout>

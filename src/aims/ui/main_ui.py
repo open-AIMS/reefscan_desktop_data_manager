@@ -18,6 +18,7 @@ import win32file
 import win32api
 from tzlocal import get_localzone
 import unicodedata
+from aims.ui import deselectable_tree_view
 
 logger = logging.getLogger("")
 

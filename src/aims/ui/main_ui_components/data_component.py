@@ -29,6 +29,9 @@ from aims.ui.main_ui_components.utils import setup_folder_tree, setup_file_syste
     update_data_folder_from_tree
 from aims.ui.map_html import map_html_str
 
+import photoenhancer.dehaze
+from photoenhancer.photoenhance import photoenhance
+
 logger = logging.getLogger("")
 
 
@@ -81,6 +84,8 @@ class DataComponent(QMainWindow):
                                                         self.data_widget.metadata_tab)
         self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui',
                                                      self.data_widget.marks_tab)
+        self.enhance_widget = self.load_sequence_frame(f'{state.meipass}resources/enhance.ui',
+                                                     self.data_widget.enhance_tab)
 
         self.info_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_info.ui',
                                                     self.data_widget.info_tab)
@@ -88,7 +93,9 @@ class DataComponent(QMainWindow):
                                                         self.data_widget.metadata_tab)
         self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui',
                                                      self.data_widget.marks_tab)
-
+        self.enhance_widget = self.load_sequence_frame(f'{state.meipass}resources/enhance.ui',
+                                                     self.data_widget.enhance_tab)
+        
         self.lookups()
         self.data_widget.tabWidget.currentChanged.connect(self.tab_changed)
         self.data_widget.renameFoldersButton.clicked.connect(self.rename_folders)
@@ -122,6 +129,13 @@ class DataComponent(QMainWindow):
         self.initial_disables()
         self.set_hint()
         self.data_widget.mapView.loadFinished.connect(self.map_load_finished)
+
+        self.enhance_widget.btnEnhanceOpenFolder.clicked.connect(self.enhance_open_folder)
+        self.enhance_widget.btnEnhanceFolder.clicked.connect(self.enhance_photos_folder)
+        self.enhance_widget.textEditSuffix.setPlainText("")
+        self.enhance_widget.textEditCPULoad.setPlainText("0.01")
+        self.enhance_widget.checkboxDisableDenoise.setChecked(False)
+        self.enhance_widget.checkboxStrongerEnhancement.setChecked(False)
 
 
     def disable_save_cancel(self):
@@ -398,6 +412,22 @@ class DataComponent(QMainWindow):
                 subprocess.call(command)
             except:
                 os.startfile(self.mark_filename, "open")
+
+    def enhance_open_folder(self):
+        os.startfile(self.survey().folder)
+
+    def enhance_photos_folder(self):
+        output_suffix = self.enhance_widget.textEditSuffix.toPlainText()
+        cpu_load_string = self.enhance_widget.textEditCPULoad.toPlainText()
+        disable_denoising = self.enhance_widget.checkboxDisableDenoise.isChecked()
+        stronger_enhancement = self.enhance_widget.checkboxStrongerEnhancement.isChecked()
+
+        self.enhance_widget.textBrowser.append("Photoenhance starting")
+        self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved with the suffix \'_{output_suffix}\'")
+
+        QApplication.processEvents()
+        photoenhance(target=self.survey().folder, load=float(cpu_load_string), suffix=output_suffix, stronger_contrast_deep=str(stronger_enhancement), disable_denoising=str(disable_denoising))
+        self.enhance_widget.textBrowser.append("Photoenhance done")
 
     def camera_tree_selection_changed(self, item_selection: QItemSelection):
         print("camera tree changed")
