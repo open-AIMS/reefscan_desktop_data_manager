@@ -21,3 +21,5 @@ pywin32-ctypes==0.2.0
 geopy
 jwt
 simplekml
+shapely
+alphashape

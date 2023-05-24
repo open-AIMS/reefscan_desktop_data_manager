@@ -63,13 +63,13 @@ class Config(object):
         if dev:
             self.aws_region_id = 'ap-southeast-2'
             self.cognito_user_pool_id = 'ap-southeast-2_VpzWNPszV'
-            self.client_id = '7866phkrj600o9c0aulgmqpi21'
+            self.client_id = '40da2ahdtt0k1h1iro3n98bja3'
             self.cognito_uri = 'https://login.dev.reefcloud.ai/'
             self.cognito_token_key_url = f'https://cognito-idp.{self.aws_region_id}.amazonaws.com/{self.cognito_user_pool_id}/.well-known/jwks.json'
         else:
             self.aws_region_id = 'ap-southeast-2'
             self.cognito_user_pool_id = 'ap-southeast-2_VpzWNPszV'
-            self.client_id = '7866phkrj600o9c0aulgmqpi21'
+            self.client_id = '40da2ahdtt0k1h1iro3n98bja3'
             self.cognito_uri = 'https://login.dev.reefcloud.ai/'
             self.cognito_token_key_url = f'https://cognito-idp.{self.aws_region_id}.amazonaws.com/{self.cognito_user_pool_id}/.well-known/jwks.json'
 

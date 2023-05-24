@@ -83,11 +83,13 @@ def update_reefcloud_projects(oauth2_session):
     return False
 '''
 
+
 def update_reefcloud_projects(oauth2_session):
     oauth2_session.check_refresh()
     project_result = download_reefcloud_projects(oauth2_session)
     state.config.load_reefcloud_projects()
     return project_result
+
 
 def update_reefcloud_sites(oauth2_session):
     oauth2_session.check_refresh()
@@ -101,6 +103,8 @@ def update_reefcloud_sites(oauth2_session):
     with open(filename, "w") as write_file:
         json.dump(sites, write_file)
     return f"{site_count} sites downloaded"
+
+
 def download_reefcloud_projects(oauth2_session):
     # The real url will be something like https://api.dev.reefcloud.ai/reefcloud/api/organisation/list?org=REEFSCAN
 
@@ -126,7 +130,6 @@ def download_reefcloud_projects(oauth2_session):
         return f"{project_count} projects downloaded"
     else:
         raise Exception("Error downloading projects " + r.text)
-
 
 
 def download_reefcloud_sites_for_project(oauth2_session, reefcloud_project):

@@ -140,7 +140,6 @@ class LoginWorker(Thread):
         logger.info(f"http://{self.host_name}:{self.port}{self.path}")
         authorization_url, oauth2_state = self.oauth_session.authorization_url(f"{self.cognito_uri}/login")
         logger.info(f"{authorization_url}")
-        logger.info(f"{authorization_url}")
         if self.launch_browser:
             webbrowser.open(authorization_url)
         else:
