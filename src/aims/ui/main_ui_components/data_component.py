@@ -29,6 +29,7 @@ from aims.ui.main_ui_components.utils import setup_folder_tree, setup_file_syste
     update_data_folder_from_tree
 from aims.ui.map_html import map_html_str
 
+from aims.operations.enhance_photo_operation import EnhancePhotoOperation
 import photoenhancer.dehaze
 from photoenhancer.photoenhance import photoenhance
 
@@ -426,8 +427,22 @@ class DataComponent(QMainWindow):
         self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved with the suffix \'_{output_suffix}\'")
 
         QApplication.processEvents()
-        photoenhance(target=self.survey().folder, load=float(cpu_load_string), suffix=output_suffix, stronger_contrast_deep=str(stronger_enhancement), disable_denoising=str(disable_denoising))
+        # photoenhance(target=self.survey().folder, load=float(cpu_load_string), suffix=output_suffix, stronger_contrast_deep=str(stronger_enhancement), disable_denoising=str(disable_denoising))
+
+        enhance_operation = EnhancePhotoOperation(target=self.survey().folder, load=float(cpu_load_string), suffix=output_suffix)
+        enhance_operation.update_interval = 1
+        self.aims_status_dialog.set_operation_connections(enhance_operation)
+        # # operation.after_run.connect(self.after_sync)
+        logger.info("done connections")
+        result = self.aims_status_dialog.threadPool.apply_async(enhance_operation.run)
+        logger.info("thread started")
+        while not result.ready():
+            QApplication.processEvents()
+        logger.info("thread finished")
+        self.aims_status_dialog.close()
+
         self.enhance_widget.textBrowser.append("Photoenhance done")
+
 
     def camera_tree_selection_changed(self, item_selection: QItemSelection):
         print("camera tree changed")
