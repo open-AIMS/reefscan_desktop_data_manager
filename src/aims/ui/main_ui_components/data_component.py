@@ -30,8 +30,6 @@ from aims.ui.main_ui_components.utils import setup_folder_tree, setup_file_syste
 from aims.ui.map_html import map_html_str
 
 from aims.operations.enhance_photo_operation import EnhancePhotoOperation
-import photoenhancer.dehaze
-from photoenhancer.photoenhance import photoenhance
 
 logger = logging.getLogger("")
 
@@ -134,10 +132,22 @@ class DataComponent(QMainWindow):
         self.enhance_widget.btnEnhanceOpenFolder.clicked.connect(self.enhance_open_folder)
         self.enhance_widget.btnEnhanceFolder.clicked.connect(self.enhance_photos_folder)
         self.enhance_widget.textEditSuffix.setPlainText("")
+        self.enhance_widget.textEditOutputFolder.setPlainText("enhanced")
         self.enhance_widget.textEditCPULoad.setPlainText("0.01")
-        self.enhance_widget.checkboxDisableDenoise.setChecked(False)
-        self.enhance_widget.checkboxStrongerEnhancement.setChecked(False)
+        self.enhance_widget.checkBoxOutputFolder.setChecked(False)
+        self.enhance_widget.checkBoxSuffix.setChecked(False)
+        self.enhance_widget.textEditOutputFolder.setEnabled(False)
+        self.enhance_widget.textEditSuffix.setEnabled(False)
 
+        self.enhance_widget.checkBoxOutputFolder.stateChanged.connect(self.enhance_widget_cb_outputfolder_changed)
+        self.enhance_widget.checkBoxSuffix.stateChanged.connect(self.enhance_widget_cb_suffix_changed)
+
+
+    def enhance_widget_cb_suffix_changed(self, state):
+        self.enhance_widget.textEditSuffix.setEnabled(state != 0)
+
+    def enhance_widget_cb_outputfolder_changed(self, state):
+        self.enhance_widget.textEditOutputFolder.setEnabled(state != 0)
 
     def disable_save_cancel(self):
         self.metadata_widget.saveButton.setEnabled(False)
@@ -420,16 +430,20 @@ class DataComponent(QMainWindow):
     def enhance_photos_folder(self):
         output_suffix = self.enhance_widget.textEditSuffix.toPlainText()
         cpu_load_string = self.enhance_widget.textEditCPULoad.toPlainText()
-        disable_denoising = self.enhance_widget.checkboxDisableDenoise.isChecked()
-        stronger_enhancement = self.enhance_widget.checkboxStrongerEnhancement.isChecked()
+
+
+        output_folder = self.enhance_widget.textEditOutputFolder.toPlainText() if self.enhance_widget.checkBoxOutputFolder.isChecked() else 'enhanced'
+        output_suffix = self.enhance_widget.textEditSuffix.toPlainText() if self.enhance_widget.checkBoxSuffix.isChecked() else None
 
         self.enhance_widget.textBrowser.append("Photoenhance starting")
-        self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved with the suffix \'_{output_suffix}\'")
+        self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved in the folder \'{output_folder}\'") 
+        if self.enhance_widget.checkBoxSuffix.isChecked():
+            self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved with the suffix \'_{output_suffix}\'") 
 
         QApplication.processEvents()
         # photoenhance(target=self.survey().folder, load=float(cpu_load_string), suffix=output_suffix, stronger_contrast_deep=str(stronger_enhancement), disable_denoising=str(disable_denoising))
 
-        enhance_operation = EnhancePhotoOperation(target=self.survey().folder, load=float(cpu_load_string), suffix=output_suffix)
+        enhance_operation = EnhancePhotoOperation(target=self.survey().folder, load=float(cpu_load_string), suffix=output_suffix, output_folder=output_folder)
         enhance_operation.update_interval = 1
         self.aims_status_dialog.set_operation_connections(enhance_operation)
         # # operation.after_run.connect(self.after_sync)
