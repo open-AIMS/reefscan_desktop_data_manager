@@ -133,7 +133,7 @@ class DataComponent(QMainWindow):
         self.enhance_widget.btnEnhanceFolder.clicked.connect(self.enhance_photos_folder)
         self.enhance_widget.textEditSuffix.setPlainText("")
         self.enhance_widget.textEditOutputFolder.setPlainText("enhanced")
-        self.enhance_widget.textEditCPULoad.setPlainText("0.01")
+        self.enhance_widget.textEditCPULoad.setPlainText("0.8")
         self.enhance_widget.checkBoxOutputFolder.setChecked(False)
         self.enhance_widget.checkBoxSuffix.setChecked(False)
         self.enhance_widget.textEditOutputFolder.setEnabled(False)
@@ -453,7 +453,7 @@ class DataComponent(QMainWindow):
         while not result.ready():
             QApplication.processEvents()
         logger.info("thread finished")
-        self.aims_status_dialog.close()
+        # self.aims_status_dialog.close()
 
         self.enhance_widget.textBrowser.append("Photoenhance done")
 
