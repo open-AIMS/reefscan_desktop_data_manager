@@ -435,7 +435,7 @@ class DataComponent(QMainWindow):
         output_folder = self.enhance_widget.textEditOutputFolder.toPlainText() if self.enhance_widget.checkBoxOutputFolder.isChecked() else 'enhanced'
         output_suffix = self.enhance_widget.textEditSuffix.toPlainText() if self.enhance_widget.checkBoxSuffix.isChecked() else None
 
-        self.enhance_widget.textBrowser.append("Photoenhance starting")
+        self.enhance_widget.textBrowser.append("Photoenhancer starting")
         self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved in the folder \'{output_folder}\'") 
         if self.enhance_widget.checkBoxSuffix.isChecked():
             self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved with the suffix \'_{output_suffix}\'") 
@@ -446,6 +446,7 @@ class DataComponent(QMainWindow):
         enhance_operation = EnhancePhotoOperation(target=self.survey().folder, load=float(cpu_load_string), suffix=output_suffix, output_folder=output_folder)
         enhance_operation.update_interval = 1
         self.aims_status_dialog.set_operation_connections(enhance_operation)
+        enhance_operation.set_msg_function(lambda msg: self.enhance_widget.textBrowser.append(msg))
         # # operation.after_run.connect(self.after_sync)
         logger.info("done connections")
         result = self.aims_status_dialog.threadPool.apply_async(enhance_operation.run)
@@ -453,9 +454,12 @@ class DataComponent(QMainWindow):
         while not result.ready():
             QApplication.processEvents()
         logger.info("thread finished")
-        # self.aims_status_dialog.close()
+        self.aims_status_dialog.close()
 
-        self.enhance_widget.textBrowser.append("Photoenhance done")
+        if enhance_operation.batch_monitor.cancelled:
+            self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
+        else:
+            self.enhance_widget.textBrowser.append("Photoenhancer finished")
 
 
     def camera_tree_selection_changed(self, item_selection: QItemSelection):

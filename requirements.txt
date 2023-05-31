@@ -24,4 +24,4 @@ simplekml
 scipy
 opencv-python
 reefscanner @ file:///C:/Users/pteneder/Documents/reefscan_desktop_integrations/reefscan_desktop_data_manager/reefscanner-1.0.3.1-py3-none-any.whl
-photoenhancer @ file:///C:/Users/pteneder/Documents/reefscan_desktop_integrations/reefscan_desktop_data_manager/photoenhancer-1.1.6-py3-none-any.whl
+photoenhancer @ file:///C:/Users/pteneder/Documents/reefscan_desktop_integrations/reefscan_desktop_data_manager/photoenhancer-1.1.8-py3-none-any.whl
