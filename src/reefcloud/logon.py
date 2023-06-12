@@ -3,10 +3,8 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import cgi
 
-api_url = 'https://dev.reefscan.api.aims.gov.au/reefscan/api'
+from aims import state
 
-
-user_info_url = f'{api_url}/user_info'
 
 from aims import state
 
@@ -181,6 +179,8 @@ class UserInfo():
 
     @classmethod
     def from_id_token(cls, cognito_token_key_url, id_token, access_token):
+        user_info_url = f'{state.config.api_url}/user_info'
+
         jwt_object = JWT()
         data = cls._get_jwt_encryption_pub_keys(cognito_token_key_url)
         signing_key = jwk_from_dict(data['keys'][0])
@@ -227,6 +227,8 @@ class ReefCloudSession():
                                                        include_client_id=True
                                                        )
             self.tokens = tokens
+            self.id_token = self.tokens['id_token']
+            self.access_token = self.tokens['access_token']
 
 
     def login(self):

@@ -163,7 +163,10 @@ class UploadComponent():
 
     def update(self):
         projects_response = update_reefcloud_projects(state.reefcloud_session)
+        state.config.load_reefcloud_projects()
         sites_response = update_reefcloud_sites(state.reefcloud_session)
+        state.config.load_reefcloud_sites()
+
         msg_box = QtWidgets.QMessageBox()
         msg_box.setText("Download finished")
         msg_box.setDetailedText(f"{projects_response}\n{sites_response}")

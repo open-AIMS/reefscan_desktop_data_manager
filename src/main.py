@@ -19,7 +19,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("")
 logger_smb = logging.getLogger('smbprotocol')
 logger_smb.setLevel(level=logging.WARNING)
-path = f"{state.config.config_folder}/reefscan.log"
+
+config_folder = state.config.config_folder
+
+if not os.path.isdir(config_folder):
+    os.makedirs(config_folder)
+path = f"{config_folder}/reefscan.log"
 formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
 handler = RotatingFileHandler(path, maxBytes=1000000,
                               backupCount=5)

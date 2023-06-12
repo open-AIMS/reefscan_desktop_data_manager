@@ -23,8 +23,6 @@ class Config(object):
 
         # Configuration for AWS
         # Projects have write access
-        self.projects_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/user/access?min-level=WRITE"
-        self.sites_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/locations?org=REEFSCAN"
 
         self.dev = False
         self.aws_region_id = ''
@@ -66,12 +64,19 @@ class Config(object):
             self.client_id = '40da2ahdtt0k1h1iro3n98bja3'
             self.cognito_uri = 'https://login.dev.reefcloud.ai/'
             self.cognito_token_key_url = f'https://cognito-idp.{self.aws_region_id}.amazonaws.com/{self.cognito_user_pool_id}/.well-known/jwks.json'
+            self.api_url = 'https://dev.reefscan.api.aims.gov.au/reefscan/api'
+            self.projects_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/user/access?min-level=WRITE"
+            self.sites_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/locations"
+
         else:
             self.aws_region_id = 'ap-southeast-2'
-            self.cognito_user_pool_id = 'ap-southeast-2_VpzWNPszV'
-            self.client_id = '40da2ahdtt0k1h1iro3n98bja3'
-            self.cognito_uri = 'https://login.dev.reefcloud.ai/'
+            self.cognito_user_pool_id = 'ap-southeast-2_rS47RmMsG'
+            self.client_id = '5lu64jpa1vemmfoq8hhkkkpqlg'
+            self.cognito_uri = 'https://login.reefcloud.ai/'
             self.cognito_token_key_url = f'https://cognito-idp.{self.aws_region_id}.amazonaws.com/{self.cognito_user_pool_id}/.well-known/jwks.json'
+            self.api_url = 'https://reefscan.api.aims.gov.au/reefscan/api'
+            self.projects_json_download_url = "https://api.reefcloud.ai/reefcloud/api/user/access?min-level=WRITE"
+            self.sites_json_download_url = "https://api.reefcloud.ai/reefcloud/api/locations"
 
     def save_config_file(self):
         data_folder_json = {
