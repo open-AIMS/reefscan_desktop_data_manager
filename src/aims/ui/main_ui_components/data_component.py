@@ -28,6 +28,7 @@ from aims.stats.survey_stats import SurveyStats
 from aims.ui.main_ui_components.utils import setup_folder_tree, setup_file_system_tree_and_combo_box, clearLayout, \
     update_data_folder_from_tree
 from aims.ui.map_html import map_html_str
+from reefcloud.reefcloud_utils import create_reefcloud_site
 
 logger = logging.getLogger("")
 
@@ -104,6 +105,7 @@ class DataComponent(QMainWindow):
         self.survey_id = None
         self.metadata_widget.cancelButton.clicked.connect(self.data_to_ui)
         self.metadata_widget.saveButton.clicked.connect(self.ui_to_data)
+        self.metadata_widget.newSiteButton.clicked.connect(self.add_new_reefcloud_site)
 
         self.load_explore_surveys_tree()
 
@@ -123,6 +125,37 @@ class DataComponent(QMainWindow):
         self.set_hint()
         self.data_widget.mapView.loadFinished.connect(self.map_load_finished)
 
+
+    def add_new_reefcloud_site(self):
+        project = self.metadata_widget.cb_reefcloud_project.currentText()
+        site = self.metadata_widget.ed_site.text()
+
+        all_sites = [self.metadata_widget.cb_reefcloud_site.itemText(i) for i in range(self.metadata_widget.cb_reefcloud_site.count())]
+        print(all_sites)
+        if site in all_sites:
+            raise Exception(f"{site} already exists. Choose it from the drop down.")
+
+        if project is None or project == "":
+            raise Exception("Choose a reefcloud project first.")
+
+        if site is None or site == "":
+            raise Exception("Enter a site name in the site field.")
+
+        if state.reefcloud_session is None:
+            raise Exception("Log on to reefcloud first. (See the reefcloud tab)")
+
+        site_id = create_reefcloud_site(project, site, self.survey().start_lat, self.survey().start_lon, self.survey().start_depth)
+        state.config.load_reefcloud_sites()
+        self.update_sites_combo()
+        self.metadata_widget.cb_reefcloud_site.setCurrentText(site)
+
+        # state.config.reefcloud_sites[project].append({"name": site, "id": site_id})
+        # self.site_lookup[site_id] = site
+        # self.metadata_widget.cb_reefcloud_site.addItem(site, site_id)
+        message_box = QtWidgets.QMessageBox()
+        message_box.setText(self.tr("Site created with default properties"))
+        message_box.setDetailedText("You can modify the site properties in reefcloud")
+        message_box.exec_()
 
     def disable_save_cancel(self):
         self.metadata_widget.saveButton.setEnabled(False)
@@ -294,6 +327,9 @@ class DataComponent(QMainWindow):
 
 
     def cb_reefcloud_project_changed(self, index):
+        self.update_sites_combo()
+
+    def update_sites_combo(self):
         # figure out what project was selected.
         project = self.metadata_widget.cb_reefcloud_project.currentText()
         if project == "":
@@ -603,8 +639,8 @@ class DataComponent(QMainWindow):
             self.info_widget.lb_sequence_name.setText(self.survey().id)
             self.info_widget.lb_start_time.setText(utc_to_local(self.survey().start_date, timezone=self.time_zone))
             self.info_widget.lb_end_time.setText(utc_to_local(self.survey().finish_date, timezone=self.time_zone))
-            self.info_widget.lb_start_waypoint.setText(f"{self.survey().start_lon} {self.survey().start_lat}")
-            self.info_widget.lb_end_waypoint.setText(f"{self.survey().finish_lon} {self.survey().finish_lat}")
+            self.info_widget.lb_start_waypoint.setText(f"{self.survey().start_lon} {self.survey().start_lat} {round(self.survey().start_depth)}m")
+            self.info_widget.lb_end_waypoint.setText(f"{self.survey().finish_lon} {self.survey().finish_lat} {round(self.survey().finish_depth)}m")
             self.data_widget.folder_label.setText(self.survey().folder)
             survey_stats = SurveyStats()
             survey_stats.calculate(self.survey())
