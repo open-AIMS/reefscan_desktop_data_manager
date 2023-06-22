@@ -1,22 +1,22 @@
-import datetime
-import os
 from time import process_time
 
 from PyQt5 import QtWidgets, QtTest
-from PyQt5.QtWidgets import QMessageBox, QApplication, QMainWindow
-from reefscanner.basic_model.reader_writer import save_survey
+from PyQt5.QtCore import QObject
+from PyQt5.QtWidgets import QApplication
 from reefscanner.basic_model.survey import Survey
-from reefscanner.basic_model.survey_reefcloud_info import ReefcloudUploadInfo
 
-from aims import state
+from aims import data_loader
+from aims.state import state
 from aims.gui_model.tree_model import TreeModelMaker, checked_survey_ids, checked_surveys
-from aims.operations.load_data import reefcloud_subsample, reefcloud_upload
-from reefcloud.reefcloud_utils import upload_file, write_reefcloud_photos_json, update_reefcloud_projects, update_reefcloud_sites
-from reefcloud.logon import ReefCloudSession
+from aims2.reefcloud2.reefcloud_utils import upload_file, write_reefcloud_photos_json, update_reefcloud_projects, \
+    update_reefcloud_sites, check_reefcloud_metadata
+from aims2.reefcloud2.reefcloud_session import ReefCloudSession
+from aims2.reefcloud2.upload_surveys import upload_surveys
 
 
-class UploadComponent():
+class UploadComponent(QObject):
     def __init__(self, hint_function):
+        super().__init__()
         self.login_widget = None
         self.aims_status_dialog = None
         self.time_zone = None
@@ -42,76 +42,31 @@ class UploadComponent():
         if state.reefcloud_session is not None:
             state.reefcloud_session.cancel()
 
-    def check_reefcloud_metadata(self, surveys: list[Survey]):
-        for survey in surveys:
-            best_name = survey.best_name()
-
-            if survey.reefcloud_project is None:
-                raise Exception(f"Missing reefcloud project for {best_name}")
-
-            project_ = survey.reefcloud_project
-            if not state.config.valid_reefcloud_project(project_):
-                raise Exception(f"Invalid reefcloud project {project_} for {best_name}")
-
-            if survey.reefcloud_site is None:
-                raise Exception(f"Missing reefcloud site for {best_name}")
-
-            site_ = survey.reefcloud_site
-            if not state.config.valid_reefcloud_site(site_, project_):
-                raise Exception(f"Invalid reefcloud site {site_} for {best_name}")
 
     def upload(self):
         print("uploading")
         start = process_time()
 
         state.config.camera_connected = False
-        state.load_data_model(aims_status_dialog=self.aims_status_dialog)
-
+        data_loader.load_data_model(aims_status_dialog=self.aims_status_dialog)
         surveys = checked_surveys(self.surveys_tree_model)
+        check_reefcloud_metadata(surveys)
 
-        self.check_reefcloud_metadata(surveys)
-        for survey in surveys:
-            survey_id = survey.id
-            survey_folder = survey.folder
-            if survey.reefcloud is not None and survey.reefcloud.total_photo_count == survey.photos:
-                # photos are already uploaded just upload the metadata
-                upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=survey_folder,
-                            file_name="survey.json")
-
-            else:
-                subsampled_image_folder = survey.folder.replace("/reefscan/", "/reefscan_reefcloud/")
-
-                success, selected_photo_infos = reefcloud_subsample(survey_folder, subsampled_image_folder, self.aims_status_dialog)
-                if not success:
-                    self.aims_status_dialog.close()
-                    raise Exception("Cancelled")
-
-                print(selected_photo_infos)
-                write_reefcloud_photos_json(survey_id=survey_id,
-                                            outputfile=f"{subsampled_image_folder}/photos.json",
-                                            selected_photo_infos=selected_photo_infos
-                                            )
-
-                success, message = reefcloud_upload(survey, survey_id, survey_folder, subsampled_image_folder, self.aims_status_dialog)
-                if not success:
-                    self.aims_status_dialog.close()
-                    if message is not None:
-                        raise Exception(message)
-                    else:
-                        raise Exception("Cancelled")
+        upload_surveys(surveys, aims_status_dialog = self.aims_status_dialog)
 
         end = process_time()
         minutes = (end-start)/60
 
         print(f"Upload Finished in {minutes} minutes")
         errorbox = QtWidgets.QMessageBox()
-        errorbox.setText("Upload finished")
-        errorbox.setDetailedText(f"Finished in {minutes} minutes")
+        errorbox.setText(self.tr("Upload finished"))
+        errorbox.setDetailedText(self.tr("Finished in") + f" {minutes} " + self.tr("minutes"))
 
         self.aims_status_dialog.close()
 
         QtTest.QTest.qWait(200)
         errorbox.exec_()
+
 
     def logged_in(self):
         return state.reefcloud_session is not None and state.reefcloud_session.is_logged_in
@@ -119,7 +74,12 @@ class UploadComponent():
     def set_hint(self):
         if self.logged_in():
             user_info = state.reefcloud_session.current_user
-            self.login_widget.username_label.setText(f"Hello user {user_info.name}.  " + user_info.message)
+            if user_info.authorized:
+                message = self.tr("you are authorised to upload data to reefcloud.")
+            else:
+                message = self.tr("you are not authorised to upload data to reefcloud.")
+
+            self.login_widget.username_label.setText(self.tr("Hello user") + f" {user_info.name}.  " + message)
 
             if not user_info.authorized:
                 self.login_widget.upload_button.setEnabled(False)
@@ -132,12 +92,12 @@ class UploadComponent():
 
             surveys = checked_survey_ids(self.surveys_tree_model)
             if len(surveys) == 0:
-                self.hint_function("Press 'Download Projects and Sites' or check the surveys that you want to upload to reefcloud")
+                self.hint_function(self.tr("Press 'Download Projects and Sites' or check the surveys that you want to upload to reefcloud"))
             else:
-                self.hint_function("Press the 'Upload Selected Surveys'")
+                self.hint_function(self.tr("Press the 'Upload Selected Surveys'"))
 
         else:
-            self.hint_function("Press the login button")
+            self.hint_function(self.tr("Press the login button"))
 
     def login(self):
 
@@ -152,9 +112,11 @@ class UploadComponent():
             self.login_widget.login_button.setEnabled(False)
             self.login_widget.update_button.setEnabled(False)
             self.login_widget.cancel_button.setEnabled(True)
-
+            print("waiting")
             while not result.ready():
                 QApplication.processEvents()
+
+            print("logged in")
 
             self.login_widget.login_button.setEnabled(True)
             self.login_widget.cancel_button.setEnabled(False)
@@ -168,13 +130,13 @@ class UploadComponent():
         state.config.load_reefcloud_sites()
 
         msg_box = QtWidgets.QMessageBox()
-        msg_box.setText("Download finished")
+        msg_box.setText(self.tr("Download finished"))
         msg_box.setDetailedText(f"{projects_response}\n{sites_response}")
         msg_box.exec_()
 
     def load_tree(self):
         state.config.camera_connected = False
-        state.load_data_model(aims_status_dialog=self.aims_status_dialog)
+        data_loader.load_data_model(aims_status_dialog=self.aims_status_dialog)
         tree = self.login_widget.treeView
         self.surveys_tree_model = TreeModelMaker().make_tree_model(timezone=self.time_zone, include_camera=False, checkable=True)
         tree.setModel(self.surveys_tree_model)

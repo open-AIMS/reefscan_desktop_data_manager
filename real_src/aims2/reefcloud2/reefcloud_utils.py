@@ -1,10 +1,31 @@
 import json
 import os
-from aims import state
+
+from reefscanner.basic_model.survey import Survey
+
+from aims.state import state
 import requests
 
-
 surveys_folder = "surveys"
+
+
+def check_reefcloud_metadata(surveys: list[Survey]):
+    for survey in surveys:
+        best_name = survey.best_name()
+
+        if survey.reefcloud_project is None:
+            raise Exception(f"Missing reefcloud project for {best_name}")
+
+        project_ = survey.reefcloud_project
+        if not state.config.valid_reefcloud_project(project_):
+            raise Exception(f"Invalid reefcloud project {project_} for {best_name}")
+
+        if survey.reefcloud_site is None:
+            raise Exception(f"Missing reefcloud site for {best_name}")
+
+        site_ = survey.reefcloud_site
+        if not state.config.valid_reefcloud_site(site_, project_):
+            raise Exception(f"Invalid reefcloud site {site_} for {best_name}")
 
 
 def write_reefcloud_photos_json(survey_id, outputfile, selected_photo_infos):

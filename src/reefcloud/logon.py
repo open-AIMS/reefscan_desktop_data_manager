@@ -3,10 +3,12 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import cgi
 
-from aims import state
+from PyQt5.QtCore import QObject
+
+from aims.state import state
 
 
-from aims import state
+from aims.state import state
 
 from oauthlib.oauth2 import WebApplicationClient, BackendApplicationClient
 from threading import Thread
@@ -25,8 +27,6 @@ from jwt import (
 logger = logging.getLogger("")
 
 
-oauth2_code = None
-oauth2_state = None
 
 html = """
 <html>
@@ -72,12 +72,11 @@ class TokenServer(BaseHTTPRequestHandler):
         return
 
     def do_GET(self):
-        global oauth2_code
         logger.info(f"do_Get {self.path}")
         params = parse_qs(urlparse(self.path).query)
         if 'code' in params:
-            oauth2_code = params['code'][0]
-            logger.info(f"code: {oauth2_code}")
+            state.oauth2_code = params['code'][0]
+            logger.info(f"code: {state.oauth2_code}")
 
         logger.info("gonna send response")
         self.send_response(200)
@@ -85,7 +84,7 @@ class TokenServer(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.end_headers()
         logger.info("headers sent")
-        if oauth2_code:
+        if state.oauth2_code:
             logger.info("otherhtml")
             self.wfile.write(bytes(otherhtml, "UTF-8"))
         else:
@@ -96,7 +95,6 @@ class TokenServer(BaseHTTPRequestHandler):
     def do_POST(self):
 
         logger.info(f"do_Post {self.path}")
-        global oauth2_code
         form = cgi.FieldStorage(
             fp=self.rfile,
             headers=self.headers,
@@ -131,12 +129,11 @@ class LoginWorker(Thread):
         requests.get("http://localhost:4200")
 
     def run(self):
-        global oauth2_code, oauth2_state
         logger.info("LoginWorker run() start")
         self.oauth_session = OAuth2Session(client=self.client,
                                            redirect_uri=f"http://{self.host_name}:{self.port}{self.path}")
         logger.info(f"http://{self.host_name}:{self.port}{self.path}")
-        authorization_url, oauth2_state = self.oauth_session.authorization_url(f"{self.cognito_uri}/login")
+        authorization_url, state.oauth2_state = self.oauth_session.authorization_url(f"{self.cognito_uri}/login")
         logger.info(f"{authorization_url}")
         if self.launch_browser:
             webbrowser.open(authorization_url)
@@ -146,7 +143,7 @@ class LoginWorker(Thread):
         self.web_server = HTTPServer((self.host_name, self.port), TokenServer)
         logger.debug(f"Server starting http://{self.host_name}:{self.port}")
         logger.info(f"Server starting http://{self.host_name}:{self.port}")
-        while oauth2_code is None and not self.cancelled:
+        while state.oauth2_code is None and not self.cancelled:
             logger.info("Handling")
             self.web_server.handle_request()
 
@@ -160,7 +157,7 @@ class LoginWorker(Thread):
         return self.oauth_session
 
 
-class UserInfo():
+class UserInfo(QObject):
     def __init__(self, cognito_token_key_url, name, email, authorized=False, message=""):
         self.cognito_token_key_url = cognito_token_key_url
         self.name = name
@@ -200,76 +197,3 @@ class UserInfo():
         return cls(cognito_token_key_url, decoded['name'], decoded['email'], authorized=authorized, message=message)
 
 
-class ReefCloudSession():
-    def __init__(self, client_id, cognito_uri):
-        self.client_id = client_id
-        self.cognito_uri = cognito_uri
-        self.current_user = None
-        self.is_logged_in = False
-        self.login_worker = None
-        self.finished = False
-
-    def cancel(self):
-        logger.info ("session cancelled")
-        if self.login_worker is not None:
-            self.login_worker.cancel()
-
-    def check_refresh(self):
-        expire_time = self.tokens["expires_at"]
-        now = datetime.timestamp(datetime.now())
-        expires_in_secs = expire_time - now
-        # if the tokens expire less than a minute from now then refresh
-        if expires_in_secs < 60:
-            token_url = f'{self.cognito_uri}/oauth2/token'
-            tokens = self.oauth2_session.refresh_token(token_url,
-                                                          refresh_token=self.tokens["refresh_token"],
-                                                       client_id=self.client_id,
-                                                       include_client_id=True
-                                                       )
-            self.tokens = tokens
-            self.id_token = self.tokens['id_token']
-            self.access_token = self.tokens['access_token']
-
-
-    def login(self):
-        global oauth2_code, oauth2_state
-        self.login_worker = LoginWorker(self.client_id, self.cognito_uri)
-        self.login_worker.start()
-        self.login_worker.join()
-        self.oauth2_session = self.login_worker.get_session()
-
-        token_url = f'{self.cognito_uri}/oauth2/token'
-        self.tokens = self.oauth2_session.fetch_token(token_url,
-                                                      code=oauth2_code,
-                                                      state=oauth2_state,
-                                                      client_id=self.client_id,
-                                                      include_client_id=True)
-        print(self.tokens)
-        self.id_token = self.tokens['id_token']
-        self.access_token = self.tokens['access_token']
-        self.current_user = UserInfo.from_id_token(state.config.cognito_token_key_url, self.id_token, self.access_token)
-        self.is_logged_in = True
-        # Set code to none so if the user clicks the login page a second time, the web server waits for the new code
-        code = None
-        self.finished = True
-
-    def get(self, url, **kwargs):
-        return self.oauth2_session.get(url, **kwargs)
-
-    def options(self, url, **kwargs):
-        return self.oauth2_session.options(url, **kwargs)
-
-    def head(self, url, **kwargs):
-        return self.oauth2_session.head(url, **kwargs)
-
-    def post(self, url, data=None, json=None, **kwargs):
-        return self.oauth2_session.post(url, data=data, json=json, **kwargs)
-
-    def put(self, url, data=None, **kwargs):
-        return self.oauth2_session.put(url, data=data, **kwargs)
-
-    def patch(self, url, data=None, **kwargs):
-        return self.oauth2_session.patch(url, data=data, **kwargs)
-
-    def delete(self, url, **kwargs):
-        return self.oauth2_session.delete(url, **kwargs)

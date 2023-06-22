@@ -11,9 +11,9 @@ import glob
 
 # from uncaught_hook import UncaughtHook
 
-
-from aims import state
+from aims.state import state
 from aims.ui.main_ui import MainUi
+from aims2 import simulated
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("")
@@ -77,9 +77,14 @@ if __name__ == "__main__":
     try:
         state.meipass = sys._MEIPASS + "/"
         state.meipass2 = state.meipass
+        state.has_meipass = True
     except:
         state.meipass= file_path + os.sep
         state.meipass2 = file_path + os.sep
+        state.has_meipass = False
+
+    simulated.set_simulated()
+
     logger.info(state.meipass)
     files = glob.glob(state.meipass + '**/*', recursive=True)
     print(files)
@@ -102,7 +107,7 @@ if __name__ == "__main__":
     # This makes the Icon show in the task bar on Windows
     try:
         import ctypes
-        myappid = 'aims.reefscan.boom'  # arbitrary string
+        myappid = 'aims.reefscan.transom'  # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     except:
         print ("Error setting up windows task bar. Probably not windows.")
@@ -123,7 +128,7 @@ if __name__ == "__main__":
     except Exception:
         logger.exception("Error")
 
-    if state.model.local_data_loaded:
+    if state.model.local_data_loaded and not state.read_only:
         print("will export")
         state.model.export()
 

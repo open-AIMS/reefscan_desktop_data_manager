@@ -1,51 +1,43 @@
 from reefscanner.basic_model.basic_model import BasicModel
 
 from aims.config import Config
-from aims.operations.load_data import load_data, load_camera_data, load_archive_data
-from fabric import Connection
 
-config = Config()
-model = BasicModel()
-meipass = None
-surveys_tree = None
-reefscan_id = ""
-primary_drive = None
-backup_drive = None
-primary_folder = None
-backup_folder = None
-reefcloud_session = None
+from aims2.operations2.camera_utils import read_reefscan_id_for_ip
 
 
-def meipass_linux():
-    return meipass.replace("\\", "/")
+class State:
+
+    def __init__(self):
+        super().__init__()
+
+        self.config = Config()
+        self.model = BasicModel()
+        self.meipass = None
+        self.has_meipass = False
+        self.surveys_tree = None
+        self.reefscan_id = ""
+        self.primary_drive = None
+        self.backup_drive = None
+        self.primary_folder = None
+        self.backup_folder = None
+        self.reefcloud_session = None
+        self.oauth2_code = None
+        self.oauth2_state = None
+        self.read_only = False
+        self.is_simulated = False
+
+    def simulated(self, is_simulated: bool):
+        self.read_only = is_simulated and not self.has_meipass
+        self.is_simulated = is_simulated
+
+    def meipass_linux(self):
+        return self.meipass.replace("\\", "/")
+
+    def set_data_folders(self):
+        self.model.set_data_folders(self.primary_folder, self.backup_folder, self.config.hardware_data_folder)
+
+    def read_reefscan_id(self):
+        return read_reefscan_id_for_ip(self.config.camera_ip)
 
 
-def load_data_model(aims_status_dialog):
-    model.slow_network = False
-    return load_data(model, False, aims_status_dialog=aims_status_dialog)
-
-
-def load_camera_data_model(aims_status_dialog):
-    model.camera_data_folder = config.hardware_data_folder
-    return load_camera_data(model, aims_status_dialog=aims_status_dialog)
-
-def load_archive_data_model(aims_status_dialog):
-    model.camera_data_folder = config.hardware_data_folder
-    return load_archive_data(model, aims_status_dialog=aims_status_dialog)
-
-def set_data_folders():
-    model.set_data_folders(primary_folder, backup_folder, config.hardware_data_folder)
-
-
-def read_reefscan_id():
-    try:
-        conn = Connection(
-            "jetson@" + config.camera_ip,
-            connect_kwargs={"password": "jetson"}
-        )
-
-        r = conn.run("cat ~/reefscan_id.txt", hide=True)
-        reefscan_id = r.stdout
-        return reefscan_id
-    except:
-        return "REEFSCAN"
+state = State()

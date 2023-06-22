@@ -2,14 +2,16 @@ import json
 import os
 import shutil
 
+from PyQt5.QtCore import QObject
 from reefscanner.basic_model.exif_utils import get_exif_data
 
 import geopy.distance
 from reefscanner.basic_model.progress_queue import ProgressQueue
 
 
-class SubSampler:
+class SubSampler(QObject):
     def __init__(self):
+        super().__init__()
         self.canceled = False
 
 
@@ -28,7 +30,8 @@ class SubSampler:
     def sub_sample_dir(self, image_dir, sample_dir, progress_queue: ProgressQueue):
 
         progress_queue.reset()
-        progress_queue.set_progress_label(f"Subsampling folder {image_dir}")
+        _subsampling_folder = self.tr('Subsampling folder')
+        progress_queue.set_progress_label(f"{_subsampling_folder} {image_dir}")
 
         if os.path.exists (sample_dir):
             shutil.rmtree(sample_dir)
