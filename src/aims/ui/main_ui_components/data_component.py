@@ -478,16 +478,21 @@ class DataComponent(QObject):
             except:
                 os.startfile(self.mark_filename, "open")
 
+    def enhanced_folder(self):
+        return self.survey().folder.replace("reefscan", "reefscan_enhanced")
+
     def enhance_open_folder(self):
-        os.startfile(self.survey().folder)
+        os.startfile(self.enhanced_folder())
 
     def enhance_photos_folder(self):
-        output_suffix = self.enhance_widget.textEditSuffix.toPlainText()
+        output_suffix = ""
+        output_folder = self.enhanced_folder()
+        # output_suffix = self.enhance_widget.textEditSuffix.toPlainText()
         cpu_load_string = self.enhance_widget.textEditCPULoad.toPlainText()
         disable_denoising = self.enhance_widget.checkBoxDisableDenoising.isChecked()
 
-        output_folder = self.enhance_widget.textEditOutputFolder.toPlainText() if self.enhance_widget.checkBoxOutputFolder.isChecked() else 'enhanced'
-        output_suffix = self.enhance_widget.textEditSuffix.toPlainText() if self.enhance_widget.checkBoxSuffix.isChecked() else None
+        # output_folder = self.enhance_widget.textEditOutputFolder.toPlainText() if self.enhance_widget.checkBoxOutputFolder.isChecked() else 'enhanced'
+        # output_suffix = self.enhance_widget.textEditSuffix.toPlainText() if self.enhance_widget.checkBoxSuffix.isChecked() else None
 
         self.enhance_widget.textBrowser.append("Photoenhancer starting")
         self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved in the folder \'{output_folder}\'")
