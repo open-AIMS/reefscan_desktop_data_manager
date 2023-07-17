@@ -204,7 +204,7 @@ QGroupBox::title{
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
-          <widget class="DeselectableTreeView" name="surveysTree">
+          <widget class="QTreeView" name="surveysTree">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -452,11 +452,6 @@ QGroupBox::title{
    <class>QWebEngineView</class>
    <extends>QWidget</extends>
    <header location="global">QtWebEngineWidgets/QWebEngineView</header>
-  </customwidget>
-  <customwidget>
-   <class>DeselectableTreeView</class>
-   <extends>QTreeView</extends>
-   <header>aims/ui/deselectable_tree_view.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

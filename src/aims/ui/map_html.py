@@ -100,10 +100,15 @@ html_str = """
 """
 
 
+
 def map_html_str(folder, samba):
     try:
-        _track = track(folder, samba)
-        print(len(_track))
+        try:
+            _track = track(folder, samba)
+            print(len(_track))
+        except:
+            _track = None
+
         if _track is None or len(_track) < 2:
             return "<html>No Map</html"
 

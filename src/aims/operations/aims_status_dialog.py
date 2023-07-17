@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QProgressDialog
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QObject
 import logging
 from threading import RLock, Timer
 from multiprocessing.pool import ThreadPool
@@ -7,7 +7,7 @@ from multiprocessing.pool import ThreadPool
 logger = logging.getLogger("")
 
 
-class AimsStatusDialog(object):
+class AimsStatusDialog(QObject):
     def __init__(self, ui):
         super().__init__()
 
@@ -19,8 +19,8 @@ class AimsStatusDialog(object):
         self.operation = None
 
     def make_progress_dialog(self):
-        self.progress_dialog = QProgressDialog("Syncing data.", "Cancel", 0, 1, self.ui)
-        self.progress_dialog.setWindowTitle("Wait...")
+        self.progress_dialog = QProgressDialog(self.tr("Syncing data."), self.tr("Cancel"), 0, 1, self.ui)
+        self.progress_dialog.setWindowTitle(self.tr("Wait..."))
         self.progress_dialog.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.progress_dialog.setValue(1)
         self.progress_dialog.setMinimumDuration(10)

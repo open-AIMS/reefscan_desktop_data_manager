@@ -5,7 +5,7 @@ from reefscanner.basic_model.survey import Survey
 from aims.gui_model.SurveyTreeModelByDate import SurveyTreeModelByDate
 from aims.ui.checked_tree_item import CheckTreeitem
 from PyQt5.QtCore import QItemSelection, Qt, QModelIndex, QSize, QEvent
-from aims import state
+from aims.state import state
 
 class TreeModelMaker(QMainWindow):
     def __init__(self):

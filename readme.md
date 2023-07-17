@@ -31,7 +31,7 @@ These are the values for the three edit boxes
 
 # Create executable  
 On Windows:  
-`pyinstaller -p src --noconsole --name reefscan-transom --add-data src\resources\*;resources --icon src\resources\aims_fish.ico --onefile src\main.py`
+`pyinstaller -p src:simulated_src --noconsole --name reefscan-transom --add-data src\resources\*;resources --icon src\resources\aims_fish.ico --onefile src\main.py`
 Rename the exe file to reefscan-deep.exe for reefscan deep functionality 
 On Linux:  
 `pyinstaller -p src --noconsole --name reefscan-transom --add-data src/resources/*:resources --icon src\resources\aims_fish.ico --onefile src/main.py`
@@ -42,9 +42,12 @@ pip install ..\reef_scanner_data_model\dist\reefscanner-0.2.0-py3-none-any.whl
 # Language stuff
 
 Create or update ts files
-ensure reefscan.pro is up to date
-`pylupdate5 reefscan.pro src/resources/eng-vi.ts`
+ensure reefscan.pro (this is a text file) is up to date
+`pylupdate5 reefscan.pro`
+or 
+`pylupdate5 -noobsolete reefscan.pro`
 
+this will update src/resources/eng-vi.ts
 Install QT and use QT linguist to edit and release the file. That will create a .qm file 
 
-Test in vietnamese by running mani.py with a command line parameter "viet"
+Test in vietnamese by running main.py with a command line parameter "viet"

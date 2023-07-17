@@ -11,7 +11,7 @@ class CheckTreeitem(QStandardItem):
             super().setData(QVariant(QColor(Qt.gray)), Qt.ForegroundRole)
 
     def cascade_check(self) -> None:
-        print("cascade check state")
+        # print("cascade check state")
         state = self.checkState()
         for i in range(self.rowCount()):
             child_item = self.child(i)
