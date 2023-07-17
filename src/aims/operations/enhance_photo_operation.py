@@ -29,7 +29,11 @@ class EnhancePhotoOperation(AbstractOperation):
         def retrieve_current_progress(completed, total):
             self.set_progress_max(total)
             self.set_progress_value(completed)
-            self.set_progress_label(f'Enhancing: {completed} / {total} done')
+            if not self.batch_monitor.cancelled:
+                self.set_progress_label(f'Enhancing: {completed} / {total} done')
+            else:
+                self.set_progress_label("Shutting down enhancer")
+
 
         self.batch_monitor.set_callback_on_tick(retrieve_current_progress)
 
@@ -44,8 +48,7 @@ class EnhancePhotoOperation(AbstractOperation):
             if not self.batch_monitor.finished:
                 self.msg_func("Stopping enhance operation...") 
                 self.msg_func("Waiting for the enhancer to finish shutting down. This will take a few seconds.")
-        # while not self.batch_monitor.finished:
-        #     self.set_progress_label('Cancelled. Waiting for current jobs to finish...')
+
 
     def enhance_photos(self):
         use_suffix = 'True' if self.suffix is not None else 'False'

@@ -30,6 +30,7 @@ from aims.ui.main_ui_components.utils import setup_folder_tree, setup_file_syste
 from aims.ui.map_html import map_html_str
 
 from aims.operations.enhance_photo_operation import EnhancePhotoOperation
+from aims.operations.inference_operation import InferenceOperation
 
 logger = logging.getLogger("")
 
@@ -85,7 +86,9 @@ class DataComponent(QMainWindow):
                                                      self.data_widget.marks_tab)
         self.enhance_widget = self.load_sequence_frame(f'{state.meipass}resources/enhance.ui',
                                                      self.data_widget.enhance_tab)
-
+        self.inference_widget = self.load_sequence_frame(f'{state.meipass}resources/inference.ui',
+                                                     self.data_widget.inference_tab)
+        
         self.info_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_info.ui',
                                                     self.data_widget.info_tab)
         self.metadata_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_metadata.ui',
@@ -94,6 +97,8 @@ class DataComponent(QMainWindow):
                                                      self.data_widget.marks_tab)
         self.enhance_widget = self.load_sequence_frame(f'{state.meipass}resources/enhance.ui',
                                                      self.data_widget.enhance_tab)
+        self.inference_widget = self.load_sequence_frame(f'{state.meipass}resources/inference.ui',
+                                                     self.data_widget.inference_tab)
         
         self.lookups()
         self.data_widget.tabWidget.currentChanged.connect(self.tab_changed)
@@ -142,12 +147,23 @@ class DataComponent(QMainWindow):
         self.enhance_widget.checkBoxOutputFolder.stateChanged.connect(self.enhance_widget_cb_outputfolder_changed)
         self.enhance_widget.checkBoxSuffix.stateChanged.connect(self.enhance_widget_cb_suffix_changed)
 
+        self.inference_widget.btnInferenceOpenFolder.clicked.connect(self.inference_open_folder)
+        self.inference_widget.btnInferenceFolder.clicked.connect(self.inference_folder)
+        self.inference_widget.textEditOutputFolder.setPlainText("inference_results")
+        self.inference_widget.checkBoxOutputFolder.setChecked(False)
+        self.inference_widget.textEditOutputFolder.setEnabled(False)
+        
+        self.inference_widget.checkBoxOutputFolder.stateChanged.connect(self.inference_widget_cb_outputfolder_changed)
+
 
     def enhance_widget_cb_suffix_changed(self, state):
         self.enhance_widget.textEditSuffix.setEnabled(state != 0)
 
     def enhance_widget_cb_outputfolder_changed(self, state):
         self.enhance_widget.textEditOutputFolder.setEnabled(state != 0)
+
+    def inference_widget_cb_outputfolder_changed(self, state):
+        self.inference_widget.textEditOutputFolder.setEnabled(state != 0)
 
     def disable_save_cancel(self):
         self.metadata_widget.saveButton.setEnabled(False)
@@ -461,6 +477,36 @@ class DataComponent(QMainWindow):
         else:
             self.enhance_widget.textBrowser.append("Photoenhancer finished")
 
+    def inference_open_folder(self):
+        os.startfile(self.survey().folder)
+
+    def inference_folder(self):
+        output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'
+
+        self.inference_widget.textBrowser.append("Inferencer starting")
+        self.inference_widget.textBrowser.append(f"Inferenced photos will be saved in the folder \'{output_folder}\'") 
+
+        QApplication.processEvents()
+
+        inference_operation = InferenceOperation(target=self.survey().folder,
+                                                  target_results_folder_name=output_folder)
+
+        inference_operation.update_interval = 1
+        self.aims_status_dialog.set_operation_connections(inference_operation)
+        inference_operation.set_msg_function(lambda msg: self.inference_widget.textBrowser.append(msg))
+        # # operation.after_run.connect(self.after_sync)
+        logger.info("done connections")
+        result = self.aims_status_dialog.threadPool.apply_async(inference_operation.run)
+        logger.info("thread started")
+        while not result.ready():
+            QApplication.processEvents()
+        logger.info("thread finished")
+        self.aims_status_dialog.close()
+
+        if inference_operation.batch_monitor.cancelled:
+            self.inference_widget.textBrowser.append("Inferencer was cancelled")
+        else:
+            self.inference_widget.textBrowser.append("Inferencer finished")
 
     def camera_tree_selection_changed(self, item_selection: QItemSelection):
         print("camera tree changed")
