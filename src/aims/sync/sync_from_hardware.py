@@ -6,7 +6,8 @@ from datetime import datetime
 
 from reefscanner.basic_model.json_utils import read_json_file
 
-from aims import state
+from aims.messages import messages
+from aims.state import state
 from aims.samba import aims_shutil
 from joblib import Parallel, delayed
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
@@ -33,7 +34,8 @@ class SyncFromHardware(Synchroniser):
     def sync(self, survey_infos):
 
         if not self.camera_os.isdir(self.hardware_folder):
-            raise Exception(f"Hardware not found at {self.hardware_folder}")
+            message = self.tr("Hardware not found at")
+            raise Exception(f"{message} {self.hardware_folder}")
 
         if not os.path.isdir(self.local_folder):
             os.makedirs(self.local_folder)
@@ -47,7 +49,8 @@ class SyncFromHardware(Synchroniser):
             pass
 
         if not self.camera_os.isdir(h_surveys_folder):
-            raise Exception(f"Hardware surveys not found at {h_surveys_folder}")
+            message = self.tr("Hardware surveys not found at")
+            raise Exception(f"{message} {h_surveys_folder}")
 
         #   Copy all surveys from hardware to local. Then Archive
         # self.copytree_parallel(h_surveys_folder, l_surveys_folder)
@@ -55,7 +58,7 @@ class SyncFromHardware(Synchroniser):
         i=0
         for survey_info in survey_infos:
             survey_id = survey_info["survey_id"]
-            already_archived = (survey_info["branch"] == "Downloaded Sequences")
+            already_archived = (survey_info["branch"] == self.tr("Downloaded Sequences"))
             try:
                 friendly_name = state.model.camera_surveys[survey_id].friendly_name
             except:
@@ -64,7 +67,7 @@ class SyncFromHardware(Synchroniser):
             if not self.cancelled:
                 i += 1
                 self.progress_queue.reset()
-                self.folder_message = f"Survey {friendly_name}. {i} of {tot_surveys}"
+                self.folder_message = f"{messages.survey()} {friendly_name}. {i} {messages.of()} {tot_surveys}"
                 l_survey_folder = self.find_local_survey_folder(survey_id)
                 if already_archived:
                     h_survey_folder = archive_folder + "/" + survey_id
@@ -83,11 +86,9 @@ class SyncFromHardware(Synchroniser):
         # for survey_id in survey_ids:
         #     add_exif_from_csv()
 
-        message = f"Your data has been synchronised to the local storage. "
-        detailed_message = """
-        All photos have been copied to the local and backup folders.\n
-        """
-        return message, detailed_message
+        message = self.tr("Your data has been synchronised to the local storage. ")
+        detailed_message = self.tr("All photos have been copied to the local and backup folders.")
+        return message, detailed_message + "\n"
 
     def find_local_survey_folder(self, survey_id):
         for root, dirs, files in os.walk(self.local_folder):
@@ -144,11 +145,11 @@ class SyncFromHardware(Synchroniser):
         if self.cancelled:
             logger.debug("cancelled")
         else:
-            message = f'copying  {src}'
+            message = f'{messages.copying()}  {src}'
             logger.debug(message)
             try:
                 if os.path.exists(l_dst) and not src.endswith("survey.json"):
-                    message = f'skipping {src}'
+                    message = f'{messages.skipping()} {src}'
                     # print(message)
                     self.set_progress_label(message)
                 else:
@@ -159,7 +160,7 @@ class SyncFromHardware(Synchroniser):
                 if self.backup:
                     b_dst = f"{self.backup_folder}/{dst_last_part}"
                     if os.path.exists(b_dst) and not src.endswith("survey.json"):
-                        message = f'skipping {src}'
+                        message = f'{messages.skipping()} {src}'
                     else:
                         logger.debug(f"will copy backup {src}")
                         os.makedirs(os.path.dirname(b_dst), exist_ok=True)

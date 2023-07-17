@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QDir, QStandardPaths
 from PyQt5.QtWidgets import QFileSystemModel
 
-from aims import state
+from aims.state import state
 
 
 def split_drive(dir_name):

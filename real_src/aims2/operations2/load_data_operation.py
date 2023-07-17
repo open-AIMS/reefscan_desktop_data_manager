@@ -4,26 +4,31 @@ import traceback
 
 from reefscanner.basic_model.basic_model import BasicModel
 
+from aims.messages import messages
 from aims.operations.abstract_operation import AbstractOperation
 
 logger = logging.getLogger("")
 
 
-class LoadArchiveDataOperation(AbstractOperation):
+class LoadDataOperation(AbstractOperation):
 
-    def __init__(self, model: BasicModel):
+    def __init__(self, model: BasicModel, camera_connected):
         super().__init__()
         self.model = model
         self.finished=False
         self.success=False
         self.message = ""
+        self.camera_connected = camera_connected
 
     def _run(self):
         self.finished=False
         self.success = False
         logger.info("start load data")
         try:
-            self.model.load_camera_archive_data(self.progress_queue)
+            self.model.read_from_files(self.progress_queue, self.camera_connected,
+                                       message=messages.load_local_data_message(),
+                                       error_message=messages.load_local_data_error_message()
+                                       )
             self.success = True
         except Exception as e:
             logger.error("ERROR ERROR")

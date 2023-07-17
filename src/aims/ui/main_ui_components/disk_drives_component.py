@@ -1,11 +1,11 @@
 import os
 
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QSize, QObject
 from PyQt5.QtWidgets import QMessageBox, QMainWindow
 
-from aims import state
-from aims.operations.disk_drive_sync import compare
+from aims.state import state
+from aims.operations.disk_drive_sync import disk_drive_utils
 
 
 def get_primary_folder(disk):
@@ -24,7 +24,7 @@ def has_secondary_folder(disk):
     return os.path.exists(get_secondary_folder(disk))
 
 
-class DiskDrivesComponent(QMainWindow):
+class DiskDrivesComponent(QObject):
     def __init__(self, hint_function):
         super().__init__()
         self.widget = None
@@ -74,9 +74,16 @@ class DiskDrivesComponent(QMainWindow):
         self.set_hint()
 
     def copy(self):
-        primary_folder = get_primary_folder(self.widget.driveComboBox.currentData())
-        secondary_folder = get_secondary_folder(self.widget.secondDriveComboBox.currentData())
-        compare(primary_folder, secondary_folder, True, self.aims_status_dialog)
+        if state.is_simulated:
+            state.backup_drive = None
+            state.backup_folder = None
+            state.config.backup = False
+            self.widget.cbBackup.setChecked(False)
+            state.set_data_folders()
+        else:
+            primary_folder = get_primary_folder(self.widget.driveComboBox.currentData())
+            secondary_folder = get_secondary_folder(self.widget.secondDriveComboBox.currentData())
+            disk_drive_utils.compare(primary_folder, secondary_folder, True, self.aims_status_dialog)
 
     def connect(self):
         state.config.backup = self.widget.cbBackup.isChecked()
@@ -104,15 +111,15 @@ class DiskDrivesComponent(QMainWindow):
 
 
     def compare_disks(self, primary_folder, secondary_folder):
-        total_differences, messages, message_str = compare(primary_folder, secondary_folder, False, self.aims_status_dialog)
+        total_differences, messages, message_str = disk_drive_utils.compare(primary_folder, secondary_folder, False, self.aims_status_dialog)
         if total_differences > 0:
-            message = self.tr("""
-                Contents of the primary and seconday drives do not match.\n
-                Do you want to copy all the missing and modified files from the primary to the secondary drive? \n
-            """)
+            message = self.tr("Contents of the primary and seconday drives do not match.")\
+                      + "\n" \
+                      + self.tr("Do you want to copy all the missing and modified files from the primary to the secondary drive?") \
+                      + "\n"
             message = message + message_str
 
-            self.widget.messageText.setText(message_str)
+            self.widget.messageText.setText(message)
             self.widget.error_label1.setVisible(True)
             self.widget.error_label2.setVisible(True)
             self.widget.copyButton.setVisible(True)
