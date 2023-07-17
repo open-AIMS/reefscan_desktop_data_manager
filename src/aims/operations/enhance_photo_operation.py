@@ -12,16 +12,18 @@ class EnhancePhotoOperation(AbstractOperation):
     target: str = ""
     load: float = 0.01
     suffix: str = ""
+    disable_denoising: str = 'False'
     msg_func = lambda msg: None
     teststring = ""
 
-    def __init__(self, target, load, suffix, output_folder='enhanced'):
+    def __init__(self, target, load, suffix, output_folder='enhanced', disable_denoising=False):        
         super().__init__()
         self.target = target
         self.output_folder = output_folder
         self.load = load
         self.suffix = suffix
         self.batch_monitor = BatchMonitor()
+        self.disable_denoising = 'True' if disable_denoising else 'False'
 
     def _run(self):
         logger.info("EnhancePhotoOperation run")
@@ -57,7 +59,8 @@ class EnhancePhotoOperation(AbstractOperation):
                      load=self.load, 
                      use_suffix=use_suffix, 
                      suffix=self.suffix,
-                     batch_monitor=self.batch_monitor)
+                     batch_monitor=self.batch_monitor,
+                     disable_denoising=self.disable_denoising)
 
     def set_msg_function(self, msg_func):
         self.msg_func = msg_func

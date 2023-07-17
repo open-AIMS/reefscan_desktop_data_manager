@@ -141,12 +141,13 @@ class DataComponent(QMainWindow):
         self.enhance_widget.textEditCPULoad.setPlainText("0.8")
         self.enhance_widget.checkBoxOutputFolder.setChecked(False)
         self.enhance_widget.checkBoxSuffix.setChecked(False)
+        self.enhance_widget.checkBoxDisableDenoising.setChecked(False)
         self.enhance_widget.textEditOutputFolder.setEnabled(False)
         self.enhance_widget.textEditSuffix.setEnabled(False)
 
         self.enhance_widget.checkBoxOutputFolder.stateChanged.connect(self.enhance_widget_cb_outputfolder_changed)
         self.enhance_widget.checkBoxSuffix.stateChanged.connect(self.enhance_widget_cb_suffix_changed)
-
+        
         self.inference_widget.btnInferenceOpenFolder.clicked.connect(self.inference_open_folder)
         self.inference_widget.btnInferenceFolder.clicked.connect(self.inference_folder)
         self.inference_widget.textEditOutputFolder.setPlainText("inference_results")
@@ -446,7 +447,7 @@ class DataComponent(QMainWindow):
     def enhance_photos_folder(self):
         output_suffix = self.enhance_widget.textEditSuffix.toPlainText()
         cpu_load_string = self.enhance_widget.textEditCPULoad.toPlainText()
-
+        disable_denoising = self.enhance_widget.checkBoxDisableDenoising.isChecked() 
 
         output_folder = self.enhance_widget.textEditOutputFolder.toPlainText() if self.enhance_widget.checkBoxOutputFolder.isChecked() else 'enhanced'
         output_suffix = self.enhance_widget.textEditSuffix.toPlainText() if self.enhance_widget.checkBoxSuffix.isChecked() else None
@@ -455,11 +456,19 @@ class DataComponent(QMainWindow):
         self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved in the folder \'{output_folder}\'") 
         if self.enhance_widget.checkBoxSuffix.isChecked():
             self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved with the suffix \'_{output_suffix}\'") 
+        if self.enhance_widget.checkBoxDisableDenoising.isChecked():
+            self.enhance_widget.textBrowser.append("Denoising step is skipped for faster performance.")
+
 
         QApplication.processEvents()
         # photoenhance(target=self.survey().folder, load=float(cpu_load_string), suffix=output_suffix, stronger_contrast_deep=str(stronger_enhancement), disable_denoising=str(disable_denoising))
 
-        enhance_operation = EnhancePhotoOperation(target=self.survey().folder, load=float(cpu_load_string), suffix=output_suffix, output_folder=output_folder)
+        enhance_operation = EnhancePhotoOperation(target=self.survey().folder, 
+                                                  load=float(cpu_load_string), 
+                                                  suffix=output_suffix, 
+                                                  output_folder=output_folder, 
+                                                  disable_denoising=disable_denoising)
+        
         enhance_operation.update_interval = 1
         self.aims_status_dialog.set_operation_connections(enhance_operation)
         enhance_operation.set_msg_function(lambda msg: self.enhance_widget.textBrowser.append(msg))
@@ -472,10 +481,13 @@ class DataComponent(QMainWindow):
         logger.info("thread finished")
         self.aims_status_dialog.close()
 
-        if enhance_operation.batch_monitor.cancelled:
-            self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
-        else:
+
+        if enhance_operation.batch_monitor.finished:
             self.enhance_widget.textBrowser.append("Photoenhancer finished")
+        else:
+            if enhance_operation.batch_monitor.cancelled:
+                self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
+
 
     def inference_open_folder(self):
         os.startfile(self.survey().folder)
