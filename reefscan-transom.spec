@@ -8,7 +8,7 @@ a = Analysis(
     ['src\\main.py'],
     pathex=['src'],
     binaries=[('venv\\Lib\\site-packages\\tensorflow\\python\\_pywrap*.pyd', '.')],
-    datas=[('src\\resources\\*', 'resources'), ('venv\\Lib\\site-packages\\tensorflow', 'tensorflow'), ('venv\\Lib\\site-packages\\keras', 'keras'), ('venv\\Lib\\site-packages\\keras_preprocessing', 'keras_preprocessing'), ('venv\\Lib\\site-packages\\inferencer\\models', 'inferencer\\models')],
+    datas=[('src\\resources\\*', 'resources'), ('venv\\Lib\\site-packages\\tensorflow', 'tensorflow'), ('venv\\Lib\\site-packages\\tensorflow_estimator', 'tensorflow_estimator'), ('venv\\Lib\\site-packages\\keras', 'keras'), ('venv\\Lib\\site-packages\\keras_preprocessing', 'keras_preprocessing'), ('venv\\Lib\\site-packages\\inferencer\\models', 'inferencer\\models')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
