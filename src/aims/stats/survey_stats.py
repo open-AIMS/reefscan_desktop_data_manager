@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-from aims import state
+from aims.state import state
 
 
 class SurveyStats:

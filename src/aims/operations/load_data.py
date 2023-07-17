@@ -1,13 +1,12 @@
 import logging
-import time
 
 from PyQt5.QtWidgets import QApplication
 from reefscanner.basic_model.survey import Survey
 
 from aims.operations.aims_status_dialog import AimsStatusDialog
-from aims.operations.load_archive_data_operation import LoadArchiveDataOperation
-from aims.operations.load_camera_data_operation import LoadCameraDataOperation
-from aims.operations.load_data_operation import LoadDataOperation
+from aims2.operations2.load_archive_data_operation import LoadArchiveDataOperation
+from aims2.operations2.load_camera_data_operation import LoadCameraDataOperation
+from aims2.operations2.load_data_operation import LoadDataOperation
 from aims.operations.reefcloud_sub_sample_operation import ReefcloudSubSampleOperation
 from aims.operations.reefcloud_upload_operation import ReefcloudUploadOperation
 
@@ -41,7 +40,7 @@ def reefcloud_subsample(image_dir, sample_dir, aims_status_dialog: AimsStatusDia
     return operation.success, operation.selected_photo_infos
 
 
-def reefcloud_upload(survey: Survey, survey_id, survey_folder, subsampled_image_folder, aims_status_dialog: AimsStatusDialog):
+def reefcloud_upload_survey(survey: Survey, survey_id, survey_folder, subsampled_image_folder, aims_status_dialog: AimsStatusDialog):
     operation = ReefcloudUploadOperation(survey, survey_id, survey_folder, subsampled_image_folder)
     operation.update_interval = 1
     aims_status_dialog.set_operation_connections(operation)

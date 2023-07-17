@@ -1,14 +1,10 @@
 import logging
-import sys
 import traceback
 
-from reefscanner.basic_model.basic_model import BasicModel
-from reefscanner.basic_model.progress_queue import ProgressQueue
 from reefscanner.basic_model.survey import Survey
 
 from aims.operations.abstract_operation import AbstractOperation
-from reefcloud.reefcloud_uploader import ReefcloudUploader
-from reefcloud.sub_sample import SubSampler
+from aims2.reefcloud2.reefcloud_uploader import ReefcloudUploader
 
 logger = logging.getLogger("")
 

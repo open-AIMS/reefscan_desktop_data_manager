@@ -1,5 +1,5 @@
 import io
-from aims import state
+from aims.state import state
 from reefscanner.basic_model.samba import file_ops_factory
 
 from PIL import Image
