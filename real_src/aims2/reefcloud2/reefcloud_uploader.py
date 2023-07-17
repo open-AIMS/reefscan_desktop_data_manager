@@ -1,23 +1,26 @@
 import os
 from datetime import datetime
 
+from PyQt5.QtCore import QObject
 from reefscanner.basic_model.progress_queue import ProgressQueue
 from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.survey import Survey
 from reefscanner.basic_model.survey_reefcloud_info import ReefcloudUploadInfo
 
-from aims import state
-from reefcloud.reefcloud_utils import upload_file
+from aims.messages import messages
+from aims.state import state
+from aims2.reefcloud2.reefcloud_utils import upload_file
 
 
-class ReefcloudUploader:
+class ReefcloudUploader(QObject):
     def __init__(self):
+        super().__init__()
         self.canceled = False
 
     def upload_survey(self, survey: Survey, survey_id, survey_folder, subsampled_image_folder, progress_queue: ProgressQueue):
 
         progress_queue.reset()
-        progress_queue.set_progress_label(f"Uploading survey {survey.best_name()}")
+        progress_queue.set_progress_label(f"{messages.upload_survey_message()} {survey.best_name()}")
 
         survey.reefcloud = ReefcloudUploadInfo({"uploaded_date": datetime.now().strftime("%Y-%m-%dT%H%M%S"),
                                                 "uploaded_photo_count": 0})

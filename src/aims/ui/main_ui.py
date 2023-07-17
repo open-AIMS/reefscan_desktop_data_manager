@@ -3,17 +3,18 @@ import shutil
 from PyQt5.QtWidgets import QMainWindow, QWidget, QTextBrowser
 from PyQt5 import QtWidgets, uic, QtCore
 
-from aims import state
+from aims import data_loader
+from aims.state import state
 import sys
 import logging
-from PyQt5.QtCore import QItemSelection, Qt, QModelIndex, QSize, QEvent, QStandardPaths, QDir
+from PyQt5.QtCore import Qt
 
 from aims.operations.aims_status_dialog import AimsStatusDialog
-from aims.operations.archive_checker import ArchiveChecker
+from aims2.operations2.archive_checker import ArchiveChecker
 from aims.ui.main_ui_components.data_component import DataComponent
 from aims.ui.main_ui_components.disk_drives_component import DiskDrivesComponent
 from aims.ui.main_ui_components.upload_component import UploadComponent
-from aims.ui.main_ui_components.utils import clearLayout, setup_file_system_tree_and_combo_box
+from aims.ui.main_ui_components.utils import clearLayout
 import win32file
 import win32api
 from tzlocal import get_localzone
@@ -130,7 +131,7 @@ class MainUi(QMainWindow):
 
     def ui_to_data(self):
         if self.current_screen == "data":
-            self.data_component.ui_to_data()
+            self.data_component.check_save()
 
     def load_upload_screen(self):
         self.ui_to_data()
@@ -175,7 +176,7 @@ class MainUi(QMainWindow):
         self.ui_to_data()
         self.current_screen = "data"
         self.highlight_button(self.workflow_widget.dataButton)
-        self.data_component.data_widget = self.load_main_frame(f'{state.meipass}resources/data.ui')
+        self.data_component.data_widget = self.load_main_frame(f'{state.meipass}resources/data.ui', package='aims.ui')
 
         self.data_component.load_data_screen(self.fixed_drives, self.aims_status_dialog, self.time_zone)
 
@@ -214,9 +215,9 @@ class MainUi(QMainWindow):
         if self.drives_connected:
             self.load_connect_screen()
 
-    def load_main_frame(self, ui_file):
+    def load_main_frame(self, ui_file, package=None):
         clearLayout(self.ui.mainFrame.layout())
-        widget: QWidget = uic.loadUi(ui_file)
+        widget: QWidget = uic.loadUi(ui_file, package=package)
         self.ui.mainFrame.layout().addWidget(widget)
         return widget
 
@@ -226,7 +227,7 @@ class MainUi(QMainWindow):
         except:
             raise Exception("Connect to the local disks first")
 
-        data_loaded, message = state.load_camera_data_model(aims_status_dialog=self.aims_status_dialog)
+        data_loaded, message = data_loader.load_camera_data_model(aims_status_dialog=self.aims_status_dialog)
         if data_loaded:
             self.connect_widget.lblMessage.setText(self.tr("Connected Successfully"))
             if self.drives_connected:
@@ -240,7 +241,7 @@ class MainUi(QMainWindow):
     def update_status(self):
         if state.model.local_data_loaded:
             self.archive_checker.check()
-            bytes_available = self.archive_checker.archive_stats.space.actual_available_size
+            bytes_available = self.archive_checker.archive_stats.available_size()
             gb_available = round(bytes_available / 1000000000)
             self.status_widget.lblDevice.setText(f"{state.reefscan_id}: {gb_available}  " + self.tr("Gb Free"))
             self.status_widget.lblSequences.setText(f"{len(state.model.camera_surveys)} " + self.tr("sequences"))

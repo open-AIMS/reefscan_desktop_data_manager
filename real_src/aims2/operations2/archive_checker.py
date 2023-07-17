@@ -6,7 +6,7 @@ import time
 from PyQt5.QtCore import QObject
 from reefscanner.archive_stats.archive_stats import ArchiveStats
 
-from aims import state
+from aims.state import state
 from PyQt5 import QtCore
 
 logger = logging.getLogger("")
@@ -50,4 +50,5 @@ class ArchiveChecker(QObject):
 
     def cancel(self):
         self.archive_stats.cancelled = True
+
 
