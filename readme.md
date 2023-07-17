@@ -31,7 +31,7 @@ These are the values for the three edit boxes
 
 # Create executable  
 On Windows:  
-`pyinstaller -p src --noconsole --name reefscan-transom --add-data src\resources\*;resources --icon src\resources\aims_fish.ico --onefile src\main.py`
+`pyinstaller -p src --noconsole --name reefscan-transom --add-binary venv\Lib\site-packages\tensorflow\python\_pywrap*.pyd;. --add-data src\resources\*;resources --add-data venv\Lib\site-packages\tensorflow;tensorflow --add-data venv\Lib\site-packages\tensorflow_estimator;tensorflow_estimator --add-data venv\Lib\site-packages\keras;keras --add-data venv\Lib\site-packages\keras_preprocessing;keras_preprocessing --add-data venv\Lib\site-packages\inferencer\models;inferencer\models --icon src\resources\aims_fish.ico --onefile src\main.py`
 Rename the exe file to reefscan-deep.exe for reefscan deep functionality 
 On Linux:  
 `pyinstaller -p src --noconsole --name reefscan-transom --add-data src/resources/*:resources --icon src\resources\aims_fish.ico --onefile src/main.py`
