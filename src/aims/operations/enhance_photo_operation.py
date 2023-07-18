@@ -16,7 +16,7 @@ class EnhancePhotoOperation(AbstractOperation):
     msg_func = lambda msg: None
     teststring = ""
 
-    def __init__(self, target, load, suffix, output_folder='enhanced', disable_denoising=False):        
+    def __init__(self, target, load, suffix='', output_folder='enhanced', disable_denoising=False):        
         super().__init__()
         self.target = target
         self.output_folder = output_folder
