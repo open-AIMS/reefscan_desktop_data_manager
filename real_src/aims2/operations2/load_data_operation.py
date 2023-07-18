@@ -25,16 +25,17 @@ class LoadDataOperation(AbstractOperation):
         self.success = False
         logger.info("start load data")
         try:
-            self.model.read_from_files(self.progress_queue, self.camera_connected,
-                                       message=messages.load_local_data_message(),
-                                       error_message=messages.load_local_data_error_message()
+            self.model.read_from_files(self.progress_queue, self.camera_connected#,
+                                       #message=messages.load_local_data_message(),
+                                       #error_message=messages.load_local_data_error_message()
                                        )
             self.success = True
         except Exception as e:
-            logger.error("ERROR ERROR")
+            logger.error("ERROR ERROR: load_data_operation from real_src")
             traceback.print_exc()
             self.message = str(e)
             print(self.message)
+            logger.error(self.message)
             self.success = False
 
         logger.info("finish load data")
