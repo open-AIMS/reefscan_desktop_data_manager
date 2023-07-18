@@ -137,35 +137,37 @@ class DataComponent(QObject):
 
         self.enhance_widget.btnEnhanceOpenFolder.clicked.connect(self.enhance_open_folder)
         self.enhance_widget.btnEnhanceFolder.clicked.connect(self.enhance_photos_folder)
-        self.enhance_widget.textEditSuffix.setPlainText("")
-        self.enhance_widget.textEditOutputFolder.setPlainText("enhanced")
+        # self.enhance_widget.textEditSuffix.setPlainText("")
+        # self.enhance_widget.textEditOutputFolder.setPlainText("enhanced")
         self.enhance_widget.textEditCPULoad.setPlainText("0.8")
-        self.enhance_widget.checkBoxOutputFolder.setChecked(False)
-        self.enhance_widget.checkBoxSuffix.setChecked(False)
+        # self.enhance_widget.checkBoxOutputFolder.setChecked(False)
+        # self.enhance_widget.checkBoxSuffix.setChecked(False)
         self.enhance_widget.checkBoxDisableDenoising.setChecked(False)
-        self.enhance_widget.textEditOutputFolder.setEnabled(False)
-        self.enhance_widget.textEditSuffix.setEnabled(False)
+        # self.enhance_widget.textEditOutputFolder.setEnabled(False)
+        # self.enhance_widget.textEditSuffix.setEnabled(False)
 
-        self.enhance_widget.checkBoxOutputFolder.stateChanged.connect(self.enhance_widget_cb_outputfolder_changed)
-        self.enhance_widget.checkBoxSuffix.stateChanged.connect(self.enhance_widget_cb_suffix_changed)
+        # self.enhance_widget.checkBoxOutputFolder.stateChanged.connect(self.enhance_widget_cb_outputfolder_changed)
+        # self.enhance_widget.checkBoxSuffix.stateChanged.connect(self.enhance_widget_cb_suffix_changed)
 
         self.inference_widget.btnInferenceOpenFolder.clicked.connect(self.inference_open_folder)
         self.inference_widget.btnInferenceFolder.clicked.connect(self.inference_folder)
-        self.inference_widget.textEditOutputFolder.setPlainText("inference_results")
-        self.inference_widget.checkBoxOutputFolder.setChecked(False)
-        self.inference_widget.textEditOutputFolder.setEnabled(False)
+        # self.inference_widget.textEditOutputFolder.setPlainText("inference_results")
+        # self.inference_widget.checkBoxOutputFolder.setChecked(False)
+        # self.inference_widget.textEditOutputFolder.setEnabled(False)
 
-        self.inference_widget.checkBoxOutputFolder.stateChanged.connect(self.inference_widget_cb_outputfolder_changed)
+        # self.inference_widget.checkBoxOutputFolder.stateChanged.connect(self.inference_widget_cb_outputfolder_changed)
 
 
-    def enhance_widget_cb_suffix_changed(self, state):
-        self.enhance_widget.textEditSuffix.setEnabled(state != 0)
+    # def enhance_widget_cb_suffix_changed(self, state):
+    #     self.enhance_widget.textEditSuffix.setEnabled(state != 0)
 
-    def enhance_widget_cb_outputfolder_changed(self, state):
-        self.enhance_widget.textEditOutputFolder.setEnabled(state != 0)
+    # def enhance_widget_cb_outputfolder_changed(self, state):
+    #     self.enhance_widget.textEditOutputFolder.setEnabled(state != 0)
 
-    def inference_widget_cb_outputfolder_changed(self, state):
-        self.inference_widget.textEditOutputFolder.setEnabled(state != 0)
+    # def inference_widget_cb_outputfolder_changed(self, state):
+    #     self.inference_widget.textEditOutputFolder.setEnabled(state != 0)
+
+
     def add_new_reefcloud_site(self):
         project = self.metadata_widget.cb_reefcloud_project.currentText()
         site = self.metadata_widget.ed_site.text()
@@ -496,9 +498,9 @@ class DataComponent(QObject):
 
         self.enhance_widget.textBrowser.append("Photoenhancer starting")
         self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved in the folder \'{output_folder}\'")
-        if self.enhance_widget.checkBoxSuffix.isChecked():
-            self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved with the suffix \'_{output_suffix}\'")
-            self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved with the suffix \'_{output_suffix}\'")
+        # if self.enhance_widget.checkBoxSuffix.isChecked():
+        #     self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved with the suffix \'_{output_suffix}\'")
+        #     self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved with the suffix \'_{output_suffix}\'")
         if self.enhance_widget.checkBoxDisableDenoising.isChecked():
             self.enhance_widget.textBrowser.append("Denoising step is skipped for faster performance.")
 
@@ -536,7 +538,9 @@ class DataComponent(QObject):
         os.startfile(self.survey().folder)
 
     def inference_folder(self):
-        output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'
+        # output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'
+
+        output_folder = 'inference_results'
 
         self.inference_widget.textBrowser.append("Inferencer starting")
         self.inference_widget.textBrowser.append(f"Inferenced photos will be saved in the folder \'{output_folder}\'")
@@ -805,11 +809,12 @@ class DataComponent(QObject):
         lat = self.survey().start_lat
         if lat is None:
             lat = ""
-        depth = self.survey().start_depth
-        if depth is None:
-            depth = ""
-        else:
-            depth = round(depth)
+        # depth = self.survey().start_depth if self.survey().start_depth else None
+        # if depth is None:
+        #     depth = ""
+        # else:
+        #     depth = round(depth)
+        depth = 6
         return f"{lon} {lat} {depth}m"
 
     def finish_waypoint_as_text(self):
@@ -819,11 +824,12 @@ class DataComponent(QObject):
         lat = self.survey().finish_lat
         if lat is None:
             lat = ""
-        depth = self.survey().finish_depth
-        if depth is None:
-            depth = ""
-        else:
-            depth = round(depth)
+        # depth = self.survey().finish_depth if self.survey().finish_depth else None
+        # if depth is None:
+        #     depth = ""
+        # else:
+        #     depth = round(depth)
+        depth = 6
         return f"{lon} {lat} {depth}m"
 
     def survey_stats_to_ui(self, survey_stats):
