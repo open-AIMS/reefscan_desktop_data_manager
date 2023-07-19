@@ -143,6 +143,7 @@ class DataComponent(QObject):
         # self.enhance_widget.checkBoxOutputFolder.setChecked(False)
         # self.enhance_widget.checkBoxSuffix.setChecked(False)
         self.enhance_widget.checkBoxDisableDenoising.setChecked(False)
+        self.enhance_widget.checkBoxDisableDehazing.setChecked(False)
         # self.enhance_widget.textEditOutputFolder.setEnabled(False)
         # self.enhance_widget.textEditSuffix.setEnabled(False)
 
@@ -487,11 +488,16 @@ class DataComponent(QObject):
         os.startfile(self.enhanced_folder())
 
     def enhance_photos_folder(self):
-        output_suffix = ""
+        output_suffix = "_enh"
         output_folder = self.enhanced_folder()
         # output_suffix = self.enhance_widget.textEditSuffix.toPlainText()
         cpu_load_string = self.enhance_widget.textEditCPULoad.toPlainText()
         disable_denoising = self.enhance_widget.checkBoxDisableDenoising.isChecked()
+        disable_dehazing = self.enhance_widget.checkBoxDisableDehazing.isChecked()
+        if not disable_denoising:
+            output_suffix = output_suffix + "_denoise"
+        if not disable_dehazing:
+            output_suffix = output_suffix + "_dehaze"
 
         # output_folder = self.enhance_widget.textEditOutputFolder.toPlainText() if self.enhance_widget.checkBoxOutputFolder.isChecked() else 'enhanced'
         # output_suffix = self.enhance_widget.textEditSuffix.toPlainText() if self.enhance_widget.checkBoxSuffix.isChecked() else None
@@ -503,6 +509,8 @@ class DataComponent(QObject):
         #     self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved with the suffix \'_{output_suffix}\'")
         if self.enhance_widget.checkBoxDisableDenoising.isChecked():
             self.enhance_widget.textBrowser.append("Denoising step is skipped for faster performance.")
+        if self.enhance_widget.checkBoxDisableDehazing.isChecked():
+            self.enhance_widget.textBrowser.append("Dehazing step is skipped for faster performance.")
 
 
         QApplication.processEvents()
@@ -512,7 +520,8 @@ class DataComponent(QObject):
                                                   load=float(cpu_load_string),
                                                   suffix=output_suffix,
                                                   output_folder=output_folder,
-                                                  disable_denoising=disable_denoising)
+                                                  disable_denoising=disable_denoising,
+                                                  disable_dehazing=disable_dehazing)
 
         enhance_operation.update_interval = 1
         self.aims_status_dialog.set_operation_connections(enhance_operation)
@@ -809,12 +818,11 @@ class DataComponent(QObject):
         lat = self.survey().start_lat
         if lat is None:
             lat = ""
-        # depth = self.survey().start_depth if self.survey().start_depth else None
-        # if depth is None:
-        #     depth = ""
-        # else:
-        #     depth = round(depth)
-        depth = 6
+        depth = self.survey().start_depth if self.survey().start_depth else None
+        if depth is None:
+            depth = ""
+        else:
+            depth = round(depth)
         return f"{lon} {lat} {depth}m"
 
     def finish_waypoint_as_text(self):
@@ -824,12 +832,11 @@ class DataComponent(QObject):
         lat = self.survey().finish_lat
         if lat is None:
             lat = ""
-        # depth = self.survey().finish_depth if self.survey().finish_depth else None
-        # if depth is None:
-        #     depth = ""
-        # else:
-        #     depth = round(depth)
-        depth = 6
+        depth = self.survey().finish_depth if self.survey().finish_depth else None
+        if depth is None:
+            depth = ""
+        else:
+            depth = round(depth)
         return f"{lon} {lat} {depth}m"
 
     def survey_stats_to_ui(self, survey_stats):

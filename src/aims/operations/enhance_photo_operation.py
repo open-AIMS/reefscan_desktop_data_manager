@@ -16,7 +16,7 @@ class EnhancePhotoOperation(AbstractOperation):
     msg_func = lambda msg: None
     teststring = ""
 
-    def __init__(self, target, load, suffix='', output_folder='enhanced', disable_denoising=False):        
+    def __init__(self, target, load, suffix='', output_folder='enhanced', disable_denoising=False, disable_dehazing=False):
         super().__init__()
         self.target = target
         self.output_folder = output_folder
@@ -24,6 +24,7 @@ class EnhancePhotoOperation(AbstractOperation):
         self.suffix = suffix
         self.batch_monitor = BatchMonitor()
         self.disable_denoising = 'True' if disable_denoising else 'False'
+        self.disable_dehazing = 'True' if disable_dehazing else 'False'
 
     def _run(self):
         logger.info("EnhancePhotoOperation run")
@@ -60,7 +61,9 @@ class EnhancePhotoOperation(AbstractOperation):
                      use_suffix=use_suffix, 
                      suffix=self.suffix,
                      batch_monitor=self.batch_monitor,
-                     disable_denoising=self.disable_denoising)
+                     disable_denoising=self.disable_denoising,
+                     disable_dehazing=self.disable_dehazing,
+                     replace_existing='False')
 
     def set_msg_function(self, msg_func):
         self.msg_func = msg_func

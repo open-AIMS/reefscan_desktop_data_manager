@@ -25,9 +25,9 @@ class LoadDataOperation(AbstractOperation):
         self.success = False
         logger.info("start load data")
         try:
-            self.model.read_from_files(self.progress_queue, self.camera_connected#,
-                                       #message=messages.load_local_data_message(),
-                                       #error_message=messages.load_local_data_error_message()
+            self.model.read_from_files(self.progress_queue, self.camera_connected,
+                                       message=messages.load_local_data_message(),
+                                       error_message=messages.load_local_data_error_message()
                                        )
             self.success = True
         except Exception as e:
