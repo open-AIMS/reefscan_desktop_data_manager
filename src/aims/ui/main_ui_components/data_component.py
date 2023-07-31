@@ -31,6 +31,7 @@ from aims2.reefcloud2.reefcloud_utils import create_reefcloud_site
 
 from aims.operations.enhance_photo_operation import EnhancePhotoOperation
 from aims.operations.inference_operation import InferenceOperation
+from aims.operations.chart_operation import ChartOperation
 
 logger = logging.getLogger("")
 
@@ -157,7 +158,7 @@ class DataComponent(QObject):
         # self.inference_widget.textEditOutputFolder.setEnabled(False)
 
         # self.inference_widget.checkBoxOutputFolder.stateChanged.connect(self.inference_widget_cb_outputfolder_changed)
-
+        self.data_widget.chart_tab.setVisible(False)
 
     # def enhance_widget_cb_suffix_changed(self, state):
     #     self.enhance_widget.textEditSuffix.setEnabled(state != 0)
@@ -543,10 +544,25 @@ class DataComponent(QObject):
                 self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
 
 
+    def load_inference_charts(self, coverage_results_file=''):
+        self.data_widget.chart_tab.setVisible(True)
+
+        self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
+                                                     self.data_widget.chart_tab)
+        from PyQt5 import QtWebEngineWidgets
+        pie_browser = QtWebEngineWidgets.QWebEngineView(self.chart_widget.pieChartWidget)
+
+        vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
+        vlayout.addWidget(pie_browser)        
+
+        chart_operation = ChartOperation()
+        chart_operation.pie_chart_benthic_groups(pie_browser, coverage_results_file=coverage_results_file)
+
     def inference_open_folder(self):
         os.startfile(self.survey().folder)
 
     def inference_folder(self):
+
         # output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'
 
         output_folder = 'inference_results'
@@ -575,6 +591,10 @@ class DataComponent(QObject):
             self.inference_widget.textBrowser.append("Inferencer was cancelled")
         else:
             self.inference_widget.textBrowser.append("Inferencer finished")
+
+        coverage_file = inference_operation.get_coverage_filepath()
+        self.inference_widget.textBrowser.append(f'Pie Chart from {coverage_file}')
+        self.load_inference_charts(coverage_file)
 
     def camera_tree_selection_changed(self, item_selection: QItemSelection):
         print("camera tree changed")

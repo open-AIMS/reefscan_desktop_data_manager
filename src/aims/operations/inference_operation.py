@@ -21,6 +21,7 @@ class InferenceOperation(AbstractOperation):
     feature_extractor_path = os.path.join(reefscan_feature_extractor.__path__[0], 'weights.best.hdf5')
     classifier_path = os.path.join(reefscan_classifier.__path__[0], 'reefscan.sav')
     group_labels_path = os.path.join(inferencer.models.__path__[0], 'reefscan_group_labels.csv')
+    output_coverage_file = ''
 
     TEST_IMAGES_PATH = 'C:\\reefscan\\reefscan-inf-test-images'
 
@@ -57,6 +58,9 @@ class InferenceOperation(AbstractOperation):
             if not self.batch_monitor.finished:
                 self.msg_func("Stopping inference operation...") 
                 self.msg_func("Waiting for the inferencer to finish shutting down.")
+
+    def get_coverage_filepath(self):
+        return self.output_coverage_file
 
     def set_msg_function(self, msg_func):
         self.msg_func = msg_func
