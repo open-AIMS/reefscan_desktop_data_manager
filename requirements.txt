@@ -26,13 +26,14 @@ jwt
 simplekml
 scipy
 opencv-python
-tensorflow==2.9.2
+tensorflow-cpu==2.9.2
 keras==2.9
 scikit-learn
 glob2
 matplotlib
-#reefscanner @ file:///C:/Users/pteneder/Documents/reefscan_desktop_integrations/reefscan_desktop_data_manager/reefscanner-1.0.3.1-py3-none-any.whl
+#reefscanner @ file:///C:/Users/pteneder/Documents/reefscan_desktop_integrations/reefscan_desktop_data_manager/reefscanner-1.0.4.1-py3-none-any.whl
 #photoenhancer @ file:///C:/Users/pteneder/Documents/reefscan_desktop_integrations/reefscan_desktop_data_manager/photoenhancer-1.1.8-py3-none-any.whl
-#inferencer @ file:///C:/Users/pteneder/Documents/reefscan_desktop_integrations/reefscan_desktop_data_manager/inferencer-1.1.4f9.8-py3-none-any.whl
+#inferencer @ file:///C:/Users/pteneder/Documents/reefscan_desktop_integrations/reefscan_desktop_data_manager/inferencer-1.1.5-py3-none-any.whl
 shapely
 alphashape
+plotly

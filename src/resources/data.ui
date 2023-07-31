@@ -17,6 +17,36 @@
    <string notr="true"/>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="3" column="1" colspan="2">
+    <widget class="QFrame" name="frame">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+     </layout>
+    </widget>
+   </item>
    <item row="1" column="0">
     <widget class="QWidget" name="widget" native="true">
      <property name="styleSheet">
@@ -300,36 +330,6 @@ QGroupBox::title{
      </layout>
     </widget>
    </item>
-   <item row="3" column="1" colspan="2">
-    <widget class="QFrame" name="frame">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-     </layout>
-    </widget>
-   </item>
    <item row="1" column="2">
     <widget class="QTabWidget" name="tabWidget">
      <property name="sizePolicy">
@@ -339,7 +339,7 @@ QGroupBox::title{
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>7</number>
+      <number>8</number>
      </property>
      <widget class="QWidget" name="empty_tab">
       <attribute name="title">
@@ -454,6 +454,12 @@ QGroupBox::title{
        <string>Inference</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_9"/>
+     </widget>
+     <widget class="QWidget" name="chart_tab">
+      <attribute name="title">
+       <string>Chart</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_10"/>
      </widget>
     </widget>
    </item>
