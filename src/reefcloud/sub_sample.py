@@ -54,10 +54,13 @@ class SubSampler(QObject):
                     if target_distance is None:
                         target_distance = exif["subject_distance"]
 
+                    if target_distance is None:
+                        target_distance = 8
+
                     wp = exif["latitude"], exif["longitude"]
                     keep = self.should_keep(wp, old_wp, target_distance)
                     # Ignore photos with bad geolocation in exif data.
-                    if exif["latitude"] is None or exif["longitude"] is None or "altitude" not in exif:
+                    if exif["latitude"] is None or exif["longitude"] is None:
                         keep = False
                 except Exception as e:
                     print (e)

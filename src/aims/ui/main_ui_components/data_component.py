@@ -3,6 +3,8 @@ import logging
 import os
 import shutil
 import subprocess
+import traceback
+import typing
 from time import process_time
 
 from PyQt5 import uic, QtWidgets, QtTest
@@ -15,6 +17,7 @@ from pytz import utc
 from reefscanner.basic_model.model_helper import rename_folders
 from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
+from reefscanner.basic_model.survey import Survey
 
 from aims import data_loader
 from aims.state import state
@@ -30,7 +33,7 @@ from aims2.operations2.camera_utils import delete_archives, get_kilo_bytes_used
 from aims2.reefcloud2.reefcloud_utils import create_reefcloud_site
 
 from aims.operations.enhance_photo_operation import EnhancePhotoOperation
-from aims.operations.inference_operation import InferenceOperation
+# from aims.operations.inference_operation import InferenceOperation
 
 logger = logging.getLogger("")
 
@@ -68,10 +71,56 @@ class DataComponent(QObject):
         self.site_lookup = {}
         self.hint_function = hint_function
 
+        self.clipboard: typing.Optional[Survey] = None
+
     def tab_changed(self, index):
         print(index)
         if index == 2:
             self.draw_map()
+
+    def copy(self):
+        self.ui_to_data()
+        self.clipboard = self.survey()
+
+    def paste(self):
+        if self.clipboard is not None:
+            self.ui_to_data()
+            if self.survey().site == "" or self.survey().site is None:
+                self.survey().site = self.clipboard.site
+
+            if self.survey().operator == "" or self.survey().operator is None:
+                self.survey().operator = self.clipboard.operator
+
+            if self.survey().observer == "" or self.survey().observer is None:
+                self.survey().observer = self.clipboard.observer
+
+            if self.survey().vessel == "" or self.survey().vessel is None:
+                self.survey().vessel = self.clipboard.vessel
+
+            if self.survey().tide == "" or self.survey().tide is None:
+                self.survey().tide = self.clipboard.tide
+
+            if self.survey().sea == "" or self.survey().sea is None:
+                self.survey().sea = self.clipboard.sea
+
+            if self.survey().wind == "" or self.survey().wind is None:
+                self.survey().wind = self.clipboard.wind
+
+            if self.survey().cloud == "" or self.survey().cloud  is None:
+                self.survey().cloud = self.clipboard.cloud
+
+            if self.survey().visibility == "" or self.survey().visibility is None:
+                self.survey().visibility = self.clipboard.visibility
+
+            if self.survey().reefcloud_site == "" or self.survey().reefcloud_site is None:
+                self.survey().reefcloud_site = self.clipboard.reefcloud_site
+
+            if self.survey().reefcloud_project == "" or self.survey().reefcloud_project is None:
+                self.survey().reefcloud_project = self.clipboard.reefcloud_project
+
+            self.data_to_ui()
+            self.ui_to_data()
+
 
     def load_data_screen(self, fixed_drives, aims_status_dialog, time_zone):
 
@@ -117,6 +166,8 @@ class DataComponent(QObject):
         self.metadata_widget.cancelButton.clicked.connect(self.data_to_ui)
         self.metadata_widget.saveButton.clicked.connect(self.ui_to_data)
         self.metadata_widget.newSiteButton.clicked.connect(self.add_new_reefcloud_site)
+        self.metadata_widget.btn_copy.clicked.connect(self.copy)
+        self.metadata_widget.btn_paste.clicked.connect(self.paste)
 
         self.load_explore_surveys_tree()
 
@@ -402,7 +453,8 @@ class DataComponent(QObject):
             self.survey_id = None
             try:
                 rename_folders(state.model, self.time_zone)
-            except:
+            except Exception as e:
+                traceback.print_exc()
                 raise Exception("Error renaming folders. Maybe you have a file or folder open in another window.")
 
             self.load_explore_surveys_tree()
@@ -548,33 +600,34 @@ class DataComponent(QObject):
 
     def inference_folder(self):
         # output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'
+        raise Exception("Inference not available")
 
-        output_folder = 'inference_results'
-
-        self.inference_widget.textBrowser.append("Inferencer starting")
-        self.inference_widget.textBrowser.append(f"Inferenced photos will be saved in the folder \'{output_folder}\'")
-
-        QApplication.processEvents()
-
-        inference_operation = InferenceOperation(target=self.survey().folder,
-                                                  target_results_folder_name=output_folder)
-
-        inference_operation.update_interval = 1
-        self.aims_status_dialog.set_operation_connections(inference_operation)
-        inference_operation.set_msg_function(lambda msg: self.inference_widget.textBrowser.append(msg))
-        # # operation.after_run.connect(self.after_sync)
-        logger.info("done connections")
-        result = self.aims_status_dialog.threadPool.apply_async(inference_operation.run)
-        logger.info("thread started")
-        while not result.ready():
-            QApplication.processEvents()
-        logger.info("thread finished")
-        self.aims_status_dialog.close()
-
-        if inference_operation.batch_monitor.cancelled:
-            self.inference_widget.textBrowser.append("Inferencer was cancelled")
-        else:
-            self.inference_widget.textBrowser.append("Inferencer finished")
+        # output_folder = 'inference_results'
+        #
+        # self.inference_widget.textBrowser.append("Inferencer starting")
+        # self.inference_widget.textBrowser.append(f"Inferenced photos will be saved in the folder \'{output_folder}\'")
+        #
+        # QApplication.processEvents()
+        #
+        # inference_operation = InferenceOperation(target=self.survey().folder,
+        #                                           target_results_folder_name=output_folder)
+        #
+        # inference_operation.update_interval = 1
+        # self.aims_status_dialog.set_operation_connections(inference_operation)
+        # inference_operation.set_msg_function(lambda msg: self.inference_widget.textBrowser.append(msg))
+        # # # operation.after_run.connect(self.after_sync)
+        # logger.info("done connections")
+        # result = self.aims_status_dialog.threadPool.apply_async(inference_operation.run)
+        # logger.info("thread started")
+        # while not result.ready():
+        #     QApplication.processEvents()
+        # logger.info("thread finished")
+        # self.aims_status_dialog.close()
+        #
+        # if inference_operation.batch_monitor.cancelled:
+        #     self.inference_widget.textBrowser.append("Inferencer was cancelled")
+        # else:
+        #     self.inference_widget.textBrowser.append("Inferencer finished")
 
     def camera_tree_selection_changed(self, item_selection: QItemSelection):
         print("camera tree changed")
@@ -724,7 +777,7 @@ class DataComponent(QObject):
             return ''
         return str(s)
 
-    def survey(self):
+    def survey(self) -> Survey:
         if self.survey_list is None:
             return None
         else:
