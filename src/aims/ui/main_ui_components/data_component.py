@@ -158,7 +158,7 @@ class DataComponent(QObject):
         # self.inference_widget.textEditOutputFolder.setEnabled(False)
 
         # self.inference_widget.checkBoxOutputFolder.stateChanged.connect(self.inference_widget_cb_outputfolder_changed)
-        self.data_widget.chart_tab.setVisible(False)
+        self.hide_tab_by_tab_text('Chart')
 
     # def enhance_widget_cb_suffix_changed(self, state):
     #     self.enhance_widget.textEditSuffix.setEnabled(state != 0)
@@ -169,7 +169,19 @@ class DataComponent(QObject):
     # def inference_widget_cb_outputfolder_changed(self, state):
     #     self.inference_widget.textEditOutputFolder.setEnabled(state != 0)
 
+    def get_index_by_tab_text(self, name_of_tab):
+        for i in range(self.data_widget.tabWidget.count()):
+            if self.data_widget.tabWidget.tabText(i) == name_of_tab:
+                return i  
 
+    def hide_tab_by_tab_text(self, name_of_tab):
+        index = self.get_index_by_tab_text(name_of_tab)
+        self.data_widget.tabWidget.setTabEnabled(index, False)
+
+    def show_tab_by_tab_text(self, name_of_tab):
+        index = self.get_index_by_tab_text(name_of_tab)
+        self.data_widget.tabWidget.setTabEnabled(index, True)
+    
     def add_new_reefcloud_site(self):
         project = self.metadata_widget.cb_reefcloud_project.currentText()
         site = self.metadata_widget.ed_site.text()
@@ -545,7 +557,7 @@ class DataComponent(QObject):
 
 
     def load_inference_charts(self, coverage_results_file=''):
-        self.data_widget.chart_tab.setVisible(True)
+        self.show_tab_by_tab_text('Chart')
 
         self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
                                                      self.data_widget.chart_tab)
