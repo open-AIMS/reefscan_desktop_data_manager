@@ -10,6 +10,7 @@ import logging
 from PyQt5.QtCore import Qt
 
 from aims.operations.aims_status_dialog import AimsStatusDialog
+from aims.ui.main_ui_components.reefcloud_connect_component import ReefcloudConnectComponent
 from aims2.operations2.archive_checker import ArchiveChecker
 from aims.ui.main_ui_components.data_component import DataComponent
 from aims.ui.main_ui_components.disk_drives_component import DiskDrivesComponent
@@ -70,6 +71,7 @@ class MainUi(QMainWindow):
         self.data_component = DataComponent(hint_function=self.hint)
         self.upload_component = UploadComponent(hint_function=self.hint)
         self.disk_drives_component = DiskDrivesComponent(hint_function=self.hint)
+        self.reefcloud_connect_component = ReefcloudConnectComponent(hint_function=self.hint)
 
         self.workflow_widget = None
         self.connect_widget = None
@@ -111,8 +113,10 @@ class MainUi(QMainWindow):
         self.workflow_widget.connectButton.setEnabled(self.drives_connected)
         remove_button_border(self.workflow_widget.dataButton)
         self.workflow_widget.dataButton.setEnabled(self.drives_connected)
+        remove_button_border(self.workflow_widget.connectReefcloudButton)
+        self.workflow_widget.connectReefcloudButton.setEnabled(self.drives_connected)
         remove_button_border(self.workflow_widget.uploadButton)
-        self.workflow_widget.uploadButton.setEnabled(self.drives_connected)
+        self.workflow_widget.uploadButton.setEnabled(self.drives_connected and self.reefcloud_connect_component.logged_in())
 
         add_button_border(button)
         button.setEnabled(False)
@@ -125,7 +129,9 @@ class MainUi(QMainWindow):
         self.workflow_widget.connectButton.setEnabled(False)
         self.workflow_widget.dataButton.setEnabled(False)
         self.workflow_widget.uploadButton.setEnabled(False)
+        self.workflow_widget.connectReefcloudButton.setEnabled(False)
         self.workflow_widget.uploadButton.clicked.connect(self.load_upload_screen)
+        self.workflow_widget.connectReefcloudButton.clicked.connect(self.load_reefcloud_connect_screen)
         self.workflow_widget.dataButton.clicked.connect(self.load_data_screen)
         self.workflow_widget.connectDisksButton.clicked.connect(self.load_connect_disks_screen)
 
@@ -137,9 +143,23 @@ class MainUi(QMainWindow):
         self.ui_to_data()
         self.current_screen = "upload"
 
-        self.upload_component.login_widget = self.load_main_frame(f'{state.meipass}resources/cloud-log-in.ui')
-        self.upload_component.load_login_screen(aims_status_dialog=self.aims_status_dialog, time_zone=self.time_zone)
+        self.upload_component.login_widget = self.load_main_frame(f'{state.meipass}resources/reefcloud-upload.ui')
+        self.upload_component.load(aims_status_dialog=self.aims_status_dialog, time_zone=self.time_zone)
         self.highlight_button(self.workflow_widget.uploadButton)
+
+    def load_reefcloud_connect_screen(self):
+        self.ui_to_data()
+        self.current_screen = "connect_reefcloud"
+
+        self.reefcloud_connect_component.login_widget = self.load_main_frame(f'{state.meipass}resources/reefcloud-connect.ui')
+        self.reefcloud_connect_component.load(aims_status_dialog=self.aims_status_dialog, time_zone=self.time_zone)
+        self.reefcloud_connect_component.login_widget.login_button.clicked.connect(self.login_reefcloud)
+
+        self.highlight_button(self.workflow_widget.connectReefcloudButton)
+
+    def login_reefcloud(self):
+        if self.reefcloud_connect_component.login():
+            self.load_data_screen()
 
     def load_start_screen(self):
         widget = self.load_main_frame(f'{state.meipass}resources/start.ui')
@@ -231,7 +251,7 @@ class MainUi(QMainWindow):
         if data_loaded:
             self.connect_widget.lblMessage.setText(self.tr("Connected Successfully"))
             if self.drives_connected:
-                self.load_data_screen()
+                self.load_reefcloud_connect_screen()
             state.reefscan_id = remove_control_characters(state.read_reefscan_id())
             self.camera_connected = True
             self.update_status()

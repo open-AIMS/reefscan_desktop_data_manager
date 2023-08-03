@@ -38,6 +38,7 @@ class Config(object):
         self.camera_samba = True
 
         self.deep = False
+        self.clear_reefcloud = False
 
         self.read_config_file()
         self.language = os.getenv("LANG")
