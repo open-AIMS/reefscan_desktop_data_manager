@@ -37,10 +37,10 @@ def gui_except_hook(exc_class, exc_value, tb):
     traceback1 = ''.join(traceback.format_tb(tb))
     error_message = str(exc_value)
 
-    print (error_message)
-    print(traceback1)
+    logger.exception(exc_class)
+    logger.exception(error_message)
+    logger.exception(traceback1)
 
-    print (exc_class)
 
     if exc_class is not UserWarning:
         errorbox = QtWidgets.QMessageBox()
@@ -66,6 +66,8 @@ sys.excepthook = gui_except_hook
 
 # import cgitb
 # cgitb.enable(format='text')
+
+
 
 
 if __name__ == "__main__":
@@ -117,9 +119,26 @@ if __name__ == "__main__":
         state.config.set_deep(sys.argv[0].lower().endswith("reefscan-deep.exe"))
 
         dev = len(sys.argv) > 1 and "dev" in sys.argv
+        clear_reefcloud = len(sys.argv) > 1 and "clear_reefcloud" in sys.argv
+
         if len(sys.argv) > 1 and "viet" in sys.argv:
             state.config.vietnemese=True
         state.config.set_dev(dev)
+        state.config.clear_reefcloud = clear_reefcloud
+
+        try:
+            import pyi_splash
+
+            # Update the text on the splash screen
+            pyi_splash.update_text("PyInstaller is a great software!")
+            pyi_splash.update_text("Second time's a charm!")
+
+            # Close the splash screen. It does not matter when the call
+            # to this function is made, the splash screen remains open until
+            # this function is called or the Python program is terminated.
+            pyi_splash.close()
+        except:
+            pass
 
         main_ui = MainUi()
         main_ui.show()
