@@ -138,36 +138,15 @@ class DataComponent(QObject):
 
         self.enhance_widget.btnEnhanceOpenFolder.clicked.connect(self.enhance_open_folder)
         self.enhance_widget.btnEnhanceFolder.clicked.connect(self.enhance_photos_folder)
-        # self.enhance_widget.textEditSuffix.setPlainText("")
-        # self.enhance_widget.textEditOutputFolder.setPlainText("enhanced")
+
         self.enhance_widget.textEditCPULoad.setPlainText("0.8")
-        # self.enhance_widget.checkBoxOutputFolder.setChecked(False)
-        # self.enhance_widget.checkBoxSuffix.setChecked(False)
         self.enhance_widget.checkBoxDisableDenoising.setChecked(False)
         self.enhance_widget.checkBoxDisableDehazing.setChecked(False)
-        # self.enhance_widget.textEditOutputFolder.setEnabled(False)
-        # self.enhance_widget.textEditSuffix.setEnabled(False)
-
-        # self.enhance_widget.checkBoxOutputFolder.stateChanged.connect(self.enhance_widget_cb_outputfolder_changed)
-        # self.enhance_widget.checkBoxSuffix.stateChanged.connect(self.enhance_widget_cb_suffix_changed)
 
         self.inference_widget.btnInferenceOpenFolder.clicked.connect(self.inference_open_folder)
         self.inference_widget.btnInferenceFolder.clicked.connect(self.inference_folder)
-        # self.inference_widget.textEditOutputFolder.setPlainText("inference_results")
-        # self.inference_widget.checkBoxOutputFolder.setChecked(False)
-        # self.inference_widget.textEditOutputFolder.setEnabled(False)
 
-        # self.inference_widget.checkBoxOutputFolder.stateChanged.connect(self.inference_widget_cb_outputfolder_changed)
         self.hide_tab_by_tab_text('Chart')
-
-    # def enhance_widget_cb_suffix_changed(self, state):
-    #     self.enhance_widget.textEditSuffix.setEnabled(state != 0)
-
-    # def enhance_widget_cb_outputfolder_changed(self, state):
-    #     self.enhance_widget.textEditOutputFolder.setEnabled(state != 0)
-
-    # def inference_widget_cb_outputfolder_changed(self, state):
-    #     self.inference_widget.textEditOutputFolder.setEnabled(state != 0)
 
     def get_index_by_tab_text(self, name_of_tab):
         for i in range(self.data_widget.tabWidget.count()):
@@ -561,14 +540,16 @@ class DataComponent(QObject):
 
         self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
                                                      self.data_widget.chart_tab)
-        from PyQt5 import QtWebEngineWidgets
-        pie_browser = QtWebEngineWidgets.QWebEngineView(self.chart_widget.pieChartWidget)
+        
+        pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
 
         vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
         vlayout.addWidget(pie_browser)        
 
         chart_operation = ChartOperation()
-        chart_operation.pie_chart_benthic_groups(pie_browser, coverage_results_file=coverage_results_file)
+        fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
+        pie_browser.setHtml(fig)
+
 
     def inference_open_folder(self):
         os.startfile(self.survey().folder)
