@@ -52,31 +52,40 @@ class ReefcloudConnectComponent(QObject):
 
         else:
             self.hint_function(self.tr("Press the login button"))
+            self.login_widget.username_label.setText("Not logged in.")
 
 
     def update(self):
+        self.login_widget.username_label.setText("Downloading projects")
+        QApplication.processEvents()
+
         projects_response = update_reefcloud_projects(state.reefcloud_session)
         state.config.load_reefcloud_projects()
+        self.login_widget.username_label.setText("Downloading sites")
+        QApplication.processEvents()
+
         sites_response = update_reefcloud_sites(state.reefcloud_session)
         state.config.load_reefcloud_sites()
 
-        msg_box = QtWidgets.QMessageBox()
-        msg_box.setText(self.tr("Download finished"))
-        msg_box.setDetailedText(f"{projects_response}\n{sites_response}")
-        msg_box.exec_()
+        # msg_box = QtWidgets.QMessageBox()
+        # msg_box.setText(self.tr("Download finished"))
+        # msg_box.setDetailedText(f"{projects_response}\n{sites_response}")
+        # msg_box.exec_()
 
     def login(self):
 
         if not self.logged_in():
 
             print("*******************************************About to attempt login")
-
+            self.hint_function("Log in to Reefcloud using the browser window which just popped up; or press the cancel button.")
             state.reefcloud_session = ReefCloudSession(state.config.client_id, state.config.cognito_uri)
 
             result = self.aims_status_dialog.threadPool.apply_async(state.reefcloud_session.login)
             self.login_widget.login_button.setEnabled(False)
             self.login_widget.cancel_button.setEnabled(True)
             print("waiting")
+            self.login_widget.username_label.setText("Waiting for log in")
+
             while not result.ready():
                 QApplication.processEvents()
 

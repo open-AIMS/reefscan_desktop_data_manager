@@ -12,7 +12,7 @@ from PyQt5.QtCore import QItemSelection, QSize, Qt, QObject
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QWidget, QTableView, QLabel, QListView, \
-    QListWidget, QMessageBox, QMainWindow
+    QListWidget, QMessageBox, QMainWindow, QTabWidget
 from pytz import utc
 from reefscanner.basic_model.model_helper import rename_folders
 from reefscanner.basic_model.reader_writer import save_survey
@@ -72,6 +72,7 @@ class DataComponent(QObject):
         self.hint_function = hint_function
 
         self.clipboard: typing.Optional[Survey] = None
+        self.current_tab = 2
 
     def tab_changed(self, index):
         print(index)
@@ -245,9 +246,9 @@ class DataComponent(QObject):
         self.update_sites_combo()
         self.metadata_widget.cb_reefcloud_site.setCurrentText(site)
 
-        # state.config.reefcloud_sites[project].append({"name": site, "id": site_id})
-        # self.site_lookup[site_id] = site
-        # self.metadata_widget.cb_reefcloud_site.addItem(site, site_id)
+        state.config.reefcloud_sites[project].append({"name": site, "id": site_id})
+        self.site_lookup[site_id] = site
+        self.metadata_widget.cb_reefcloud_site.addItem(site, site_id)
         message_box = QtWidgets.QMessageBox()
         message_box.setText(self.tr("Site created with default properties"))
         message_box.setDetailedText("You can modify the site properties in reefcloud")
@@ -343,6 +344,7 @@ class DataComponent(QObject):
         errorbox = QtWidgets.QMessageBox()
         errorbox.setText(self.tr("Download finished"))
         errorbox.setDetailedText(self.tr("Finished in ") + str(minutes) + self.tr(" minutes"))
+        errorbox.setWindowTitle("ReefScan")
         self.aims_status_dialog.progress_dialog.close()
         QtTest.QTest.qWait(1000)
         errorbox.exec_()
@@ -681,8 +683,9 @@ class DataComponent(QObject):
         self.data_widget.tabWidget.setCurrentIndex(2)
 
     def disable_all_tabs(self, index):
-        self.data_widget.tabWidget.setEnabled(False)
-        self.data_widget.tabWidget.setCurrentIndex(index)
+        tab_widget:QTabWidget = self.data_widget.tabWidget
+        tab_widget.setEnabled(False)
+        tab_widget.setCurrentIndex(index)
 
     def enable_all_tabs(self):
         self.data_widget.tabWidget.setEnabled(True)
@@ -692,9 +695,12 @@ class DataComponent(QObject):
         self.data_widget.tabWidget.setTabEnabled(3, True)
         self.data_widget.tabWidget.setTabEnabled(4, True)
         self.data_widget.tabWidget.setTabEnabled(5, True)
-        # self.data_widget.tabWidget.setCurrentIndex(2)
+        self.data_widget.tabWidget.setCurrentIndex(self.current_tab)
 
     def explore_tree_selection_changed(self, item_selection: QItemSelection):
+        if self.data_widget.tabWidget.isEnabled():
+            self.current_tab = self.data_widget.tabWidget.currentIndex()
+
         print("local tree changed")
         self.check_save()
         if self.data_widget.cameraTree.selectionModel() is not None:

@@ -1,4 +1,4 @@
-from reefscanner.basic_model.photo_csv_maker import track
+from reefscanner.basic_model.photo_csv_maker import track, make_photo_csv
 
 html_str = """
 <!DOCTYPE html>
@@ -102,6 +102,10 @@ html_str = """
 
 
 def map_html_str(folder, samba):
+    try:
+        make_photo_csv(folder)
+    except Exception as e:
+        pass
     try:
         try:
             _track = track(folder, samba)

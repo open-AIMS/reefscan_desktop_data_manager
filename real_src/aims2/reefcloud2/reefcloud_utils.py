@@ -91,9 +91,38 @@ def update_reefcloud_projects(oauth2_session):
     project_result = download_reefcloud_projects(oauth2_session)
     return project_result
 
+def get_project_country(project_name):
+    url = f"{state.config.project_details_url}?org={project_name}"
+    print(url)
+    oauth2_session = state.reefcloud_session
+    oauth2_session.check_refresh()
+    print(oauth2_session.id_token)
+    headers = {
+        'Authorization': 'Bearer {}'.format(oauth2_session.id_token)
+    }
+    r = requests.get(url, headers=headers)
+    if r.status_code >= 400:
+        print(r.text)
+        raise Exception(f"Project {project_name} can't get details.")
+    try:
+        projects = json.loads(r.text)
+        this_project = None
+        for project in projects:
+            if project["name"] == project_name:
+                this_project = project
+
+        country = this_project["properties"]["country"][0]
+    except Exception as e:
+
+        raise Exception(f"Project {project_name} can't get details.", e)
+
+    # print(country)
+    return country
+
 
 def create_reefcloud_site(project_name, site_name, latitude, longitude, depth):
     print(project_name, site_name)
+    country = get_project_country(project_name)
     oauth2_session = state.reefcloud_session
     oauth2_session.check_refresh()
     headers = {
@@ -118,7 +147,7 @@ def create_reefcloud_site(project_name, site_name, latitude, longitude, depth):
                     "reefName": site_name,
                     "siteCode": site_name,
                     "depth": f"{depth}",
-                    "country": "Australia"
+                    "country": country
                 }
             }
         ]

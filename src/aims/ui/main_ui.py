@@ -106,20 +106,32 @@ class MainUi(QMainWindow):
         self.ui.statusFrame.layout().addWidget(self.status_widget)
         self.status_widget.refreshButton.clicked.connect(self.update_status)
 
+    def disable_all_workflow_buttons(self):
+        self.workflow_widget.connectDisksButton.setEnabled(False)
+        self.workflow_widget.connectButton.setEnabled(False)
+        self.workflow_widget.dataButton.setEnabled(False)
+        self.workflow_widget.connectReefcloudButton.setEnabled(False)
+        self.workflow_widget.uploadButton.setEnabled(False)
+
     def highlight_button(self, button):
+        self.enable_workflow_buttons()
+
         remove_button_border(self.workflow_widget.connectDisksButton)
-        self.workflow_widget.connectDisksButton.setEnabled(True)
         remove_button_border(self.workflow_widget.connectButton)
-        self.workflow_widget.connectButton.setEnabled(self.drives_connected)
         remove_button_border(self.workflow_widget.dataButton)
-        self.workflow_widget.dataButton.setEnabled(self.drives_connected)
         remove_button_border(self.workflow_widget.connectReefcloudButton)
-        self.workflow_widget.connectReefcloudButton.setEnabled(self.drives_connected)
         remove_button_border(self.workflow_widget.uploadButton)
-        self.workflow_widget.uploadButton.setEnabled(self.drives_connected and self.reefcloud_connect_component.logged_in())
 
         add_button_border(button)
         button.setEnabled(False)
+
+    def enable_workflow_buttons(self):
+        self.workflow_widget.connectDisksButton.setEnabled(True)
+        self.workflow_widget.connectButton.setEnabled(self.drives_connected)
+        self.workflow_widget.dataButton.setEnabled(self.drives_connected)
+        self.workflow_widget.connectReefcloudButton.setEnabled(self.drives_connected)
+        self.workflow_widget.uploadButton.setEnabled(
+            self.drives_connected and self.reefcloud_connect_component.logged_in())
 
     def setup_workflow(self):
         workflow_widget_file = f'{state.meipass}resources/workflow_bar.ui'
@@ -143,7 +155,7 @@ class MainUi(QMainWindow):
         self.ui_to_data()
         self.current_screen = "upload"
 
-        self.upload_component.login_widget = self.load_main_frame(f'{state.meipass}resources/reefcloud-upload.ui')
+        self.upload_component.upload_widget = self.load_main_frame(f'{state.meipass}resources/reefcloud-upload.ui')
         self.upload_component.load(aims_status_dialog=self.aims_status_dialog, time_zone=self.time_zone)
         self.highlight_button(self.workflow_widget.uploadButton)
 
@@ -158,8 +170,10 @@ class MainUi(QMainWindow):
         self.highlight_button(self.workflow_widget.connectReefcloudButton)
 
     def login_reefcloud(self):
+        self.disable_all_workflow_buttons()
         if self.reefcloud_connect_component.login():
             self.load_data_screen()
+        self.enable_workflow_buttons()
 
     def load_start_screen(self):
         widget = self.load_main_frame(f'{state.meipass}resources/start.ui')
