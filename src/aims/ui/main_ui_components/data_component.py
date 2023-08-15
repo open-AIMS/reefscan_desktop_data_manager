@@ -31,6 +31,7 @@ from aims2.reefcloud2.reefcloud_utils import create_reefcloud_site
 
 from aims.operations.enhance_photo_operation import EnhancePhotoOperation
 from aims.operations.inference_operation import InferenceOperation
+from aims.operations.chart_operation import ChartOperation
 
 logger = logging.getLogger("")
 
@@ -137,38 +138,29 @@ class DataComponent(QObject):
 
         self.enhance_widget.btnEnhanceOpenFolder.clicked.connect(self.enhance_open_folder)
         self.enhance_widget.btnEnhanceFolder.clicked.connect(self.enhance_photos_folder)
-        # self.enhance_widget.textEditSuffix.setPlainText("")
-        # self.enhance_widget.textEditOutputFolder.setPlainText("enhanced")
+
         self.enhance_widget.textEditCPULoad.setPlainText("0.8")
-        # self.enhance_widget.checkBoxOutputFolder.setChecked(False)
-        # self.enhance_widget.checkBoxSuffix.setChecked(False)
         self.enhance_widget.checkBoxDisableDenoising.setChecked(False)
         self.enhance_widget.checkBoxDisableDehazing.setChecked(False)
-        # self.enhance_widget.textEditOutputFolder.setEnabled(False)
-        # self.enhance_widget.textEditSuffix.setEnabled(False)
-
-        # self.enhance_widget.checkBoxOutputFolder.stateChanged.connect(self.enhance_widget_cb_outputfolder_changed)
-        # self.enhance_widget.checkBoxSuffix.stateChanged.connect(self.enhance_widget_cb_suffix_changed)
 
         self.inference_widget.btnInferenceOpenFolder.clicked.connect(self.inference_open_folder)
         self.inference_widget.btnInferenceFolder.clicked.connect(self.inference_folder)
-        # self.inference_widget.textEditOutputFolder.setPlainText("inference_results")
-        # self.inference_widget.checkBoxOutputFolder.setChecked(False)
-        # self.inference_widget.textEditOutputFolder.setEnabled(False)
 
-        # self.inference_widget.checkBoxOutputFolder.stateChanged.connect(self.inference_widget_cb_outputfolder_changed)
+        self.hide_tab_by_tab_text('Chart')
 
+    def get_index_by_tab_text(self, name_of_tab):
+        for i in range(self.data_widget.tabWidget.count()):
+            if self.data_widget.tabWidget.tabText(i) == name_of_tab:
+                return i  
 
-    # def enhance_widget_cb_suffix_changed(self, state):
-    #     self.enhance_widget.textEditSuffix.setEnabled(state != 0)
+    def hide_tab_by_tab_text(self, name_of_tab):
+        index = self.get_index_by_tab_text(name_of_tab)
+        self.data_widget.tabWidget.setTabEnabled(index, False)
 
-    # def enhance_widget_cb_outputfolder_changed(self, state):
-    #     self.enhance_widget.textEditOutputFolder.setEnabled(state != 0)
-
-    # def inference_widget_cb_outputfolder_changed(self, state):
-    #     self.inference_widget.textEditOutputFolder.setEnabled(state != 0)
-
-
+    def show_tab_by_tab_text(self, name_of_tab):
+        index = self.get_index_by_tab_text(name_of_tab)
+        self.data_widget.tabWidget.setTabEnabled(index, True)
+    
     def add_new_reefcloud_site(self):
         project = self.metadata_widget.cb_reefcloud_project.currentText()
         site = self.metadata_widget.ed_site.text()
@@ -543,10 +535,27 @@ class DataComponent(QObject):
                 self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
 
 
+    def load_inference_charts(self, coverage_results_file=''):
+        self.show_tab_by_tab_text('Chart')
+
+        self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
+                                                     self.data_widget.chart_tab)
+        
+        pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
+
+        vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
+        vlayout.addWidget(pie_browser)        
+
+        chart_operation = ChartOperation()
+        fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
+        pie_browser.setHtml(fig)
+
+
     def inference_open_folder(self):
         os.startfile(self.survey().folder)
 
     def inference_folder(self):
+
         # output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'
 
         output_folder = 'inference_results'
@@ -575,6 +584,10 @@ class DataComponent(QObject):
             self.inference_widget.textBrowser.append("Inferencer was cancelled")
         else:
             self.inference_widget.textBrowser.append("Inferencer finished")
+
+        coverage_file = inference_operation.get_coverage_filepath()
+        self.inference_widget.textBrowser.append(f'Pie Chart from {coverage_file}')
+        self.load_inference_charts(coverage_file)
 
     def camera_tree_selection_changed(self, item_selection: QItemSelection):
         print("camera tree changed")
