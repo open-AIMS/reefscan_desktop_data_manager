@@ -68,6 +68,7 @@ class Config(object):
             self.api_url = 'https://dev.reefscan.api.aims.gov.au/reefscan/api'
             self.projects_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/user/access?min-level=WRITE"
             self.sites_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/locations"
+            self.project_details_url = "https://api.dev.reefcloud.ai/reefcloud/api/organisation/list"
 
         else:
             self.aws_region_id = 'ap-southeast-2'
@@ -78,6 +79,7 @@ class Config(object):
             self.api_url = 'https://reefscan.api.aims.gov.au/reefscan/api'
             self.projects_json_download_url = "https://api.reefcloud.ai/reefcloud/api/user/access?min-level=WRITE"
             self.sites_json_download_url = "https://api.reefcloud.ai/reefcloud/api/locations"
+            self.project_details_url = "https://api.reefcloud.ai/reefcloud/api/organisation/list"
 
     def save_config_file(self):
         data_folder_json = {
