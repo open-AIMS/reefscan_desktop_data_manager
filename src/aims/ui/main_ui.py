@@ -273,7 +273,7 @@ class MainUi(QMainWindow):
             self.connect_widget.lblMessage.setText(message)
 
     def update_status(self):
-        if state.model.local_data_loaded:
+        if state.model.camera_data_loaded:
             self.archive_checker.check()
             bytes_available = self.archive_checker.archive_stats.available_size()
             gb_available = round(bytes_available / 1000000000)
