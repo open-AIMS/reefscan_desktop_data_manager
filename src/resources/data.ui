@@ -135,11 +135,11 @@ QGroupBox::title{
            <property name="headerHidden">
             <bool>true</bool>
            </property>
-           <attribute name="headerMinimumSectionSize">
-            <number>450</number>
-           </attribute>
            <attribute name="headerDefaultSectionSize">
             <number>900</number>
+           </attribute>
+           <attribute name="headerMinimumSectionSize">
+            <number>450</number>
            </attribute>
            <attribute name="headerStretchLastSection">
             <bool>false</bool>
@@ -179,7 +179,7 @@ QGroupBox::title{
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>fast-forward.png</normaloff>fast-forward.png</iconset>
+             <normaloff>../../../../../../Users/gcoleman/.designer/backup/fast-forward.png</normaloff>../../../../../../Users/gcoleman/.designer/backup/fast-forward.png</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -226,10 +226,10 @@ QGroupBox::title{
            <property name="headerHidden">
             <bool>true</bool>
            </property>
-           <attribute name="headerMinimumSectionSize">
+           <attribute name="headerDefaultSectionSize">
             <number>900</number>
            </attribute>
-           <attribute name="headerDefaultSectionSize">
+           <attribute name="headerMinimumSectionSize">
             <number>900</number>
            </attribute>
           </widget>
@@ -339,7 +339,7 @@ QGroupBox::title{
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>7</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="empty_tab">
       <attribute name="title">
@@ -364,7 +364,7 @@ QGroupBox::title{
       </attribute>
       <layout class="QGridLayout" name="gridLayout_5">
        <item row="0" column="0">
-        <widget class="QWebEngineView" name="mapView" native="true">
+        <widget class="QWebEngineView" name="mapView">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>
@@ -377,7 +377,7 @@ QGroupBox::title{
            <height>120</height>
           </size>
          </property>
-         <property name="url" stdset="0">
+         <property name="url">
           <url>
            <string>about:blank</string>
           </url>
@@ -391,6 +391,23 @@ QGroupBox::title{
        <string>Thumbnails</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_6">
+       <item row="2" column="0" colspan="2">
+        <widget class="QListView" name="lv_thumbnails">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>1</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="folder_label">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="0">
         <widget class="QPushButton" name="open_folder_button">
          <property name="sizePolicy">
@@ -418,20 +435,10 @@ QGroupBox::title{
          </property>
         </widget>
        </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="folder_label">
+       <item row="1" column="0" colspan="2">
+        <widget class="QLabel" name="file_info_label">
          <property name="text">
           <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0" colspan="2">
-        <widget class="QListView" name="lv_thumbnails">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
          </property>
         </widget>
        </item>
