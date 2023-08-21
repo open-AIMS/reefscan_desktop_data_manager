@@ -39,6 +39,7 @@ class Config(object):
 
         self.deep = False
         self.clear_reefcloud = False
+        self.reef_cloud_max_depth = 10
 
         self.read_config_file()
         self.language = os.getenv("LANG")
@@ -48,6 +49,7 @@ class Config(object):
             self.language = locale.windows_locale[windll.GetUserDefaultUILanguage()]
 
         self.vietnemese = self.language == "vi_VN"
+
 
         print(self.language)
 
@@ -83,7 +85,8 @@ class Config(object):
 
     def save_config_file(self):
         data_folder_json = {
-            "backup": self.backup
+            "backup": self.backup,
+            "reef_cloud_max_depth": self.reef_cloud_max_depth
         }
         write_json_file(self.config_folder, self.config_file_name, data_folder_json)
 
@@ -95,6 +98,9 @@ class Config(object):
 
         home = str(Path.home())
         self.backup = data_folder_json.get("backup", True)
+        self.reef_cloud_max_depth = data_folder_json.get("reef_cloud_max_depth")
+        if self.reef_cloud_max_depth is None:
+            self.reef_cloud_max_depth = "10"
         self.load_reefcloud_projects()
         self.load_reefcloud_sites()
         print(self)

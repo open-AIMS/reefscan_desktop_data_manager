@@ -143,9 +143,9 @@ class LazyListModel (QAbstractListModel):
             return QVariant()
 
         if role == Qt.DisplayRole:
-            name = self.thumbnails[index.row()].name
-            # print(name)
-            return name
+            # name = self.thumbnails[index.row()].name
+            # return name
+            return ""
 
         if role == Qt.DecorationRole:
             return self.thumbnails[index.row()].icon

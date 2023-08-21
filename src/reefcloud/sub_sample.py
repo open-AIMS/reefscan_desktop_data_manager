@@ -9,6 +9,8 @@ import geopy.distance
 from reefscanner.basic_model.progress_queue import ProgressQueue
 import pandas as pd
 
+from aims.state import state
+
 
 class SubSampler(QObject):
     def __init__(self):
@@ -29,7 +31,12 @@ class SubSampler(QObject):
         return proportion_bad < 0.1
 
 
-    def should_keep(self, wp, old_wp, target_distance):
+    def should_keep(self, wp, old_wp, target_distance, subject_distance, maximum_target_distance=12):
+
+
+        if subject_distance > maximum_target_distance:
+            return False
+
         if old_wp is None:
             return True
 
@@ -62,6 +69,8 @@ class SubSampler(QObject):
         old_wp = None
         selected_photo_infos = []
         target_distance = None
+
+        maximum_subject_distance = int(state.config.reef_cloud_max_depth)
         progress_queue.set_progress_max(len(listdir)-1)
         for file_name in listdir:
             if self.canceled:
@@ -71,14 +80,15 @@ class SubSampler(QObject):
                 full_file_name = image_dir + "/" + file_name
                 try:
                     exif = get_exif_data(full_file_name, False)
+                    subject_distance = exif["subject_distance"]
                     if target_distance is None:
-                        target_distance = exif["subject_distance"]
+                        target_distance = subject_distance
 
                     if target_distance is None:
                         target_distance = 8
 
                     wp = exif["latitude"], exif["longitude"]
-                    keep = self.should_keep(wp, old_wp, target_distance)
+                    keep = self.should_keep(wp, old_wp, target_distance, subject_distance, maximum_subject_distance)
                     # Ignore photos with bad geolocation in exif data.
                     if exif["latitude"] is None or exif["longitude"] is None:
                         keep = False

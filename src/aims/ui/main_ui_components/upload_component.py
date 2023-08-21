@@ -27,12 +27,20 @@ class UploadComponent(QObject):
         self.aims_status_dialog = aims_status_dialog
         self.time_zone = time_zone
         self.upload_widget.upload_button.clicked.connect(self.upload)
+        self.upload_widget.max_distance_edit.setInputMask("00")
+        self.upload_widget.max_distance_edit.setText(state.config.reef_cloud_max_depth)
+        self.upload_widget.max_distance_edit.editingFinished.connect(self.save_max_distance_to_config)
 
         self.load_tree()
         self.set_hint()
 
+    def save_max_distance_to_config(self):
+        state.config.reef_cloud_max_depth = self.upload_widget.max_distance_edit.text()
+        state.config.save_config_file()
+
     def upload(self):
         print("uploading")
+
         start = process_time()
 
         state.config.camera_connected = False

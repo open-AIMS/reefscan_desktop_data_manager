@@ -14,6 +14,7 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QWidget, QTableView, QLabel, QListView, \
     QListWidget, QMessageBox, QMainWindow, QTabWidget
 from pytz import utc
+from reefscanner.basic_model.exif_utils import get_exif_data
 from reefscanner.basic_model.model_helper import rename_folders
 from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
@@ -903,6 +904,7 @@ class DataComponent(QObject):
         self.info_widget.lbl_missing_gps.setText(str(survey_stats.missing_gps))
         self.info_widget.lbl_missing_ping.setText(str(survey_stats.missing_ping_depth))
         self.info_widget.lbl_missing_pressure.setText(str(survey_stats.missing_pressure_depth))
+        self.info_widget.distance_label.setText(f"{survey_stats.min_ping} to {survey_stats.max_ping} metres")
 
     def load_thumbnails(self):
         if self.thumbnail_model is not None:
@@ -917,8 +919,18 @@ class DataComponent(QObject):
             file_ops = get_file_ops(samba)
             photos = [name for name in file_ops.listdir(folder) if
                       name.lower().endswith(".jpg") or name.lower().endswith(".jpeg")]
+            photos.sort()
             self.thumbnail_model = LazyListModel(photos, folder, self.survey_id, samba)
             list_thumbnails.setModel(self.thumbnail_model)
+            list_thumbnails.clicked.connect(self.thumbnail_clicked)
+
+    def thumbnail_clicked(self, index):
+        self.data_widget.file_info_label.setText(self.file_info(self.thumbnail_model.data(index, Qt.UserRole)))
+
+    def file_info(self, filename):
+        exif = get_exif_data(filename, False)
+        short_filename = os.path.basename(filename)
+        return f"{short_filename} total_depth: {exif['altitude']} subject_distance: {exif['subject_distance']}"
 
     def load_explore_surveys_tree(self):
         self.check_save()
