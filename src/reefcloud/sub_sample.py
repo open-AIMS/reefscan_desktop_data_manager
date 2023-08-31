@@ -165,10 +165,10 @@ class SubSampler(QObject):
 # for this_dir in dirs:
 #     full_path = root_dir + this_dir
 #     if os.path.isdir(full_path):
-#         print(full_path)
+#         logger.info(full_path)
 #         sub_sample_dir_simple(full_path)
 #         # sub_sample_dir(full_path)
-#         # print(count_dir(full_path))
+#         # logger.info(count_dir(full_path))
 #
 #
 #

@@ -1,9 +1,10 @@
+import logging
 import os
 import pandas as pd
 
 from aims.state import state
 
-
+logger = logging.getLogger("")
 def greater(a, b):
     if a is None:
         return b

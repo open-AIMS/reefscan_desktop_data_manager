@@ -1,3 +1,4 @@
+import logging
 import os
 
 import simplekml
@@ -6,7 +7,7 @@ from reefscanner.basic_model.survey import Survey
 from shapely import Polygon, MultiPoint
 import alphashape
 
-
+logger = logging.getLogger("")
 def make_kml(survey: Survey):
     folder = survey.folder
     points = track(folder, False)
@@ -26,28 +27,28 @@ def make_kml(survey: Survey):
 
         # polygon: Polygon = MultiPoint(points_for_poly).convex_hull
         # polygon = alphashape.alphashape(points_for_poly, alpha=0.5)
-        # print(len(polygon.exterior.coords))
+        # logger.info(len(polygon.exterior.coords))
         # polygon = alphashape.alphashape(points_for_poly, alpha=0.6)
-        # print(len(polygon.exterior.coords))
+        # logger.info(len(polygon.exterior.coords))
         # polygon = alphashape.alphashape(points_for_poly, alpha=0.7)
-        # print(len(polygon.exterior.coords))
+        # logger.info(len(polygon.exterior.coords))
         # polygon = alphashape.alphashape(points_for_poly, alpha=0.8)
-        # print(len(polygon.exterior.coords))
+        # logger.info(len(polygon.exterior.coords))
         # polygon = alphashape.alphashape(points_for_poly, alpha=0.9)
-        # print(len(polygon.exterior.coords))
+        # logger.info(len(polygon.exterior.coords))
         # polygon = alphashape.alphashape(points_for_poly, alpha=1)
-        # print(len(polygon.exterior.coords))
+        # logger.info(len(polygon.exterior.coords))
         # polygon = alphashape.alphashape(points_for_poly, alpha=1.2)
-        # print(len(polygon.exterior.coords))
+        # logger.info(len(polygon.exterior.coords))
         # polygon = alphashape.alphashape(points_for_poly, alpha=1.4)
-        # print(len(polygon.exterior.coords))
+        # logger.info(len(polygon.exterior.coords))
         # polygon = alphashape.alphashape(points_for_poly, alpha=1.6)
-        # print(len(polygon.exterior.coords))
+        # logger.info(len(polygon.exterior.coords))
         # polygon = alphashape.alphashape(points_for_poly, alpha=1.8)
-        # print(len(polygon.exterior.coords))
+        # logger.info(len(polygon.exterior.coords))
         try:
             polygon = alphashape.alphashape(points_for_poly, alpha=2)
-            print(len(polygon.exterior.coords))
+            logger.info(len(polygon.exterior.coords))
             kml_poly = kml.newpolygon()
             kml_poly.outerboundaryis = polygon.exterior.coords
             kml.save(kml_file_name)

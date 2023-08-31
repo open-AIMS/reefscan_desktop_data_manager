@@ -150,7 +150,7 @@ class SyncFromHardware(Synchroniser):
             try:
                 if os.path.exists(l_dst) and not src.endswith("survey.json"):
                     message = f'{messages.skipping()} {src}'
-                    # print(message)
+                    # logger.info(message)
                     self.set_progress_label(message)
                 else:
                     logger.debug(f"will copy {src}")

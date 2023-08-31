@@ -1,3 +1,5 @@
+import logging
+
 import boto3
 import botocore
 import requests
@@ -8,7 +10,7 @@ import hmac
 
 from pycognito.utils import RequestsSrpAuth
 
-
+logger = logging.getLogger("")
 def get_secret_hash(username, client_id, client_secret):
     message = username + client_id
     dig = hmac.new(bytearray(client_secret, "utf-8"), msg=message.encode('UTF-8'),
@@ -38,7 +40,7 @@ u.check_token()
 print (u.access_token)
 client = u.client
 print (client)
-print(u.access_claims)
+logger.info(u.access_claims)
 auth = RequestsSrpAuth(
     cognito=u
 )
@@ -46,9 +48,9 @@ auth = RequestsSrpAuth(
 print (auth)
 
 response = requests.get('https://xmg5fq67x3.execute-api.ap-southeast-2.amazonaws.com/prod/reefscan/api/upload?file_name=greg', auth=auth)
-print(response.text)
+logger.info(response.text)
 
 aws = AWSSRP(username=user_name, password=password, pool_id=user_pool_id,
              client_id=client_id, pool_region=region)
 tokens = aws.authenticate_user()
-print(tokens)
+logger.info(tokens)

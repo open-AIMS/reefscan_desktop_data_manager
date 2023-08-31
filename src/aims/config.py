@@ -1,4 +1,5 @@
 import locale
+import logging
 import os
 from pathlib import Path
 
@@ -6,7 +7,7 @@ import requests
 from reefscanner.basic_model.json_utils import write_json_file
 from reefscanner.basic_model.json_utils import read_json_file
 import ctypes
-
+logger = logging.getLogger("")
 class Config(object):
 
     def __init__(self):
@@ -51,7 +52,7 @@ class Config(object):
         self.vietnemese = self.language == "vi_VN"
 
 
-        print(self.language)
+        logger.info(self.language)
 
     def set_deep(self, deep):
         self.deep = deep
@@ -103,7 +104,7 @@ class Config(object):
             self.reef_cloud_max_depth = "10"
         self.load_reefcloud_projects()
         self.load_reefcloud_sites()
-        print(self)
+        logger.info(self)
 
     def load_reefcloud_projects(self):
         self.reefcloud_projects = self.read_reefcloud_projects()

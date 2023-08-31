@@ -69,7 +69,7 @@ class DiskDrivesComponent(QObject):
 
 
     def change_backup(self):
-        print("changeit")
+        logger.info("changeit")
         self.widget.secondDriveComboBox.setEnabled(self.widget.cbBackup.isChecked())
         self.set_hint()
 
@@ -124,7 +124,7 @@ class DiskDrivesComponent(QObject):
             self.widget.error_label2.setVisible(True)
             self.widget.copyButton.setVisible(True)
 
-            print(messages)
+            logger.info(messages)
         return total_differences == 0
 
 

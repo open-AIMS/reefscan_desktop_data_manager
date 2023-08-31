@@ -1,3 +1,4 @@
+import logging
 from time import process_time
 from typing import List
 
@@ -14,7 +15,7 @@ from aims2.reefcloud2.reefcloud_utils import upload_file, write_reefcloud_photos
 from aims2.reefcloud2.reefcloud_session import ReefCloudSession
 from aims2.reefcloud2.upload_surveys import upload_surveys
 
-
+logger = logging.getLogger("")
 class UploadComponent(QObject):
     def __init__(self, hint_function):
         super().__init__()
@@ -39,7 +40,7 @@ class UploadComponent(QObject):
         state.config.save_config_file()
 
     def upload(self):
-        print("uploading")
+        logger.info("uploading")
 
         start = process_time()
 
@@ -56,7 +57,7 @@ class UploadComponent(QObject):
         end = process_time()
         minutes = (end-start)/60
 
-        print(f"Upload Finished in {minutes} minutes")
+        logger.info(f"Upload Finished in {minutes} minutes")
         errorbox = QtWidgets.QMessageBox()
         errorbox.setText(self.tr("Upload finished"))
         errorbox.setDetailedText(self.tr("Finished in") + f" {minutes} " + self.tr("minutes"))

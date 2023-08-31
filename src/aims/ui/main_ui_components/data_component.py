@@ -74,9 +74,10 @@ class DataComponent(QObject):
 
         self.clipboard: typing.Optional[Survey] = None
         self.current_tab = 2
+        self.tree_collapsed = False
 
     def tab_changed(self, index):
-        print(index)
+        logger.info(index)
         if index == 2:
             self.draw_map()
 
@@ -176,6 +177,7 @@ class DataComponent(QObject):
         self.data_widget.downloadButton.clicked.connect(self.download)
         self.data_widget.showDownloadedCheckBox.stateChanged.connect(self.show_downloaded_changed)
         self.data_widget.deleteDownloadedButton.clicked.connect(self.delete_downloaded)
+        self.data_widget.collapseTreeButton.clicked.connect(self.collapseTrees)
 
         if self.setup_camera_tree():
             self.data_widget.camera_not_connected_label.setVisible(False)
@@ -221,6 +223,13 @@ class DataComponent(QObject):
     # def inference_widget_cb_outputfolder_changed(self, state):
     #     self.inference_widget.textEditOutputFolder.setEnabled(state != 0)
 
+    def collapseTrees(self):
+        self.tree_collapsed = not self.tree_collapsed
+        self.data_widget.treesWidget.setVisible(not self.tree_collapsed)
+        if self.tree_collapsed:
+            self.data_widget.collapseTreeButton.setText(">>")
+        else:
+            self.data_widget.collapseTreeButton.setText("<<")
 
     def add_new_reefcloud_site(self):
         project = self.metadata_widget.cb_reefcloud_project.currentText()
@@ -228,7 +237,7 @@ class DataComponent(QObject):
 
         all_sites = [self.metadata_widget.cb_reefcloud_site.itemText(i) for i in
                      range(self.metadata_widget.cb_reefcloud_site.count())]
-        print(all_sites)
+        logger.info(all_sites)
         if site in all_sites:
             raise Exception(f"{site} already exists. Choose it from the drop down.")
 
@@ -341,7 +350,7 @@ class DataComponent(QObject):
         end = process_time()
         minutes = (end - start) / 60
 
-        print(f"Download Finished in {minutes} minutes")
+        logger.info(f"Download Finished in {minutes} minutes")
         errorbox = QtWidgets.QMessageBox()
         errorbox.setText(self.tr("Download finished"))
         errorbox.setDetailedText(self.tr("Finished in ") + str(minutes) + self.tr(" minutes"))
@@ -465,7 +474,7 @@ class DataComponent(QObject):
             self.survey_id = old_survey_id
             self.data_to_ui()
 
-            print("rename done")
+            logger.info("rename done")
 
     def kml_for_all(self):
         if not state.read_only:
@@ -487,7 +496,7 @@ class DataComponent(QObject):
         self.setup_camera_tree()
         self.survey_id = old_survey_id
         self.data_to_ui()
-        print("refresh done")
+        logger.info("refresh done")
 
     def load_sequence_frame(self, ui_file, parent_widget):
         clearLayout(parent_widget.layout())
@@ -531,7 +540,7 @@ class DataComponent(QObject):
                 fname = self.mark_filename.replace("//", "/")
                 fname = fname.replace("/", "\\")
                 command = f'explorer.exe /select,"{fname}"'
-                # print(command)
+                # logger.info(command)
                 subprocess.call(command)
             except:
                 os.startfile(self.mark_filename, "open")
@@ -633,7 +642,7 @@ class DataComponent(QObject):
         #     self.inference_widget.textBrowser.append("Inferencer finished")
 
     def camera_tree_selection_changed(self, item_selection: QItemSelection):
-        print("camera tree changed")
+        logger.info("camera tree changed")
         self.check_save()
         if self.data_widget.surveysTree.selectionModel() is not None:
             self.data_widget.surveysTree.selectionModel().blockSignals(True)
@@ -645,8 +654,8 @@ class DataComponent(QObject):
         selected_index = self.find_selected_tree_index(item_selection)
         self.set_survey_id_and_list_from_selected_index(selected_index)
 
-        # print(f"survey_id {self.survey_id}")
-        # print(f"survey {self.survey()}")
+        # logger.info(f"survey_id {self.survey_id}")
+        # logger.info(f"survey {self.survey()}")
 
         if self.survey_id is None:
             self.disable_all_tabs(0)
@@ -702,7 +711,7 @@ class DataComponent(QObject):
         if self.data_widget.tabWidget.isEnabled():
             self.current_tab = self.data_widget.tabWidget.currentIndex()
 
-        print("local tree changed")
+        logger.info("local tree changed")
         self.check_save()
         if self.data_widget.cameraTree.selectionModel() is not None:
             self.data_widget.cameraTree.selectionModel().blockSignals(True)
@@ -717,10 +726,10 @@ class DataComponent(QObject):
 
         if self.survey_id is None:
             self.disable_all_tabs(1)
-            # print(selected_index.data(Qt.DisplayRole))
-            # print("columns " + str(selected_index.model().columnCount()))
-            # print("rows " + str(selected_index.model().rowCount()))
-            # print("children: " + str(len(selected_index.model().children())))
+            # logger.info(selected_index.data(Qt.DisplayRole))
+            # logger.info("columns " + str(selected_index.model().columnCount()))
+            # logger.info("rows " + str(selected_index.model().rowCount()))
+            # logger.info("children: " + str(len(selected_index.model().children())))
 
             descendant_surveys = self.get_all_descendants(selected_index)
             survey_stats = SurveyStats()
@@ -728,7 +737,7 @@ class DataComponent(QObject):
             self.survey_stats_to_ui(survey_stats)
             self.non_survey_to_stats_ui(selected_index.data(Qt.DisplayRole))
 
-            print(descendant_surveys)
+            logger.info(descendant_surveys)
 
         else:
             self.enable_all_tabs()
@@ -737,7 +746,7 @@ class DataComponent(QObject):
             try:
                 self.draw_map()
             except Exception as e:
-                print(f"Error loading map\n{e}")
+                logger.info(f"Error loading map\n{e}")
             self.load_thumbnails()
             self.load_marks()
 
@@ -774,7 +783,7 @@ class DataComponent(QObject):
         child = selected_index.child(row, 0)
         while child.data(Qt.DisplayRole) is not None:
             ret.extend(self.get_all_descendants(child))
-            # print(child.data(Qt.DisplayRole))
+            # logger.info(child.data(Qt.DisplayRole))
             row += 1
             child = selected_index.child(row, 0)
         return ret
@@ -946,20 +955,20 @@ class DataComponent(QObject):
         self.survey_id = None
 
     def draw_map(self):
-        # print("draw map")
+        # logger.info("draw map")
         if self.survey_id is not None:
             folder = self.survey().folder
             html_str = map_html_str(folder, False)
-            # print(html_str)
+            # logger.info(html_str)
             if html_str is not None:
                 view: QWebEngineView = self.data_widget.mapView
                 # view.stop()
                 view.setHtml(html_str)
 
-        # print("finished draw map")
+        # logger.info("finished draw map")
 
     def map_load_finished(self, success):
-        print(f"Map loaded success:{success}")
+        logger.info(f"Map loaded success:{success}")
 
     def non_survey_to_stats_ui(self, name):
         self.info_widget.lb_sequence_name.setText(name)
@@ -997,13 +1006,13 @@ class DataComponent(QObject):
                     command = f'du -s /media/jetson/*/images/archive/{survey["survey_id"]}'
 
                 kilo_bytes_used = get_kilo_bytes_used(state.config.camera_ip, command)
-                print(self.tr("Bytes used: ") + f"{kilo_bytes_used}")
+                logger.info(self.tr("Bytes used: ") + f"{kilo_bytes_used}")
                 total_kilo_bytes_used += kilo_bytes_used
 
-            print(self.tr("total Bytes used: ") + f"{total_kilo_bytes_used}")
+            logger.info(self.tr("total Bytes used: ") + f"{total_kilo_bytes_used}")
 
-            print(state.primary_drive)
-            print(state.backup_drive)
+            logger.info(state.primary_drive)
+            logger.info(state.backup_drive)
 
             du = shutil.disk_usage(state.primary_drive)
         except Exception as e:

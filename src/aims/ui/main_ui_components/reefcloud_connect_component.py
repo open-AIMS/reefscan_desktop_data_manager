@@ -1,3 +1,4 @@
+import logging
 from time import process_time
 from typing import List
 
@@ -14,7 +15,7 @@ from aims2.reefcloud2.reefcloud_utils import upload_file, write_reefcloud_photos
 from aims2.reefcloud2.reefcloud_session import ReefCloudSession
 from aims2.reefcloud2.upload_surveys import upload_surveys
 
-
+logger = logging.getLogger("")
 class ReefcloudConnectComponent(QObject):
     def __init__(self, hint_function):
         super().__init__()
@@ -32,7 +33,7 @@ class ReefcloudConnectComponent(QObject):
         self.set_hint()
 
     def cancel(self):
-        print("cancel")
+        logger.info("cancel")
         if state.reefcloud_session is not None:
             state.reefcloud_session.cancel()
 
@@ -76,20 +77,20 @@ class ReefcloudConnectComponent(QObject):
 
         if not self.logged_in():
 
-            print("*******************************************About to attempt login")
+            logger.info("*******************************************About to attempt login")
             self.hint_function("Log in to Reefcloud using the browser window which just popped up; or press the cancel button.")
             state.reefcloud_session = ReefCloudSession(state.config.client_id, state.config.cognito_uri)
 
             result = self.aims_status_dialog.threadPool.apply_async(state.reefcloud_session.login)
             self.login_widget.login_button.setEnabled(False)
             self.login_widget.cancel_button.setEnabled(True)
-            print("waiting")
+            logger.info("waiting")
             self.login_widget.username_label.setText("Waiting for log in")
 
             while not result.ready():
                 QApplication.processEvents()
 
-            print("logged in")
+            logger.info("logged in")
 
             self.login_widget.login_button.setEnabled(True)
             self.login_widget.cancel_button.setEnabled(False)

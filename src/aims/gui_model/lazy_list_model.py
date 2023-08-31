@@ -1,4 +1,6 @@
 import io
+import logging
+
 from aims.state import state
 from reefscanner.basic_model.samba import file_ops_factory
 
@@ -9,7 +11,7 @@ import piexif
 from PyQt5.QtWidgets import QApplication
 import os.path
 
-
+logger = logging.getLogger("")
 def image_to_byte_array(image:Image):
     imgByteArr = io.BytesIO()
     image.save(imgByteArr, format=image.format)
@@ -111,9 +113,9 @@ class LazyListModel (QAbstractListModel):
         self.thumbnails = []
         self.thumbnailMaker = ThumbnailMaker(self.all_items, folder, id, samba)
         self.thumbnailMaker.add_thumbnail.connect(self.add_thumbnail)
-        # print("start now")
+        # logger.info("start now")
         self.thumbnailMaker.start()
-        # print("ok started")
+        # logger.info("ok started")
 
 
     def interrupt(self):
@@ -124,18 +126,18 @@ class LazyListModel (QAbstractListModel):
 
     @pyqtSlot(NameAndIcon)
     def add_thumbnail(self, thumbnail):
-        # print(thumbnail.name)
+        # logger.info(thumbnail.name)
         self.thumbnails.append(thumbnail)
 
     def rowCount(self, index: QModelIndex):
-        # print("rowcount")
+        # logger.info("rowcount")
         if index.isValid():
             return 0
         else:
             return self.loaded_count
 
     def data(self, index: QModelIndex, role):
-        # print("data")
+        # logger.info("data")
         if not index.isValid():
             return QVariant()
 
@@ -173,7 +175,7 @@ class LazyListModel (QAbstractListModel):
             QApplication.processEvents()
             new_count = len(self.thumbnails)
             items_to_fetch = new_count - self.loaded_count
-            # print(items_to_fetch)
+            # logger.info(items_to_fetch)
 
         self.beginInsertRows(QModelIndex(), self.loaded_count, new_count)
 

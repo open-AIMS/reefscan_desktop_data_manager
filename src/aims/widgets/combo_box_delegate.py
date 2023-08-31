@@ -38,7 +38,7 @@ class ComboBoxDelegate(QtWidgets.QItemDelegate):
             num = self.valueIndex.index(value)
             editor.setCurrentIndex(num)
         except Exception as e:
-            print(e)
+            logger.info(e)
 
 
     def setModelData(self, editor, model, index):

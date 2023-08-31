@@ -51,11 +51,12 @@ class MainUi(QMainWindow):
         super().__init__()
         self.current_screen = "start"
         self.app = QtWidgets.QApplication(sys.argv)
+        self.workflow_collapsed = False
 
         if state.config.vietnemese:
             self.trans = QtCore.QTranslator(self)
             dir = f'{state.meipass}resources'
-            print(dir)
+            logger.info(dir)
             if self.trans.load('eng-vi', directory=dir):
                 logger.info("translations loaded")
             else:
@@ -146,6 +147,18 @@ class MainUi(QMainWindow):
         self.workflow_widget.connectReefcloudButton.clicked.connect(self.load_reefcloud_connect_screen)
         self.workflow_widget.dataButton.clicked.connect(self.load_data_screen)
         self.workflow_widget.connectDisksButton.clicked.connect(self.load_connect_disks_screen)
+        self.workflow_widget.collapseButton.clicked.connect(self.collapse_workflow)
+
+    def collapse_workflow(self):
+        self.workflow_collapsed = not self.workflow_collapsed
+        logger.info("collapse")
+        self.workflow_widget.mainFrame.setVisible(not self.workflow_collapsed)
+        self.workflow_widget.workflowLabel.setVisible(not self.workflow_collapsed)
+        if self.workflow_collapsed:
+            self.workflow_widget.collapseButton.setText(">>")
+        else:
+            self.workflow_widget.collapseButton.setText("<<")
+
 
     def ui_to_data(self):
         if self.current_screen == "data":
@@ -196,7 +209,7 @@ class MainUi(QMainWindow):
         drives = win32api.GetLogicalDriveStrings()
         drives = drives.split('\000')[:-1]
         self.fixed_drives = []
-        print(drives)
+        logger.info(drives)
         for d in drives:
             drive_type = win32file.GetDriveType(d)
             if drive_type == win32file.DRIVE_FIXED or drive_type == win32file.DRIVE_REMOVABLE:
