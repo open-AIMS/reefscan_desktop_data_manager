@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 from reefscanner.basic_model.survey import Survey
@@ -8,24 +9,24 @@ import requests
 
 surveys_folder = "surveys"
 
-
+logger = logging.getLogger("")
 def check_reefcloud_metadata(surveys: list[Survey]):
     for survey in surveys:
         best_name = survey.best_name()
 
         if survey.reefcloud_project is None:
-            raise Exception(f"Missing reefcloud project for {best_name}")
+            raise Exception(f"Missing reefcloud project for {best_name}. Go to the data tab to correct this.")
 
         project_ = survey.reefcloud_project
         if not state.config.valid_reefcloud_project(project_):
-            raise Exception(f"Invalid reefcloud project {project_} for {best_name}")
+            raise Exception(f"Invalid reefcloud project {project_} for {best_name}. Go to the data tab to correct this.")
 
         if survey.reefcloud_site is None:
-            raise Exception(f"Missing reefcloud site for {best_name}")
+            raise Exception(f"Missing reefcloud site for {best_name}. Go to the data tab to correct this.")
 
         site_ = survey.reefcloud_site
         if not state.config.valid_reefcloud_site(site_, project_):
-            raise Exception(f"Invalid reefcloud site {site_} for {best_name}")
+            raise Exception(f"Invalid reefcloud site {site_} for {best_name}. Go to the data tab to correct this.")
 
 
 def write_reefcloud_photos_json(survey_id, outputfile, selected_photo_infos):
@@ -68,11 +69,11 @@ def upload_file(oauth2_session, survey_id, folder, file_name):
 
     if response.status_code == 208:
         # already uploaded
-        print(f"{file_name} already uploaded")
+        logger.info(f"{file_name} already uploaded")
         return
 
     signed_url = response.content.decode('utf-8')
-    print(signed_url)
+    logger.info(signed_url)
     # upload image
     headers = {
         "content-type": "application/unknown"
@@ -93,16 +94,16 @@ def update_reefcloud_projects(oauth2_session):
 
 def get_project_country(project_name):
     url = f"{state.config.project_details_url}?org={project_name}"
-    print(url)
+    logger.info(url)
     oauth2_session = state.reefcloud_session
     oauth2_session.check_refresh()
-    print(oauth2_session.id_token)
+    logger.info(oauth2_session.id_token)
     headers = {
         'Authorization': 'Bearer {}'.format(oauth2_session.id_token)
     }
     r = requests.get(url, headers=headers)
     if r.status_code >= 400:
-        print(r.text)
+        logger.info(r.text)
         raise Exception(f"Project {project_name} can't get details.")
     try:
         projects = json.loads(r.text)
@@ -116,12 +117,12 @@ def get_project_country(project_name):
 
         raise Exception(f"Project {project_name} can't get details.", e)
 
-    # print(country)
+    # logger.info(country)
     return country
 
 
 def create_reefcloud_site(project_name, site_name, latitude, longitude, depth):
-    print(project_name, site_name)
+    logger.info(project_name, site_name)
     country = get_project_country(project_name)
     oauth2_session = state.reefcloud_session
     oauth2_session.check_refresh()
@@ -159,7 +160,7 @@ def create_reefcloud_site(project_name, site_name, latitude, longitude, depth):
         else:
             raise Exception(f"Error creating site {r.text}")
 
-    print(r.text)
+    logger.info(r.text)
     new_sites = json.loads(r.text)
     update_reefcloud_sites(oauth2_session)
     return new_sites[0]["id"]
@@ -180,14 +181,14 @@ def update_reefcloud_sites(oauth2_session):
 
 def download_reefcloud_projects(oauth2_session):
     oauth2_session.check_refresh()
-    print("In update_reefcloud_projects")
-    print(oauth2_session.id_token)
+    logger.info("In update_reefcloud_projects")
+    logger.info(oauth2_session.id_token)
     headers = {
         'Authorization': 'Bearer {}'.format(oauth2_session.id_token)
     }
     url = state.config.projects_json_download_url
     r = requests.get(url, headers=headers)
-    print("response code " + str(r.status_code))
+    logger.info("response code " + str(r.status_code))
     if r.status_code < 400:
         projects_json = json.loads(r.text)
         project_count = 0
@@ -204,17 +205,17 @@ def download_reefcloud_projects(oauth2_session):
 
 
 def download_reefcloud_sites_for_project(oauth2_session, reefcloud_project):
-    print("entering download_reefcloud_sites_for_project " + reefcloud_project)
+    logger.info("entering download_reefcloud_sites_for_project " + reefcloud_project)
     url = f"{state.config.sites_json_download_url}?org={reefcloud_project}"
     headers = {
         'Authorization': 'Bearer {}'.format(oauth2_session.id_token)
     }
-    print(url)
+    logger.info(url)
     r = requests.get(url, headers=headers)
-    print("response code " + str(r.status_code))
+    logger.info("response code " + str(r.status_code))
 
     if r.status_code < 400:
-        # print(r.json())
+        # logger.info(r.json())
         return r.json()
     else:
         raise Exception("Error downloading sites " + r.text)

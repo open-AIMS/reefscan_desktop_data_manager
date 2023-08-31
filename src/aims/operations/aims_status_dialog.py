@@ -36,9 +36,9 @@ class AimsStatusDialog(QObject):
                 self.progress_dialog.setValue(i)
                 self.progress_dialog.setLabelText(label)
         except Exception as e:
-            print("ERROR")
+            logger.info("ERROR")
             logger.error("ERROR")
-            print(str(e))
+            logger.info(str(e))
 
     def set_progress_max(self, i):
         logger.info(f"max {i}")

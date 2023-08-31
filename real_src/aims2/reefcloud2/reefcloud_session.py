@@ -50,7 +50,7 @@ class ReefCloudSession():
                                                       state=state.oauth2_state,
                                                       client_id=self.client_id,
                                                       include_client_id=True)
-        print(self.tokens)
+        logger.info(self.tokens)
         self.id_token = self.tokens['id_token']
         self.access_token = self.tokens['access_token']
         self.current_user = UserInfo.from_id_token(state.config.cognito_token_key_url, self.id_token, self.access_token)

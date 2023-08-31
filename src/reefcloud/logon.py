@@ -141,7 +141,7 @@ class LoginWorker(Thread):
             logger.info(f"Please authorize rdp upload here: {authorization_url}")
 
         self.web_server = HTTPServer((self.host_name, self.port), TokenServer)
-        logger.debug(f"Server starting http://{self.host_name}:{self.port}")
+
         logger.info(f"Server starting http://{self.host_name}:{self.port}")
         while state.oauth2_code is None and not self.cancelled:
             logger.info("Handling")
@@ -176,24 +176,33 @@ class UserInfo(QObject):
 
     @classmethod
     def from_id_token(cls, cognito_token_key_url, id_token, access_token):
-        user_info_url = f'{state.config.api_url}/user_info'
+        name_ = "Unknown name"
+        email_ = "unknown email"
+        try:
+            user_info_url = f'{state.config.api_url}/user_info'
 
-        jwt_object = JWT()
-        data = cls._get_jwt_encryption_pub_keys(cognito_token_key_url)
-        signing_key = jwk_from_dict(data['keys'][0])
-        decoded = jwt_object.decode(id_token, signing_key)
-        headers = {
-            'Authorization': 'Bearer {}'.format(access_token)
-        }
+            jwt_object = JWT()
+            data = cls._get_jwt_encryption_pub_keys(cognito_token_key_url)
+            signing_key = jwk_from_dict(data['keys'][0])
+            decoded = jwt_object.decode(id_token, signing_key)
+            name_ = decoded.get('name')
+            email_ = decoded.get('email')
 
-        response = requests.get(user_info_url, headers=headers)
-        if response.status_code == 200:
-            authorized = True
-            message = 'You are a valid Reefcloud user and authorized to upload reefscan data.'
-        else:
-            authorized = False
-            message = str(response.content.decode('UTF-8'))
-            logger.info(message)
-        return cls(cognito_token_key_url, decoded['name'], decoded['email'], authorized=authorized, message=message)
+            headers = {
+                'Authorization': 'Bearer {}'.format(access_token)
+            }
+
+            response = requests.get(user_info_url, headers=headers)
+            if response.status_code == 200:
+                authorized = True
+                message = 'You are a valid Reefcloud user and authorized to upload reefscan data.'
+            else:
+                authorized = False
+                message = str(response.content.decode('UTF-8'))
+                logger.info(message)
+            return cls(cognito_token_key_url, name_, email_, authorized=authorized, message=message)
+        except Exception as e:
+            logger.error("Error decoding tokens. ", e)
+            return cls(cognito_token_key_url, name_, email_, authorized=False, message=str(e))
 
 

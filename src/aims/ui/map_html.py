@@ -109,7 +109,7 @@ def map_html_str(folder, samba):
     try:
         try:
             _track = track(folder, samba)
-            print(len(_track))
+            logger.info(len(_track))
         except:
             _track = None
 

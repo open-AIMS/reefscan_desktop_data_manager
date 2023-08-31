@@ -1,4 +1,9 @@
 import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("")
+logger_smb = logging.getLogger('smbprotocol')
+logger_smb.setLevel(level=logging.WARNING)
+
 import multiprocessing
 import traceback
 from logging.handlers import RotatingFileHandler
@@ -15,10 +20,6 @@ from aims.state import state
 from aims.ui.main_ui import MainUi
 from aims2 import simulated
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("")
-logger_smb = logging.getLogger('smbprotocol')
-logger_smb.setLevel(level=logging.WARNING)
 
 config_folder = state.config.config_folder
 
@@ -55,7 +56,7 @@ sys.excepthook = gui_except_hook
 
 
 # def exception_hook(exctype, value, traceback):
-#     print(exctype, value, traceback)
+#     logger.info(exctype, value, traceback)
 #     sys._excepthook(exctype, value, traceback)
 #     sys.exit(1)
 
@@ -89,14 +90,14 @@ if __name__ == "__main__":
 
     logger.info(state.meipass)
     files = glob.glob(state.meipass + '**/*', recursive=True)
-    print(files)
+    logger.info(files)
 
     app = QtWidgets.QApplication(sys.argv)
-    print(app.font().pointSize())
+    logger.info(app.font().pointSize())
     font = app.font()
     font.setPointSize(12)
     app.setFont(font)
-    print(app.font().pointSize())
+    logger.info(app.font().pointSize())
 
     app_icon = QtGui.QIcon()
     app_icon.addFile(f'{state.meipass}resources/aims-fish16.png', QtCore.QSize(16, 16))
@@ -148,8 +149,8 @@ if __name__ == "__main__":
         logger.exception("Error")
 
     if state.model.local_data_loaded and not state.read_only:
-        print("will export")
+        logger.info("will export")
         state.model.export()
 
-    print("main done")
+    logger.info("main done")
 
