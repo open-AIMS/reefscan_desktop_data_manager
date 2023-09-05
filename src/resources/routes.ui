@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1133</width>
+    <height>555</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="1" column="1">
+    <widget class="QLineEdit" name="inputFolderText"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label">
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Input folder</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QLineEdit" name="outputFolderText">
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Output folder</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2">
+    <widget class="QPushButton" name="outputFolderButton">
+     <property name="text">
+      <string>...</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="3">
+    <widget class="QTextBrowser" name="textBrowser">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="html">
+      <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:12pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;You can create routes or paths to follow. Then upload these to tablet.&lt;/p&gt;
+&lt;ol style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use google earth or similar to create the routes in one or more kml files.&lt;/li&gt;
+&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Place the kml files in a single folder&lt;/li&gt;
+&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use this form to create geojson files&lt;/li&gt;
+&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Connect your computer to the tablet using a USB cable&lt;/li&gt;
+&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Copy the GeoJson files to the tablet&lt;/li&gt;&lt;/ol&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QPushButton" name="processButton">
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Create GeoJson</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2">
+    <widget class="QPushButton" name="inputFolderButton">
+     <property name="font">
+      <font>
+       <pointsize>8</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>...</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0" colspan="3">
+    <widget class="QWidget" name="afterProcessWidget" native="true">
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="2" column="0">
+       <widget class="QLabel" name="outputFolderLabel">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QPushButton" name="openFolderButton">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Open Folder</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QLabel" name="label_3">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Now copy this folder on the computer</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="2">
+       <widget class="QLabel" name="label_5">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>To this folder on the tablet</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0" colspan="2">
+       <widget class="QLabel" name="tabletFolderLabel">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>      Android/data/au.gov.aims.reefscan_controller/files/reefscan/geojson</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

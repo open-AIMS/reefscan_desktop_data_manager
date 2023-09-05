@@ -1,7 +1,8 @@
 from PyQt5.QtCore import Qt, QVariant
 from PyQt5.QtGui import QStandardItem, QColor
 
-
+import logging
+logger = logging.getLogger("")
 class CheckTreeitem(QStandardItem):
 
     def __init__(self, label, checkable, grey=False):

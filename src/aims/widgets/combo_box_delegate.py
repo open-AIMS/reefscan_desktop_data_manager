@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets, uic, QtGui, QtCore
 from PyQt5.QtCore import QTimer
-
+import logging
+logger = logging.getLogger("")
 class ComboBoxDelegate(QtWidgets.QItemDelegate):
     def __init__(self, choices, parent=None):
         super().__init__(parent)
