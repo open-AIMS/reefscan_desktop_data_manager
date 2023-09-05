@@ -10,7 +10,8 @@ from reefscanner.basic_model.progress_queue import ProgressQueue
 import pandas as pd
 
 from aims.state import state
-
+import logging
+logger = logging.getLogger("")
 
 class SubSampler(QObject):
     def __init__(self):

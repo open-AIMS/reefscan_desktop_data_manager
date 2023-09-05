@@ -130,7 +130,7 @@ class CopyFolderOperation(AbstractOperation):
     def _run(self):
         print ("Starting copy")
         self.progress_queue.reset()
-        self.progress_queue.set_progress_label(f"{self._copying_files_from} {self.src}")
+        self.progress_queue.set_progress_label(self.src)
         src_files = os.listdir(self.src)
         self.progress_queue.set_progress_max(len(src_files) + 1)
 

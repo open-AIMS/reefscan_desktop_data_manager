@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QTextBrowser
 from PyQt5 import QtWidgets, uic, QtCore
 
 from aims import data_loader
+from aims.operations.ping_thread import PingThread
 from aims.state import state
 import sys
 import logging
@@ -11,6 +12,7 @@ from PyQt5.QtCore import Qt
 
 from aims.operations.aims_status_dialog import AimsStatusDialog
 from aims.ui.main_ui_components.reefcloud_connect_component import ReefcloudConnectComponent
+from aims.ui.main_ui_components.routes_component import RoutesComponent
 from aims2.operations2.archive_checker import ArchiveChecker
 from aims.ui.main_ui_components.data_component import DataComponent
 from aims.ui.main_ui_components.disk_drives_component import DiskDrivesComponent
@@ -73,6 +75,7 @@ class MainUi(QMainWindow):
         self.upload_component = UploadComponent(hint_function=self.hint)
         self.disk_drives_component = DiskDrivesComponent(hint_function=self.hint)
         self.reefcloud_connect_component = ReefcloudConnectComponent(hint_function=self.hint)
+        self.routes_component = RoutesComponent(hint_function=self.hint)
 
         self.workflow_widget = None
         self.connect_widget = None
@@ -93,6 +96,12 @@ class MainUi(QMainWindow):
         self.drives_connected = False
 
         self.hint(self.tr('Choose "Connect Disks" from the workflow bar'))
+        self.ping_thread_ = PingThread()
+        self.ping_thread_.ready.connect(self.camera_ready)
+
+    def camera_ready(self):
+        self.connect_widget.btnConnect.setEnabled(True)
+        self.connect_widget.readyLabel.setText("Camera is ready")
 
     def hint(self, text):
         self.ui.hint_label.setText(text)
@@ -108,6 +117,7 @@ class MainUi(QMainWindow):
         self.status_widget.refreshButton.clicked.connect(self.update_status)
 
     def disable_all_workflow_buttons(self):
+        self.workflow_widget.routesButton.setEnabled(False)
         self.workflow_widget.connectDisksButton.setEnabled(False)
         self.workflow_widget.connectButton.setEnabled(False)
         self.workflow_widget.dataButton.setEnabled(False)
@@ -115,6 +125,7 @@ class MainUi(QMainWindow):
         self.workflow_widget.uploadButton.setEnabled(False)
 
     def highlight_button(self, button):
+        self.ping_thread_.cancel()
         self.enable_workflow_buttons()
 
         remove_button_border(self.workflow_widget.connectDisksButton)
@@ -122,11 +133,13 @@ class MainUi(QMainWindow):
         remove_button_border(self.workflow_widget.dataButton)
         remove_button_border(self.workflow_widget.connectReefcloudButton)
         remove_button_border(self.workflow_widget.uploadButton)
+        remove_button_border(self.workflow_widget.routesButton)
 
         add_button_border(button)
         button.setEnabled(False)
 
     def enable_workflow_buttons(self):
+        self.workflow_widget.routesButton.setEnabled(True)
         self.workflow_widget.connectDisksButton.setEnabled(True)
         self.workflow_widget.connectButton.setEnabled(self.drives_connected)
         self.workflow_widget.dataButton.setEnabled(self.drives_connected)
@@ -148,6 +161,7 @@ class MainUi(QMainWindow):
         self.workflow_widget.dataButton.clicked.connect(self.load_data_screen)
         self.workflow_widget.connectDisksButton.clicked.connect(self.load_connect_disks_screen)
         self.workflow_widget.collapseButton.clicked.connect(self.collapse_workflow)
+        self.workflow_widget.routesButton.clicked.connect(self.load_routes_screen)
 
     def collapse_workflow(self):
         self.workflow_collapsed = not self.workflow_collapsed
@@ -248,6 +262,17 @@ class MainUi(QMainWindow):
         self.connect_widget.btnConnect.clicked.connect(self.connect)
         self.highlight_button(self.workflow_widget.connectButton)
         self.hint(self.tr("Press the red connect button below"))
+        self.connect_widget.btnConnect.setEnabled(False)
+        self.connect_widget.readyLabel.setText("Waiting for camera...")
+        self.ping_thread_.start()
+
+
+    def load_routes_screen(self):
+        self.current_screen = "routes"
+        self.routes_component.widget = self.load_main_frame(f'{state.meipass}resources/routes.ui')
+        self.highlight_button(self.workflow_widget.routesButton)
+        self.routes_component.load_screen(self.aims_status_dialog, self)
+
 
     def load_connect_disks_screen(self):
         self.current_screen = "connect_disks"

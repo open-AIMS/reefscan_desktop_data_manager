@@ -1,5 +1,7 @@
-from PyQt5.QtCore import QObject
+import logging
 
+from PyQt5.QtCore import QObject
+logger = logging.getLogger("")
 
 class Messages(QObject):
 

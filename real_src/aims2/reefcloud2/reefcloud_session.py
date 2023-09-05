@@ -39,25 +39,28 @@ class ReefCloudSession():
 
 
     def login(self):
-        self.login_worker = LoginWorker(self.client_id, self.cognito_uri)
-        self.login_worker.start()
-        self.login_worker.join()
-        self.oauth2_session = self.login_worker.get_session()
+        try:
+            self.login_worker = LoginWorker(self.client_id, self.cognito_uri)
+            self.login_worker.start()
+            self.login_worker.join()
+            self.oauth2_session = self.login_worker.get_session()
 
-        token_url = f'{self.cognito_uri}/oauth2/token'
-        self.tokens = self.oauth2_session.fetch_token(token_url,
-                                                      code=state.oauth2_code,
-                                                      state=state.oauth2_state,
-                                                      client_id=self.client_id,
-                                                      include_client_id=True)
-        logger.info(self.tokens)
-        self.id_token = self.tokens['id_token']
-        self.access_token = self.tokens['access_token']
-        self.current_user = UserInfo.from_id_token(state.config.cognito_token_key_url, self.id_token, self.access_token)
-        self.is_logged_in = True
-        # Set code to none so if the user clicks the login page a second time, the web server waits for the new code
-        code = None
-        self.finished = True
+            token_url = f'{self.cognito_uri}/oauth2/token'
+            self.tokens = self.oauth2_session.fetch_token(token_url,
+                                                          code=state.oauth2_code,
+                                                          state=state.oauth2_state,
+                                                          client_id=self.client_id,
+                                                          include_client_id=True)
+            logger.info(self.tokens)
+            self.id_token = self.tokens['id_token']
+            self.access_token = self.tokens['access_token']
+            self.current_user = UserInfo.from_id_token(state.config.cognito_token_key_url, self.id_token, self.access_token)
+            self.is_logged_in = True
+            # Set code to none so if the user clicks the login page a second time, the web server waits for the new code
+            code = None
+            self.finished = True
+        except Exception as e:
+            logger.exception("Error logging on", e)
 
     def get(self, url, **kwargs):
         return self.oauth2_session.get(url, **kwargs)
