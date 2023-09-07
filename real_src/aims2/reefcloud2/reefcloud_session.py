@@ -45,7 +45,7 @@ class ReefCloudSession():
             self.login_worker.join()
             self.oauth2_session = self.login_worker.get_session()
 
-            token_url = f'{self.cognito_uri}/oauth2/token'
+            token_url = f'{self.cognito_uri}oauth2/token'
             self.tokens = self.oauth2_session.fetch_token(token_url,
                                                           code=state.oauth2_code,
                                                           state=state.oauth2_state,
