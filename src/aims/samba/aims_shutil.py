@@ -1,7 +1,8 @@
+import logging
 import shutil as os_shutil
 from smbclient import shutil
 
-
+logger = logging.getLogger("")
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2, ignore_dangling_symlinks=False,
              dirs_exist_ok=False, **kwargs):
     """

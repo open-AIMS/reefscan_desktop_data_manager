@@ -1,4 +1,5 @@
 import locale
+import logging
 import os
 from pathlib import Path
 
@@ -6,7 +7,7 @@ import requests
 from reefscanner.basic_model.json_utils import write_json_file
 from reefscanner.basic_model.json_utils import read_json_file
 import ctypes
-
+logger = logging.getLogger("")
 class Config(object):
 
     def __init__(self):
@@ -38,6 +39,8 @@ class Config(object):
         self.camera_samba = True
 
         self.deep = False
+        self.clear_reefcloud = False
+        self.reef_cloud_max_depth = 10
 
         self.read_config_file()
         self.language = os.getenv("LANG")
@@ -48,7 +51,8 @@ class Config(object):
 
         self.vietnemese = self.language == "vi_VN"
 
-        print(self.language)
+
+        logger.info(self.language)
 
     def set_deep(self, deep):
         self.deep = deep
@@ -67,6 +71,7 @@ class Config(object):
             self.api_url = 'https://dev.reefscan.api.aims.gov.au/reefscan/api'
             self.projects_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/user/access?min-level=WRITE"
             self.sites_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/locations"
+            self.project_details_url = "https://api.dev.reefcloud.ai/reefcloud/api/organisation/list"
 
         else:
             self.aws_region_id = 'ap-southeast-2'
@@ -77,10 +82,12 @@ class Config(object):
             self.api_url = 'https://reefscan.api.aims.gov.au/reefscan/api'
             self.projects_json_download_url = "https://api.reefcloud.ai/reefcloud/api/user/access?min-level=WRITE"
             self.sites_json_download_url = "https://api.reefcloud.ai/reefcloud/api/locations"
+            self.project_details_url = "https://api.reefcloud.ai/reefcloud/api/organisation/list"
 
     def save_config_file(self):
         data_folder_json = {
-            "backup": self.backup
+            "backup": self.backup,
+            "reef_cloud_max_depth": self.reef_cloud_max_depth
         }
         write_json_file(self.config_folder, self.config_file_name, data_folder_json)
 
@@ -92,9 +99,12 @@ class Config(object):
 
         home = str(Path.home())
         self.backup = data_folder_json.get("backup", True)
+        self.reef_cloud_max_depth = data_folder_json.get("reef_cloud_max_depth")
+        if self.reef_cloud_max_depth is None:
+            self.reef_cloud_max_depth = "10"
         self.load_reefcloud_projects()
         self.load_reefcloud_sites()
-        print(self)
+        logger.info(self)
 
     def load_reefcloud_projects(self):
         self.reefcloud_projects = self.read_reefcloud_projects()

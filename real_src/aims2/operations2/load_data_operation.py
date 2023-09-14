@@ -31,10 +31,11 @@ class LoadDataOperation(AbstractOperation):
                                        )
             self.success = True
         except Exception as e:
-            logger.error("ERROR ERROR")
+            logger.error("ERROR ERROR: load_data_operation from real_src")
             traceback.print_exc()
             self.message = str(e)
-            print(self.message)
+            logger.info(self.message)
+            logger.error(self.message)
             self.success = False
 
         logger.info("finish load data")

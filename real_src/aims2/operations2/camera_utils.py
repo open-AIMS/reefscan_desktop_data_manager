@@ -1,5 +1,6 @@
 from fabric import Connection
-
+import logging
+logger = logging.getLogger("")
 def read_reefscan_id_for_ip(camera_ip):
     try:
         conn = Connection(

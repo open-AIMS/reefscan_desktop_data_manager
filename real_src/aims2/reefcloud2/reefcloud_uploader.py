@@ -10,7 +10,8 @@ from reefscanner.basic_model.survey_reefcloud_info import ReefcloudUploadInfo
 from aims.messages import messages
 from aims.state import state
 from aims2.reefcloud2.reefcloud_utils import upload_file
-
+import logging
+logger = logging.getLogger("")
 
 class ReefcloudUploader(QObject):
     def __init__(self):
