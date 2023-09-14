@@ -31,7 +31,9 @@ These are the values for the three edit boxes
 
 # Create executable  
 On Windows:  
-`pyinstaller -p src:simulated_src --noconsole --name reefscan-transom --add-data src\resources\*;resources --icon src\resources\aims_fish.ico --onefile src\main.py`
+`pyinstaller reefscan-transom.spec`
+or
+`pyinstaller reefscan-simulated.spec`
 Rename the exe file to reefscan-deep.exe for reefscan deep functionality 
 On Linux:  
 `pyinstaller -p src --noconsole --name reefscan-transom --add-data src/resources/*:resources --icon src\resources\aims_fish.ico --onefile src/main.py`

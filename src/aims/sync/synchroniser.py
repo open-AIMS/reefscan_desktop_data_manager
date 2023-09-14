@@ -29,12 +29,12 @@ class Synchroniser(QObject):
 
     def prepare_copy(self, src, dst):
         if self.cancelled:
-            print("cancelled")
+            logger.info("cancelled")
         else:
             cnt = len(self.files_to_copy)
             if cnt % 100 == 0:
                 message = f'Counting files. So far {cnt}'
                 self.progress_queue.set_progress_label(message)
-            # print(message)
+            # logger.info(message)
             self.files_to_copy.append((src, dst))
 

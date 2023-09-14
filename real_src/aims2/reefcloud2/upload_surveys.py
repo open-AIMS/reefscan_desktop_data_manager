@@ -1,8 +1,10 @@
+import logging
+
 from aims.state import state
 from aims.operations.load_data import reefcloud_subsample, reefcloud_upload_survey
 from aims2.reefcloud2.reefcloud_utils import upload_file, write_reefcloud_photos_json
 
-
+logger = logging.getLogger("")
 def upload_surveys(surveys, aims_status_dialog):
     for survey in surveys:
         survey_id = survey.id
@@ -21,7 +23,7 @@ def upload_surveys(surveys, aims_status_dialog):
                 aims_status_dialog.close()
                 raise Exception("Cancelled")
 
-            print(selected_photo_infos)
+            logger.info(selected_photo_infos)
             write_reefcloud_photos_json(survey_id=survey_id,
                                         outputfile=f"{subsampled_image_folder}/photos.json",
                                         selected_photo_infos=selected_photo_infos
