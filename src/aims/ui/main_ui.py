@@ -4,12 +4,15 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QTextBrowser
 from PyQt5 import QtWidgets, uic, QtCore
 
 from aims import data_loader
+from aims.operations.ping_thread import PingThread
 from aims.state import state
 import sys
 import logging
 from PyQt5.QtCore import Qt
 
 from aims.operations.aims_status_dialog import AimsStatusDialog
+from aims.ui.main_ui_components.reefcloud_connect_component import ReefcloudConnectComponent
+from aims.ui.main_ui_components.routes_component import RoutesComponent
 from aims2.operations2.archive_checker import ArchiveChecker
 from aims.ui.main_ui_components.data_component import DataComponent
 from aims.ui.main_ui_components.disk_drives_component import DiskDrivesComponent
@@ -50,11 +53,12 @@ class MainUi(QMainWindow):
         super().__init__()
         self.current_screen = "start"
         self.app = QtWidgets.QApplication(sys.argv)
+        self.workflow_collapsed = False
 
         if state.config.vietnemese:
             self.trans = QtCore.QTranslator(self)
             dir = f'{state.meipass}resources'
-            print(dir)
+            logger.info(dir)
             if self.trans.load('eng-vi', directory=dir):
                 logger.info("translations loaded")
             else:
@@ -70,6 +74,8 @@ class MainUi(QMainWindow):
         self.data_component = DataComponent(hint_function=self.hint)
         self.upload_component = UploadComponent(hint_function=self.hint)
         self.disk_drives_component = DiskDrivesComponent(hint_function=self.hint)
+        self.reefcloud_connect_component = ReefcloudConnectComponent(hint_function=self.hint)
+        self.routes_component = RoutesComponent(hint_function=self.hint)
 
         self.workflow_widget = None
         self.connect_widget = None
@@ -90,6 +96,12 @@ class MainUi(QMainWindow):
         self.drives_connected = False
 
         self.hint(self.tr('Choose "Connect Disks" from the workflow bar'))
+        self.ping_thread_ = PingThread()
+        self.ping_thread_.ready.connect(self.camera_ready)
+
+    def camera_ready(self):
+        self.connect_widget.btnConnect.setEnabled(True)
+        self.connect_widget.readyLabel.setText("Camera is ready")
 
     def hint(self, text):
         self.ui.hint_label.setText(text)
@@ -104,18 +116,36 @@ class MainUi(QMainWindow):
         self.ui.statusFrame.layout().addWidget(self.status_widget)
         self.status_widget.refreshButton.clicked.connect(self.update_status)
 
+    def disable_all_workflow_buttons(self):
+        self.workflow_widget.routesButton.setEnabled(False)
+        self.workflow_widget.connectDisksButton.setEnabled(False)
+        self.workflow_widget.connectButton.setEnabled(False)
+        self.workflow_widget.dataButton.setEnabled(False)
+        self.workflow_widget.connectReefcloudButton.setEnabled(False)
+        self.workflow_widget.uploadButton.setEnabled(False)
+
     def highlight_button(self, button):
+        self.ping_thread_.cancel()
+        self.enable_workflow_buttons()
+
         remove_button_border(self.workflow_widget.connectDisksButton)
-        self.workflow_widget.connectDisksButton.setEnabled(True)
         remove_button_border(self.workflow_widget.connectButton)
-        self.workflow_widget.connectButton.setEnabled(self.drives_connected)
         remove_button_border(self.workflow_widget.dataButton)
-        self.workflow_widget.dataButton.setEnabled(self.drives_connected)
+        remove_button_border(self.workflow_widget.connectReefcloudButton)
         remove_button_border(self.workflow_widget.uploadButton)
-        self.workflow_widget.uploadButton.setEnabled(self.drives_connected)
+        remove_button_border(self.workflow_widget.routesButton)
 
         add_button_border(button)
         button.setEnabled(False)
+
+    def enable_workflow_buttons(self):
+        self.workflow_widget.routesButton.setEnabled(True)
+        self.workflow_widget.connectDisksButton.setEnabled(True)
+        self.workflow_widget.connectButton.setEnabled(self.drives_connected)
+        self.workflow_widget.dataButton.setEnabled(self.drives_connected)
+        self.workflow_widget.connectReefcloudButton.setEnabled(self.drives_connected)
+        self.workflow_widget.uploadButton.setEnabled(
+            self.drives_connected and self.reefcloud_connect_component.logged_in())
 
     def setup_workflow(self):
         workflow_widget_file = f'{state.meipass}resources/workflow_bar.ui'
@@ -125,9 +155,24 @@ class MainUi(QMainWindow):
         self.workflow_widget.connectButton.setEnabled(False)
         self.workflow_widget.dataButton.setEnabled(False)
         self.workflow_widget.uploadButton.setEnabled(False)
+        self.workflow_widget.connectReefcloudButton.setEnabled(False)
         self.workflow_widget.uploadButton.clicked.connect(self.load_upload_screen)
+        self.workflow_widget.connectReefcloudButton.clicked.connect(self.load_reefcloud_connect_screen)
         self.workflow_widget.dataButton.clicked.connect(self.load_data_screen)
         self.workflow_widget.connectDisksButton.clicked.connect(self.load_connect_disks_screen)
+        self.workflow_widget.collapseButton.clicked.connect(self.collapse_workflow)
+        self.workflow_widget.routesButton.clicked.connect(self.load_routes_screen)
+
+    def collapse_workflow(self):
+        self.workflow_collapsed = not self.workflow_collapsed
+        logger.info("collapse")
+        self.workflow_widget.mainFrame.setVisible(not self.workflow_collapsed)
+        self.workflow_widget.workflowLabel.setVisible(not self.workflow_collapsed)
+        if self.workflow_collapsed:
+            self.workflow_widget.collapseButton.setText(">>")
+        else:
+            self.workflow_widget.collapseButton.setText("<<")
+
 
     def ui_to_data(self):
         if self.current_screen == "data":
@@ -137,9 +182,25 @@ class MainUi(QMainWindow):
         self.ui_to_data()
         self.current_screen = "upload"
 
-        self.upload_component.login_widget = self.load_main_frame(f'{state.meipass}resources/cloud-log-in.ui')
-        self.upload_component.load_login_screen(aims_status_dialog=self.aims_status_dialog, time_zone=self.time_zone)
+        self.upload_component.upload_widget = self.load_main_frame(f'{state.meipass}resources/reefcloud-upload.ui')
+        self.upload_component.load(aims_status_dialog=self.aims_status_dialog, time_zone=self.time_zone)
         self.highlight_button(self.workflow_widget.uploadButton)
+
+    def load_reefcloud_connect_screen(self):
+        self.ui_to_data()
+        self.current_screen = "connect_reefcloud"
+
+        self.reefcloud_connect_component.login_widget = self.load_main_frame(f'{state.meipass}resources/reefcloud-connect.ui')
+        self.reefcloud_connect_component.load(aims_status_dialog=self.aims_status_dialog, time_zone=self.time_zone)
+        self.reefcloud_connect_component.login_widget.login_button.clicked.connect(self.login_reefcloud)
+
+        self.highlight_button(self.workflow_widget.connectReefcloudButton)
+
+    def login_reefcloud(self):
+        self.disable_all_workflow_buttons()
+        if self.reefcloud_connect_component.login():
+            self.load_data_screen()
+        self.enable_workflow_buttons()
 
     def load_start_screen(self):
         widget = self.load_main_frame(f'{state.meipass}resources/start.ui')
@@ -162,7 +223,7 @@ class MainUi(QMainWindow):
         drives = win32api.GetLogicalDriveStrings()
         drives = drives.split('\000')[:-1]
         self.fixed_drives = []
-        print(drives)
+        logger.info(drives)
         for d in drives:
             drive_type = win32file.GetDriveType(d)
             if drive_type == win32file.DRIVE_FIXED or drive_type == win32file.DRIVE_REMOVABLE:
@@ -201,6 +262,17 @@ class MainUi(QMainWindow):
         self.connect_widget.btnConnect.clicked.connect(self.connect)
         self.highlight_button(self.workflow_widget.connectButton)
         self.hint(self.tr("Press the red connect button below"))
+        self.connect_widget.btnConnect.setEnabled(False)
+        self.connect_widget.readyLabel.setText("Waiting for camera...")
+        self.ping_thread_.start()
+
+
+    def load_routes_screen(self):
+        self.current_screen = "routes"
+        self.routes_component.widget = self.load_main_frame(f'{state.meipass}resources/routes.ui')
+        self.highlight_button(self.workflow_widget.routesButton)
+        self.routes_component.load_screen(self.aims_status_dialog, self)
+
 
     def load_connect_disks_screen(self):
         self.current_screen = "connect_disks"
@@ -231,7 +303,7 @@ class MainUi(QMainWindow):
         if data_loaded:
             self.connect_widget.lblMessage.setText(self.tr("Connected Successfully"))
             if self.drives_connected:
-                self.load_data_screen()
+                self.load_reefcloud_connect_screen()
             state.reefscan_id = remove_control_characters(state.read_reefscan_id())
             self.camera_connected = True
             self.update_status()

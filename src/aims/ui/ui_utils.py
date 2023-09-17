@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger("")
+
 blank_date_edit_style = """
 selection-color: rgb(0, 0, 0);
 selection-background-color: rgb(255, 255, 255)

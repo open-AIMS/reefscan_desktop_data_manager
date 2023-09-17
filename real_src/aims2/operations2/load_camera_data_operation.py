@@ -33,7 +33,7 @@ class LoadCameraDataOperation(AbstractOperation):
             logger.error("ERROR ERROR")
             traceback.print_exc()
             self.message = str(e)
-            print(self.message)
+            logger.info(self.message)
             self.success = False
 
         logger.info("finish load data")

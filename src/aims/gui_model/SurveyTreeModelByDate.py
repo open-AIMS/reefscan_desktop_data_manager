@@ -1,9 +1,10 @@
 import datetime
+import logging
 from operator import itemgetter
 
 from pytz import timezone
 
-
+logger = logging.getLogger("")
 class SurveyTreeModelByDate:
     def __init__(self, survey_data, local_tz):
         utc = timezone("UTC")
@@ -22,7 +23,7 @@ class SurveyTreeModelByDate:
                 survey.time_name = datetime.datetime.strftime(local_date, "%H:%M:%S") + " " + seq_part
                 date_name = datetime.datetime.strftime(local_date, "%Y-%m-%d")
             except Exception as e:
-                print(e)
+                logger.info(e)
                 survey.time_name = survey_id
                 date_name = "unknown date"
 

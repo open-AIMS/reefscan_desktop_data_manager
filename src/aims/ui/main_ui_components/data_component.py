@@ -3,6 +3,8 @@ import logging
 import os
 import shutil
 import subprocess
+import traceback
+import typing
 from time import process_time
 
 from PyQt5 import uic, QtWidgets, QtTest
@@ -10,11 +12,13 @@ from PyQt5.QtCore import QItemSelection, QSize, Qt, QObject
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QWidget, QTableView, QLabel, QListView, \
-    QListWidget, QMessageBox, QMainWindow
+    QListWidget, QMessageBox, QMainWindow, QTabWidget
 from pytz import utc
+from reefscanner.basic_model.exif_utils import get_exif_data
 from reefscanner.basic_model.model_helper import rename_folders
 from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
+from reefscanner.basic_model.survey import Survey
 
 from aims import data_loader
 from aims.state import state
@@ -69,10 +73,58 @@ class DataComponent(QObject):
         self.site_lookup = {}
         self.hint_function = hint_function
 
+        self.clipboard: typing.Optional[Survey] = None
+        self.current_tab = 2
+        self.tree_collapsed = False
+
     def tab_changed(self, index):
-        print(index)
+        logger.info(index)
         if index == 2:
             self.draw_map()
+
+    def copy(self):
+        self.ui_to_data()
+        self.clipboard = self.survey()
+
+    def paste(self):
+        if self.clipboard is not None:
+            self.ui_to_data()
+            if self.survey().site == "" or self.survey().site is None:
+                self.survey().site = self.clipboard.site
+
+            if self.survey().operator == "" or self.survey().operator is None:
+                self.survey().operator = self.clipboard.operator
+
+            if self.survey().observer == "" or self.survey().observer is None:
+                self.survey().observer = self.clipboard.observer
+
+            if self.survey().vessel == "" or self.survey().vessel is None:
+                self.survey().vessel = self.clipboard.vessel
+
+            if self.survey().tide == "" or self.survey().tide is None:
+                self.survey().tide = self.clipboard.tide
+
+            if self.survey().sea == "" or self.survey().sea is None:
+                self.survey().sea = self.clipboard.sea
+
+            if self.survey().wind == "" or self.survey().wind is None:
+                self.survey().wind = self.clipboard.wind
+
+            if self.survey().cloud == "" or self.survey().cloud  is None:
+                self.survey().cloud = self.clipboard.cloud
+
+            if self.survey().visibility == "" or self.survey().visibility is None:
+                self.survey().visibility = self.clipboard.visibility
+
+            if self.survey().reefcloud_site == "" or self.survey().reefcloud_site is None:
+                self.survey().reefcloud_site = self.clipboard.reefcloud_site
+
+            if self.survey().reefcloud_project == "" or self.survey().reefcloud_project is None:
+                self.survey().reefcloud_project = self.clipboard.reefcloud_project
+
+            self.data_to_ui()
+            self.ui_to_data()
+
 
     def load_data_screen(self, fixed_drives, aims_status_dialog, time_zone):
 
@@ -118,12 +170,15 @@ class DataComponent(QObject):
         self.metadata_widget.cancelButton.clicked.connect(self.data_to_ui)
         self.metadata_widget.saveButton.clicked.connect(self.ui_to_data)
         self.metadata_widget.newSiteButton.clicked.connect(self.add_new_reefcloud_site)
+        self.metadata_widget.btn_copy.clicked.connect(self.copy)
+        self.metadata_widget.btn_paste.clicked.connect(self.paste)
 
         self.load_explore_surveys_tree()
 
         self.data_widget.downloadButton.clicked.connect(self.download)
         self.data_widget.showDownloadedCheckBox.stateChanged.connect(self.show_downloaded_changed)
         self.data_widget.deleteDownloadedButton.clicked.connect(self.delete_downloaded)
+        self.data_widget.collapseTreeButton.clicked.connect(self.collapseTrees)
 
         if self.setup_camera_tree():
             self.data_widget.camera_not_connected_label.setVisible(False)
@@ -160,6 +215,13 @@ class DataComponent(QObject):
     def show_tab_by_tab_text(self, name_of_tab):
         index = self.get_index_by_tab_text(name_of_tab)
         self.data_widget.tabWidget.setTabEnabled(index, True)
+    def collapseTrees(self):
+        self.tree_collapsed = not self.tree_collapsed
+        self.data_widget.treesWidget.setVisible(not self.tree_collapsed)
+        if self.tree_collapsed:
+            self.data_widget.collapseTreeButton.setText(">>")
+        else:
+            self.data_widget.collapseTreeButton.setText("<<")
     
     def add_new_reefcloud_site(self):
         project = self.metadata_widget.cb_reefcloud_project.currentText()
@@ -167,7 +229,7 @@ class DataComponent(QObject):
 
         all_sites = [self.metadata_widget.cb_reefcloud_site.itemText(i) for i in
                      range(self.metadata_widget.cb_reefcloud_site.count())]
-        print(all_sites)
+        logger.info(all_sites)
         if site in all_sites:
             raise Exception(f"{site} already exists. Choose it from the drop down.")
 
@@ -186,9 +248,9 @@ class DataComponent(QObject):
         self.update_sites_combo()
         self.metadata_widget.cb_reefcloud_site.setCurrentText(site)
 
-        # state.config.reefcloud_sites[project].append({"name": site, "id": site_id})
-        # self.site_lookup[site_id] = site
-        # self.metadata_widget.cb_reefcloud_site.addItem(site, site_id)
+        state.config.reefcloud_sites[project].append({"name": site, "id": site_id})
+        self.site_lookup[site_id] = site
+        self.metadata_widget.cb_reefcloud_site.addItem(site, site_id)
         message_box = QtWidgets.QMessageBox()
         message_box.setText(self.tr("Site created with default properties"))
         message_box.setDetailedText("You can modify the site properties in reefcloud")
@@ -280,10 +342,11 @@ class DataComponent(QObject):
         end = process_time()
         minutes = (end - start) / 60
 
-        print(f"Download Finished in {minutes} minutes")
+        logger.info(f"Download Finished in {minutes} minutes")
         errorbox = QtWidgets.QMessageBox()
         errorbox.setText(self.tr("Download finished"))
         errorbox.setDetailedText(self.tr("Finished in ") + str(minutes) + self.tr(" minutes"))
+        errorbox.setWindowTitle("ReefScan")
         self.aims_status_dialog.progress_dialog.close()
         QtTest.QTest.qWait(1000)
         errorbox.exec_()
@@ -394,7 +457,8 @@ class DataComponent(QObject):
             self.survey_id = None
             try:
                 rename_folders(state.model, self.time_zone)
-            except:
+            except Exception as e:
+                traceback.print_exc()
                 raise Exception("Error renaming folders. Maybe you have a file or folder open in another window.")
 
             self.load_explore_surveys_tree()
@@ -402,7 +466,7 @@ class DataComponent(QObject):
             self.survey_id = old_survey_id
             self.data_to_ui()
 
-            print("rename done")
+            logger.info("rename done")
 
     def kml_for_all(self):
         if not state.read_only:
@@ -424,7 +488,7 @@ class DataComponent(QObject):
         self.setup_camera_tree()
         self.survey_id = old_survey_id
         self.data_to_ui()
-        print("refresh done")
+        logger.info("refresh done")
 
     def load_sequence_frame(self, ui_file, parent_widget):
         clearLayout(parent_widget.layout())
@@ -468,7 +532,7 @@ class DataComponent(QObject):
                 fname = self.mark_filename.replace("//", "/")
                 fname = fname.replace("/", "\\")
                 command = f'explorer.exe /select,"{fname}"'
-                # print(command)
+                # logger.info(command)
                 subprocess.call(command)
             except:
                 os.startfile(self.mark_filename, "open")
@@ -551,11 +615,10 @@ class DataComponent(QObject):
         pie_browser.setHtml(fig)
 
 
-    def inference_open_folder(self):
-        os.startfile(self.survey().folder)
+    def load_inference_charts(self, coverage_results_file=''):
+        self.show_tab_by_tab_text('Chart')
 
     def inference_folder(self):
-
         # output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'
 
         output_folder = 'inference_results'
@@ -590,7 +653,7 @@ class DataComponent(QObject):
         self.load_inference_charts(coverage_file)
 
     def camera_tree_selection_changed(self, item_selection: QItemSelection):
-        print("camera tree changed")
+        logger.info("camera tree changed")
         self.check_save()
         if self.data_widget.surveysTree.selectionModel() is not None:
             self.data_widget.surveysTree.selectionModel().blockSignals(True)
@@ -602,8 +665,8 @@ class DataComponent(QObject):
         selected_index = self.find_selected_tree_index(item_selection)
         self.set_survey_id_and_list_from_selected_index(selected_index)
 
-        # print(f"survey_id {self.survey_id}")
-        # print(f"survey {self.survey()}")
+        # logger.info(f"survey_id {self.survey_id}")
+        # logger.info(f"survey {self.survey()}")
 
         if self.survey_id is None:
             self.disable_all_tabs(0)
@@ -641,8 +704,9 @@ class DataComponent(QObject):
         self.data_widget.tabWidget.setCurrentIndex(2)
 
     def disable_all_tabs(self, index):
-        self.data_widget.tabWidget.setEnabled(False)
-        self.data_widget.tabWidget.setCurrentIndex(index)
+        tab_widget:QTabWidget = self.data_widget.tabWidget
+        tab_widget.setEnabled(False)
+        tab_widget.setCurrentIndex(index)
 
     def enable_all_tabs(self):
         self.data_widget.tabWidget.setEnabled(True)
@@ -652,10 +716,13 @@ class DataComponent(QObject):
         self.data_widget.tabWidget.setTabEnabled(3, True)
         self.data_widget.tabWidget.setTabEnabled(4, True)
         self.data_widget.tabWidget.setTabEnabled(5, True)
-        # self.data_widget.tabWidget.setCurrentIndex(2)
+        self.data_widget.tabWidget.setCurrentIndex(self.current_tab)
 
     def explore_tree_selection_changed(self, item_selection: QItemSelection):
-        print("local tree changed")
+        if self.data_widget.tabWidget.isEnabled():
+            self.current_tab = self.data_widget.tabWidget.currentIndex()
+
+        logger.info("local tree changed")
         self.check_save()
         if self.data_widget.cameraTree.selectionModel() is not None:
             self.data_widget.cameraTree.selectionModel().blockSignals(True)
@@ -670,10 +737,10 @@ class DataComponent(QObject):
 
         if self.survey_id is None:
             self.disable_all_tabs(1)
-            # print(selected_index.data(Qt.DisplayRole))
-            # print("columns " + str(selected_index.model().columnCount()))
-            # print("rows " + str(selected_index.model().rowCount()))
-            # print("children: " + str(len(selected_index.model().children())))
+            # logger.info(selected_index.data(Qt.DisplayRole))
+            # logger.info("columns " + str(selected_index.model().columnCount()))
+            # logger.info("rows " + str(selected_index.model().rowCount()))
+            # logger.info("children: " + str(len(selected_index.model().children())))
 
             descendant_surveys = self.get_all_descendants(selected_index)
             survey_stats = SurveyStats()
@@ -681,7 +748,7 @@ class DataComponent(QObject):
             self.survey_stats_to_ui(survey_stats)
             self.non_survey_to_stats_ui(selected_index.data(Qt.DisplayRole))
 
-            print(descendant_surveys)
+            logger.info(descendant_surveys)
 
         else:
             self.enable_all_tabs()
@@ -690,7 +757,7 @@ class DataComponent(QObject):
             try:
                 self.draw_map()
             except Exception as e:
-                print(f"Error loading map\n{e}")
+                logger.info(f"Error loading map\n{e}")
             self.load_thumbnails()
             self.load_marks()
 
@@ -727,7 +794,7 @@ class DataComponent(QObject):
         child = selected_index.child(row, 0)
         while child.data(Qt.DisplayRole) is not None:
             ret.extend(self.get_all_descendants(child))
-            # print(child.data(Qt.DisplayRole))
+            # logger.info(child.data(Qt.DisplayRole))
             row += 1
             child = selected_index.child(row, 0)
         return ret
@@ -737,7 +804,7 @@ class DataComponent(QObject):
             return ''
         return str(s)
 
-    def survey(self):
+    def survey(self) -> Survey:
         if self.survey_list is None:
             return None
         else:
@@ -857,6 +924,7 @@ class DataComponent(QObject):
         self.info_widget.lbl_missing_gps.setText(str(survey_stats.missing_gps))
         self.info_widget.lbl_missing_ping.setText(str(survey_stats.missing_ping_depth))
         self.info_widget.lbl_missing_pressure.setText(str(survey_stats.missing_pressure_depth))
+        self.info_widget.distance_label.setText(f"{survey_stats.min_ping} to {survey_stats.max_ping} metres")
 
     def load_thumbnails(self):
         if self.thumbnail_model is not None:
@@ -871,8 +939,18 @@ class DataComponent(QObject):
             file_ops = get_file_ops(samba)
             photos = [name for name in file_ops.listdir(folder) if
                       name.lower().endswith(".jpg") or name.lower().endswith(".jpeg")]
+            photos.sort()
             self.thumbnail_model = LazyListModel(photos, folder, self.survey_id, samba)
             list_thumbnails.setModel(self.thumbnail_model)
+            list_thumbnails.clicked.connect(self.thumbnail_clicked)
+
+    def thumbnail_clicked(self, index):
+        self.data_widget.file_info_label.setText(self.file_info(self.thumbnail_model.data(index, Qt.UserRole)))
+
+    def file_info(self, filename):
+        exif = get_exif_data(filename, False)
+        short_filename = os.path.basename(filename)
+        return f"{short_filename} total_depth: {exif['altitude']} subject_distance: {exif['subject_distance']}"
 
     def load_explore_surveys_tree(self):
         self.check_save()
@@ -888,20 +966,20 @@ class DataComponent(QObject):
         self.survey_id = None
 
     def draw_map(self):
-        # print("draw map")
+        # logger.info("draw map")
         if self.survey_id is not None:
             folder = self.survey().folder
             html_str = map_html_str(folder, False)
-            # print(html_str)
+            # logger.info(html_str)
             if html_str is not None:
                 view: QWebEngineView = self.data_widget.mapView
                 # view.stop()
                 view.setHtml(html_str)
 
-        # print("finished draw map")
+        # logger.info("finished draw map")
 
     def map_load_finished(self, success):
-        print(f"Map loaded success:{success}")
+        logger.info(f"Map loaded success:{success}")
 
     def non_survey_to_stats_ui(self, name):
         self.info_widget.lb_sequence_name.setText(name)
@@ -939,13 +1017,13 @@ class DataComponent(QObject):
                     command = f'du -s /media/jetson/*/images/archive/{survey["survey_id"]}'
 
                 kilo_bytes_used = get_kilo_bytes_used(state.config.camera_ip, command)
-                print(self.tr("Bytes used: ") + f"{kilo_bytes_used}")
+                logger.info(self.tr("Bytes used: ") + f"{kilo_bytes_used}")
                 total_kilo_bytes_used += kilo_bytes_used
 
-            print(self.tr("total Bytes used: ") + f"{total_kilo_bytes_used}")
+            logger.info(self.tr("total Bytes used: ") + f"{total_kilo_bytes_used}")
 
-            print(state.primary_drive)
-            print(state.backup_drive)
+            logger.info(state.primary_drive)
+            logger.info(state.backup_drive)
 
             du = shutil.disk_usage(state.primary_drive)
         except Exception as e:

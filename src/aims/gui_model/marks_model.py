@@ -1,9 +1,11 @@
+import logging
+
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QModelIndex, QVariant
 import pandas as pd
 from pandas import DataFrame
 
-
+logger = logging.getLogger("")
 class MarksModel(QtCore.QAbstractTableModel):
     def __init__(self, survey_folder):
         self.survey_folder = survey_folder

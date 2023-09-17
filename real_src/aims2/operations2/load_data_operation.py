@@ -34,7 +34,7 @@ class LoadDataOperation(AbstractOperation):
             logger.error("ERROR ERROR: load_data_operation from real_src")
             traceback.print_exc()
             self.message = str(e)
-            print(self.message)
+            logger.info(self.message)
             logger.error(self.message)
             self.success = False
 
