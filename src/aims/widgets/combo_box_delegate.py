@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets, uic, QtGui, QtCore
 from PyQt5.QtCore import QTimer
-
+import logging
+logger = logging.getLogger("")
 class ComboBoxDelegate(QtWidgets.QItemDelegate):
     def __init__(self, choices, parent=None):
         super().__init__(parent)
@@ -38,7 +39,7 @@ class ComboBoxDelegate(QtWidgets.QItemDelegate):
             num = self.valueIndex.index(value)
             editor.setCurrentIndex(num)
         except Exception as e:
-            print(e)
+            logger.info(e)
 
 
     def setModelData(self, editor, model, index):

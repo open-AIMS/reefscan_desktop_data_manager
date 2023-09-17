@@ -1,4 +1,5 @@
 import filecmp
+import logging
 import os
 import shutil
 
@@ -9,7 +10,7 @@ from aims.operations.abstract_operation import AbstractOperation
 
 exclude = {'thumbnails'}
 
-
+logger = logging.getLogger("")
 class DiskDriveUtils(QObject):
     def __init__(self):
         super().__init__()
@@ -67,15 +68,15 @@ class DiskDriveUtils(QObject):
                         if fix:
                             os.makedirs(os.path.dirname(second_file_name), exist_ok=True)
                             shutil.copy2(file_name, second_file_name)
-                        print(second_file_name)
+                        logger.info(second_file_name)
         return total_differences, messages
 
     def compare(self, dir1, dir2, fix, aims_status_dialog):
         self.init_translations()
         counts1 = self.dir_with_counts(dir1)
-        print(counts1)
+        logger.info(counts1)
         counts2 = self.dir_with_counts(dir2)
-        print(counts2)
+        logger.info(counts2)
         total_differences, messages = self.check_all_files_except_photos(dir1, dir2, fix)
         for folder in counts1:
             src_folder = counts1[folder]["original_file"]
@@ -129,13 +130,13 @@ class CopyFolderOperation(AbstractOperation):
     def _run(self):
         print ("Starting copy")
         self.progress_queue.reset()
-        self.progress_queue.set_progress_label(f"{self._copying_files_from} {self.src}")
+        self.progress_queue.set_progress_label(self.src)
         src_files = os.listdir(self.src)
         self.progress_queue.set_progress_max(len(src_files) + 1)
 
         i = 0
         for file in src_files:
-            print(i)
+            logger.info(i)
             i += 1
             src_file = f"{self.src}/{file}"
             dst_file = f"{self.dst}/{file}"

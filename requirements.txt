@@ -5,7 +5,8 @@ pyinstaller
 PyQt5==5.15.5
 shortuuid
 PyQtWebEngine
-reefscanner @ git+https://github.com/AIMS/reefscan-data-model@v1.1.1
+reefscanner @ git+https://github.com/AIMS/reefscan-data-model@v1.1.2
+#reefscanner @ file:///C:/aa_git_root/techdev/reef_scanner_data_model/dist/reefscanner-1.1.1.2-py3-none-any.whl
 photoenhancer @ git+https://github.com/open-AIMS/photo_enhancer@v1.1.11
 #photoenhancer @ file:///C:/aa_git_root/techdev/photo_enhancer/dist/photoenhancer-1.1.9.2-py3-none-any.whl
 inferencer @ git+https://github.com/open-AIMS/reefscan_inference@main
@@ -27,9 +28,9 @@ jwt
 simplekml
 scipy
 opencv-python
-tensorflow-cpu==2.9.2
-keras==2.9
-scikit-learn
+#tensorflow-cpu==2.9.2
+#keras==2.9
+#scikit-learn
 glob2
 matplotlib
 #reefscanner @ file:///C:/Users/pteneder/Documents/reefscan_desktop_integrations/reefscan_desktop_data_manager/reefscanner-1.0.4.1-py3-none-any.whl
@@ -37,4 +38,6 @@ matplotlib
 #inferencer @ file:///C:/Users/pteneder/Documents/reefscan_desktop_integrations/reefscan_desktop_data_manager/inferencer-1.1.5-py3-none-any.whl
 shapely
 alphashape
+gpxpy
+pyping
 plotly

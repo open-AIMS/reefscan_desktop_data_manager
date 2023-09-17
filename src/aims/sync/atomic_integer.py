@@ -1,5 +1,6 @@
 import threading
-
+import logging
+logger = logging.getLogger("")
 
 class AtomicInteger():
     def __init__(self, value=0):

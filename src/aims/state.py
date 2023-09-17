@@ -3,7 +3,8 @@ from reefscanner.basic_model.basic_model import BasicModel
 from aims.config import Config
 
 from aims2.operations2.camera_utils import read_reefscan_id_for_ip
-
+import logging
+logger = logging.getLogger("")
 
 class State:
 

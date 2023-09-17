@@ -1,3 +1,5 @@
+import logging
+
 from PyQt5.QtGui import QStandardItemModel
 from PyQt5.QtWidgets import QMainWindow
 from reefscanner.basic_model.survey import Survey
@@ -7,6 +9,7 @@ from aims.ui.checked_tree_item import CheckTreeitem
 from PyQt5.QtCore import QItemSelection, Qt, QModelIndex, QSize, QEvent
 from aims.state import state
 
+logger = logging.getLogger("")
 class TreeModelMaker(QMainWindow):
     def __init__(self):
         super().__init__()

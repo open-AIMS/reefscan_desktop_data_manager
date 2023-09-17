@@ -1,4 +1,9 @@
 import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("")
+logger_smb = logging.getLogger('smbprotocol')
+logger_smb.setLevel(level=logging.WARNING)
+
 import multiprocessing
 import traceback
 from logging.handlers import RotatingFileHandler
@@ -15,10 +20,6 @@ from aims.state import state
 from aims.ui.main_ui import MainUi
 from aims2 import simulated
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("")
-logger_smb = logging.getLogger('smbprotocol')
-logger_smb.setLevel(level=logging.WARNING)
 
 config_folder = state.config.config_folder
 
@@ -37,10 +38,10 @@ def gui_except_hook(exc_class, exc_value, tb):
     traceback1 = ''.join(traceback.format_tb(tb))
     error_message = str(exc_value)
 
-    print (error_message)
-    print(traceback1)
+    logger.exception(exc_class)
+    logger.exception(error_message)
+    logger.exception(traceback1)
 
-    print (exc_class)
 
     if exc_class is not UserWarning:
         errorbox = QtWidgets.QMessageBox()
@@ -55,7 +56,7 @@ sys.excepthook = gui_except_hook
 
 
 # def exception_hook(exctype, value, traceback):
-#     print(exctype, value, traceback)
+#     logger.info(exctype, value, traceback)
 #     sys._excepthook(exctype, value, traceback)
 #     sys.exit(1)
 
@@ -66,6 +67,8 @@ sys.excepthook = gui_except_hook
 
 # import cgitb
 # cgitb.enable(format='text')
+
+
 
 
 if __name__ == "__main__":
@@ -87,14 +90,14 @@ if __name__ == "__main__":
 
     logger.info(state.meipass)
     files = glob.glob(state.meipass + '**/*', recursive=True)
-    print(files)
+    logger.info(files)
 
     app = QtWidgets.QApplication(sys.argv)
-    print(app.font().pointSize())
+    logger.info(app.font().pointSize())
     font = app.font()
     font.setPointSize(12)
     app.setFont(font)
-    print(app.font().pointSize())
+    logger.info(app.font().pointSize())
 
     app_icon = QtGui.QIcon()
     app_icon.addFile(f'{state.meipass}resources/aims-fish16.png', QtCore.QSize(16, 16))
@@ -117,9 +120,26 @@ if __name__ == "__main__":
         state.config.set_deep(sys.argv[0].lower().endswith("reefscan-deep.exe"))
 
         dev = len(sys.argv) > 1 and "dev" in sys.argv
+        clear_reefcloud = len(sys.argv) > 1 and "clear_reefcloud" in sys.argv
+
         if len(sys.argv) > 1 and "viet" in sys.argv:
             state.config.vietnemese=True
         state.config.set_dev(dev)
+        state.config.clear_reefcloud = clear_reefcloud
+
+        try:
+            import pyi_splash
+
+            # Update the text on the splash screen
+            pyi_splash.update_text("PyInstaller is a great software!")
+            pyi_splash.update_text("Second time's a charm!")
+
+            # Close the splash screen. It does not matter when the call
+            # to this function is made, the splash screen remains open until
+            # this function is called or the Python program is terminated.
+            pyi_splash.close()
+        except:
+            pass
 
         main_ui = MainUi()
         main_ui.show()
@@ -129,8 +149,8 @@ if __name__ == "__main__":
         logger.exception("Error")
 
     if state.model.local_data_loaded and not state.read_only:
-        print("will export")
+        logger.info("will export")
         state.model.export()
 
-    print("main done")
+    logger.info("main done")
 
