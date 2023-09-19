@@ -1,4 +1,6 @@
+import os
 import shutil
+import psutil
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QTextBrowser
 from PyQt5 import QtWidgets, uic, QtCore
@@ -220,6 +222,15 @@ class MainUi(QMainWindow):
 
 
     def load_fixed_drives(self):
+        print(sys.platform)
+        if sys.platform == 'win32':
+            self.load_fixed_drives_win32()
+        elif sys.platform == 'linux':
+            self.load_fixed_drives_linux()
+        else:
+            self.load_fixed_drives_mac()
+
+    def load_fixed_drives(self):
         drives = win32api.GetLogicalDriveStrings()
         drives = drives.split('\000')[:-1]
         self.fixed_drives = []
@@ -232,6 +243,26 @@ class MainUi(QMainWindow):
                 except:
                     label = "Dont know"
                 self.fixed_drives.append({"letter": d.replace("\\", ""), "label": label})
+
+
+    def load_fixed_drives_mac(self):
+        drives = psutil.disk_partitions()
+        self.fixed_drives = []
+        base_drive_location = "/Volumes/"
+
+        for d in drives:
+            if d.mountpoint.startswith(base_drive_location):
+                self.fixed_drives.append({"letter": d.mountpoint, "label": d.mountpoint.replace(base_drive_location, "")})
+
+    def load_fixed_drives_linux(self):
+        drives = psutil.disk_partitions()
+        self.fixed_drives = []
+        user = os.getlogin()
+        base_drive_location = "/media/%s/" % user
+
+        for d in drives:
+            if d.mountpoint.startswith(base_drive_location):
+                self.fixed_drives.append({"letter": d.mountpoint, "label": d.mountpoint.replace(base_drive_location, "")})
 
     def load_data_screen(self):
         self.ui_to_data()
