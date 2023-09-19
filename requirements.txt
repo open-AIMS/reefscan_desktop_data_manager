@@ -13,6 +13,7 @@ photoenhancer @ git+https://github.com/open-AIMS/photo_enhancer@v1.1.11
 #inferencer @ file:///C:/aa_git_root/techdev/reefscan_inference/dist/inferencer-1.1.4.1-py3-none-any.whl
 pandas
 smbprotocol
+fabric2
 psutil;sys_platform == 'linux'
 pywin32;sys_platform == 'windows'
 tzlocal
