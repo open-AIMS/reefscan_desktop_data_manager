@@ -1,7 +1,9 @@
 import os
 import shutil
-import psutil
-
+try:
+    import psutil
+except:
+    pass
 from PyQt5.QtWidgets import QMainWindow, QWidget, QTextBrowser
 from PyQt5 import QtWidgets, uic, QtCore
 
