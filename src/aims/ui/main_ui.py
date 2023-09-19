@@ -2,7 +2,7 @@ import os
 import shutil
 try:
     import psutil
-except:
+except ImportError:
     pass
 from PyQt5.QtWidgets import QMainWindow, QWidget, QTextBrowser
 from PyQt5 import QtWidgets, uic, QtCore
@@ -22,8 +22,11 @@ from aims.ui.main_ui_components.data_component import DataComponent
 from aims.ui.main_ui_components.disk_drives_component import DiskDrivesComponent
 from aims.ui.main_ui_components.upload_component import UploadComponent
 from aims.ui.main_ui_components.utils import clearLayout
-import win32file
-import win32api
+try:
+    import win32file
+    import win32api
+except ImportError:
+    pass
 from tzlocal import get_localzone
 import unicodedata
 from aims.ui import deselectable_tree_view
