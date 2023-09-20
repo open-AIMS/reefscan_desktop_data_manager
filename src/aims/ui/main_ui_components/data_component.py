@@ -20,7 +20,7 @@ from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 from reefscanner.basic_model.survey import Survey
 
-from aims import data_loader
+from aims import data_loader, utils
 from aims.state import state
 from aims.gui_model.lazy_list_model import LazyListModel
 from aims.gui_model.marks_model import MarksModel
@@ -546,7 +546,7 @@ class DataComponent(QObject):
                 os.startfile(self.mark_filename, "open")
 
     def enhanced_folder(self):
-        return self.survey().folder.replace("reefscan", "reefscan_enhanced")
+        return utils.replace_last(self.survey().folder, "/reefscan/", "/reefscan_enhanced/")
 
     def enhance_open_folder(self):
         os.startfile(self.enhanced_folder())

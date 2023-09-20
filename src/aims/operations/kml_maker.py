@@ -7,10 +7,12 @@ from reefscanner.basic_model.survey import Survey
 from shapely import Polygon, MultiPoint
 import alphashape
 
+from aims import utils
+
 logger = logging.getLogger("")
 def make_kml(survey: Survey):
     input_folder = survey.folder
-    output_folder = survey.folder.replace("/reefscan/", "/reefscan_kml/")
+    output_folder = utils.replace_last(survey.folder, "/reefscan/", "/reefscan_kml/")
     points = track(input_folder, False)
     os.makedirs(output_folder, exist_ok=True)
     kml_file_name = f"{output_folder}.kml"
