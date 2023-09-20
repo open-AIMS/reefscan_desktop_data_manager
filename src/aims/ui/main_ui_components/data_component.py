@@ -34,8 +34,24 @@ from aims2.operations2.camera_utils import delete_archives, get_kilo_bytes_used
 from aims2.reefcloud2.reefcloud_utils import create_reefcloud_site
 
 from aims.operations.enhance_photo_operation import EnhancePhotoOperation
-from aims.operations.inference_operation import InferenceOperation
-from aims.operations.chart_operation import ChartOperation
+
+"""
+Check if code is run through a pyinstaller executable.
+sys.frozen will be False if run through pyinstaller
+otherwise if it is True then it indicates that it is
+being run as a standalone script.
+
+If the code is run through a pyinstaller we would want to 
+disable the InferenceOperation and the related ChartOperation
+due to file size requirements, i.e. tensorflow is required for
+these operations but it is too large for the purposes
+of a pyinstaller executable
+"""
+import sys
+PYINSTALLER_COMPILED = getattr(sys, 'frozen')
+if not PYINSTALLER_COMPILED:
+    from aims.operations.inference_operation import InferenceOperation
+    from aims.operations.chart_operation import ChartOperation
 
 logger = logging.getLogger("")
 
@@ -200,8 +216,11 @@ class DataComponent(QObject):
 
         self.inference_widget.btnInferenceOpenFolder.clicked.connect(self.inference_open_folder)
         self.inference_widget.btnInferenceFolder.clicked.connect(self.inference_folder)
-
         self.hide_tab_by_tab_text('Chart')
+
+        if PYINSTALLER_COMPILED:
+            self.remove_tab_by_tab_text('Inference')
+            self.remove_tab_by_tab_text('Chart')
 
     def get_index_by_tab_text(self, name_of_tab):
         for i in range(self.data_widget.tabWidget.count()):
@@ -212,9 +231,14 @@ class DataComponent(QObject):
         index = self.get_index_by_tab_text(name_of_tab)
         self.data_widget.tabWidget.setTabEnabled(index, False)
 
+    def remove_tab_by_tab_text(self, name_of_tab):
+        index = self.get_index_by_tab_text(name_of_tab)
+        self.data_widget.tabWidget.removeTab(index)
+
     def show_tab_by_tab_text(self, name_of_tab):
         index = self.get_index_by_tab_text(name_of_tab)
         self.data_widget.tabWidget.setTabEnabled(index, True)
+    
     def collapseTrees(self):
         self.tree_collapsed = not self.tree_collapsed
         self.data_widget.treesWidget.setVisible(not self.tree_collapsed)
@@ -615,8 +639,8 @@ class DataComponent(QObject):
         pie_browser.setHtml(fig)
 
 
-    def load_inference_charts(self, coverage_results_file=''):
-        self.show_tab_by_tab_text('Chart')
+    def inference_open_folder(self):
+        os.startfile(self.survey().folder)
 
     def inference_folder(self):
         # output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'

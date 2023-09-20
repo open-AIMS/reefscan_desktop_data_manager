@@ -41,3 +41,4 @@ alphashape
 gpxpy
 pyping
 plotly
+ping3
