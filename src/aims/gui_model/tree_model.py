@@ -109,7 +109,7 @@ def checked_survey_ids(model, parent: QModelIndex = QModelIndex()):
     return surveys
 
 
-def checked_surveys(model) -> list[Survey]:
+def checked_surveys(model) -> list:
     survey_infos = checked_survey_ids(model)
     surveys = []
     for survey_info in survey_infos:

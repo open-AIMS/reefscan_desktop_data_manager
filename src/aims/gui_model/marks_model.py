@@ -6,6 +6,8 @@ import pandas as pd
 from pandas import DataFrame
 
 logger = logging.getLogger("")
+
+
 class MarksModel(QtCore.QAbstractTableModel):
     def __init__(self, survey_folder):
         self.survey_folder = survey_folder
@@ -13,8 +15,8 @@ class MarksModel(QtCore.QAbstractTableModel):
         try:
             self.data_frame = pd.read_csv(survey_folder + "/" + "marks.csv")
         except Exception as e:
-            self.data_frame:DataFrame = None
-            print (e)
+            self.data_frame: DataFrame = None
+            print(e)
 
     def photo_file(self, r):
         return self.survey_folder + "/" + self.data_frame["file"][r]
@@ -22,22 +24,20 @@ class MarksModel(QtCore.QAbstractTableModel):
     def photo_file_name(self, r):
         return self.data_frame["file"][r]
 
-
     def data(self, index: QModelIndex, role: int) -> any:
         row = index.row()
         col = index.column()
         if role == Qt.DisplayRole:
-            match col:
-                case 0:
-                    return self.data_frame["name"][row]
-                case 1:
-                    return self.data_frame["type"][row]
-                case 2:
-                    return self.data_frame["time"][row]
-                case 3:
-                    return str(self.data_frame["latitude"][row])
-                case 4:
-                    return str(self.data_frame["longitude"][row])
+            if col == 0:
+                return self.data_frame["name"][row]
+            elif col == 1:
+                return self.data_frame["type"][row]
+            elif col == 2:
+                return self.data_frame["time"][row]
+            elif col == 3:
+                return str(self.data_frame["latitude"][row])
+            elif col == 4:
+                return str(self.data_frame["longitude"][row])
         return QVariant()
 
     def hasData(self):
@@ -56,18 +56,16 @@ class MarksModel(QtCore.QAbstractTableModel):
     def flags(self, index):
         return Qt.ItemIsEnabled
 
-    def headerData(self, column, orientation, role=None):
+    def headerData(self, col, orientation, role=None):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            match column:
-                case 0:
-                    return "Name"
-                case 1:
-                    return "Type"
-                case 2:
-                    return "Time"
-                case 3:
-                    return "Latitude"
-                case 4:
-                    return "Longitude"
+            if col == 0:
+                return "Name"
+            elif col == 1:
+                return "Type"
+            elif col == 2:
+                return "Time"
+            elif col == 3:
+                return "Latitude"
+            elif col == 4:
+                return "Longitude"
         return QVariant()
-
