@@ -36,4 +36,4 @@ matplotlib
 shapely
 alphashape
 gpxpy
-pyping
+ping3
