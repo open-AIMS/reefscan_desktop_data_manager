@@ -7,7 +7,7 @@ shortuuid
 PyQtWebEngine
 reefscanner @ git+https://github.com/AIMS/reefscan-data-model@v1.1.2
 #reefscanner @ file:///C:/aa_git_root/techdev/reef_scanner_data_model/dist/reefscanner-1.1.1.2-py3-none-any.whl
-photoenhancer @ git+https://github.com/open-AIMS/photo_enhancer@v1.1.11
+photoenhancer @ git+https://github.com/open-AIMS/photo_enhancer@v1.1.12
 #photoenhancer @ file:///C:/aa_git_root/techdev/photo_enhancer/dist/photoenhancer-1.1.9.2-py3-none-any.whl
 #inferencer @ git+https://github.com/open-AIMS/reefscan_inference@main
 #inferencer @ file:///C:/aa_git_root/techdev/reefscan_inference/dist/inferencer-1.1.4.1-py3-none-any.whl
