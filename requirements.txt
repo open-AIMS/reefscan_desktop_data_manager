@@ -27,7 +27,7 @@ geopy
 jwt
 simplekml
 scipy
-opencv-python
+opencv-python-headless
 #tensorflow-cpu==2.9.2
 #keras==2.9
 #scikit-learn
