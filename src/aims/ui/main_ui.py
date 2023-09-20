@@ -235,7 +235,7 @@ class MainUi(QMainWindow):
         else:
             self.load_fixed_drives_mac()
 
-    def load_fixed_drives(self):
+    def load_fixed_drives_win32(self):
         drives = win32api.GetLogicalDriveStrings()
         drives = drives.split('\000')[:-1]
         self.fixed_drives = []
