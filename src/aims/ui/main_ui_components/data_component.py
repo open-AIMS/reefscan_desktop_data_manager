@@ -528,11 +528,11 @@ class DataComponent(QObject):
             label.setPixmap(pixmap)
 
     def open_folder(self):
-        os.startfile(self.survey().folder)
+        utils.open_file(self.survey().folder)
 
     def open_mark(self):
         if self.mark_filename is not None:
-            os.startfile(self.mark_filename)
+            utils.open_file(self.mark_filename)
 
     def open_mark_folder(self):
         if self.mark_filename is not None:
@@ -543,13 +543,13 @@ class DataComponent(QObject):
                 # logger.info(command)
                 subprocess.call(command)
             except:
-                os.startfile(self.mark_filename, "open")
+                utils.open_file(self.mark_filename, "open")
 
     def enhanced_folder(self):
         return utils.replace_last(self.survey().folder, "/reefscan/", "/reefscan_enhanced/")
 
     def enhance_open_folder(self):
-        os.startfile(self.enhanced_folder())
+        utils.open_file(self.enhanced_folder())
 
     def enhance_photos_folder(self):
         output_suffix = "_enh"
@@ -608,7 +608,7 @@ class DataComponent(QObject):
 
 
     def inference_open_folder(self):
-        os.startfile(self.survey().folder)
+        utils.open_file(self.survey().folder)
 
     def inference_folder(self):
         # output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'
