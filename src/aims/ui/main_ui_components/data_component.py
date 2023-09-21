@@ -48,15 +48,16 @@ these operations but it is too large for the purposes
 of a pyinstaller executable
 """
 import sys
+logger = logging.getLogger("")
+
 PYINSTALLER_COMPILED = getattr(sys, 'frozen', False)
 if not PYINSTALLER_COMPILED:
     try:
         from aims.operations.inference_operation import InferenceOperation
         from aims.operations.chart_operation import ChartOperation
-    except:
+    except Exception as e:
+        logger.error("Can't load inferencer", e)
         PYINSTALLER_COMPILED = True
-
-logger = logging.getLogger("")
 
 
 def utc_to_local(utc_str, timezone):

@@ -4,4 +4,4 @@ inferencer @ git+https://github.com/open-AIMS/reefscan_inference@main
 tensorflow-cpu==2.9.2
 keras==2.9
 scikit-learn
-#scipy
+plotly

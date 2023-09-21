@@ -14,6 +14,7 @@ smbprotocol
 fabric2
 psutil;sys_platform == 'linux'
 pywin32;sys_platform == 'windows'
+pywin32;sys_platform == 'win32'
 tzlocal
 boto3
 oauthlib==3.1.1
