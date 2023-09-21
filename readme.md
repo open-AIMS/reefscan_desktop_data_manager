@@ -30,6 +30,7 @@ These are the values for the three edit boxes
 1. $ProjectFileDir$    
 
 # Create executable  
+pip pinstall -r requirements.txt 
 On Windows:  
 `pyinstaller reefscan-transom.spec`
 or
@@ -53,3 +54,12 @@ this will update src/resources/eng-vi.ts
 Install QT and use QT linguist to edit and release the file. That will create a .qm file 
 
 Test in vietnamese by running main.py with a command line parameter "viet"
+
+# EOD processing (inferencing)
+For installing on the CCIP end of day processing computer, also install the following dependencies
+
+pip install -r requirements-eod.txt
+
+But remove these if you want to make an executable
+pip uninstall -r requirements-eod.txt
+
