@@ -48,10 +48,13 @@ these operations but it is too large for the purposes
 of a pyinstaller executable
 """
 import sys
-PYINSTALLER_COMPILED = getattr(sys, 'frozen')
+PYINSTALLER_COMPILED = getattr(sys, 'frozen', False)
 if not PYINSTALLER_COMPILED:
-    from aims.operations.inference_operation import InferenceOperation
-    from aims.operations.chart_operation import ChartOperation
+    try:
+        from aims.operations.inference_operation import InferenceOperation
+        from aims.operations.chart_operation import ChartOperation
+    except:
+        PYINSTALLER_COMPILED = True
 
 logger = logging.getLogger("")
 
