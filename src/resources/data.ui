@@ -352,7 +352,7 @@ QGroupBox::title{
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>7</number>
      </property>
      <widget class="QWidget" name="empty_tab">
       <attribute name="title">
@@ -474,6 +474,12 @@ QGroupBox::title{
        <string>Inference</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_9"/>
+     </widget>
+     <widget class="QWidget" name="eod_cots_tab">
+      <attribute name="title">
+       <string>End-Of-Day-COTS</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_11"/>
      </widget>
     </widget>
    </item>

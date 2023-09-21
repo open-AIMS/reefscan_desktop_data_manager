@@ -78,7 +78,9 @@ class MainUi(QMainWindow):
 
         self.ui.setWindowState(self.ui.windowState() | Qt.WindowMaximized)
 
-        self.data_component = DataComponent(hint_function=self.hint)
+        self.data_component = DataComponent(hint_function=self.hint,
+                                            disable_all_workflow_buttons=self.disable_all_workflow_buttons,
+                                            enable_workflow_buttons=self.enable_workflow_buttons)
         self.upload_component = UploadComponent(hint_function=self.hint)
         self.disk_drives_component = DiskDrivesComponent(hint_function=self.hint)
         self.reefcloud_connect_component = ReefcloudConnectComponent(hint_function=self.hint)
