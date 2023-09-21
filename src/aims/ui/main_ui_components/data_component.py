@@ -34,7 +34,27 @@ from aims2.operations2.camera_utils import delete_archives, get_kilo_bytes_used
 from aims2.reefcloud2.reefcloud_utils import create_reefcloud_site
 
 from aims.operations.enhance_photo_operation import EnhancePhotoOperation
-# from aims.operations.inference_operation import InferenceOperation
+
+"""
+Check if code is run through a pyinstaller executable.
+sys.frozen will be False if run through pyinstaller
+otherwise if it is True then it indicates that it is
+being run as a standalone script.
+
+If the code is run through a pyinstaller we would want to 
+disable the InferenceOperation and the related ChartOperation
+due to file size requirements, i.e. tensorflow is required for
+these operations but it is too large for the purposes
+of a pyinstaller executable
+"""
+import sys
+PYINSTALLER_COMPILED = getattr(sys, 'frozen', False)
+if not PYINSTALLER_COMPILED:
+    try:
+        from aims.operations.inference_operation import InferenceOperation
+        from aims.operations.chart_operation import ChartOperation
+    except:
+        PYINSTALLER_COMPILED = True
 
 logger = logging.getLogger("")
 
@@ -192,37 +212,36 @@ class DataComponent(QObject):
 
         self.enhance_widget.btnEnhanceOpenFolder.clicked.connect(self.enhance_open_folder)
         self.enhance_widget.btnEnhanceFolder.clicked.connect(self.enhance_photos_folder)
-        # self.enhance_widget.textEditSuffix.setPlainText("")
-        # self.enhance_widget.textEditOutputFolder.setPlainText("enhanced")
+
         self.enhance_widget.textEditCPULoad.setPlainText("0.8")
-        # self.enhance_widget.checkBoxOutputFolder.setChecked(False)
-        # self.enhance_widget.checkBoxSuffix.setChecked(False)
         self.enhance_widget.checkBoxDisableDenoising.setChecked(False)
         self.enhance_widget.checkBoxDisableDehazing.setChecked(False)
-        # self.enhance_widget.textEditOutputFolder.setEnabled(False)
-        # self.enhance_widget.textEditSuffix.setEnabled(False)
-
-        # self.enhance_widget.checkBoxOutputFolder.stateChanged.connect(self.enhance_widget_cb_outputfolder_changed)
-        # self.enhance_widget.checkBoxSuffix.stateChanged.connect(self.enhance_widget_cb_suffix_changed)
 
         self.inference_widget.btnInferenceOpenFolder.clicked.connect(self.inference_open_folder)
         self.inference_widget.btnInferenceFolder.clicked.connect(self.inference_folder)
-        # self.inference_widget.textEditOutputFolder.setPlainText("inference_results")
-        # self.inference_widget.checkBoxOutputFolder.setChecked(False)
-        # self.inference_widget.textEditOutputFolder.setEnabled(False)
+        self.hide_tab_by_tab_text('Chart')
 
-        # self.inference_widget.checkBoxOutputFolder.stateChanged.connect(self.inference_widget_cb_outputfolder_changed)
+        if PYINSTALLER_COMPILED:
+            self.remove_tab_by_tab_text('Inference')
+            self.remove_tab_by_tab_text('Chart')
 
+    def get_index_by_tab_text(self, name_of_tab):
+        for i in range(self.data_widget.tabWidget.count()):
+            if self.data_widget.tabWidget.tabText(i) == name_of_tab:
+                return i  
 
-    # def enhance_widget_cb_suffix_changed(self, state):
-    #     self.enhance_widget.textEditSuffix.setEnabled(state != 0)
+    def hide_tab_by_tab_text(self, name_of_tab):
+        index = self.get_index_by_tab_text(name_of_tab)
+        self.data_widget.tabWidget.setTabEnabled(index, False)
 
-    # def enhance_widget_cb_outputfolder_changed(self, state):
-    #     self.enhance_widget.textEditOutputFolder.setEnabled(state != 0)
+    def remove_tab_by_tab_text(self, name_of_tab):
+        index = self.get_index_by_tab_text(name_of_tab)
+        self.data_widget.tabWidget.removeTab(index)
 
-    # def inference_widget_cb_outputfolder_changed(self, state):
-    #     self.inference_widget.textEditOutputFolder.setEnabled(state != 0)
-
+    def show_tab_by_tab_text(self, name_of_tab):
+        index = self.get_index_by_tab_text(name_of_tab)
+        self.data_widget.tabWidget.setTabEnabled(index, True)
+    
     def collapseTrees(self):
         self.tree_collapsed = not self.tree_collapsed
         self.data_widget.treesWidget.setVisible(not self.tree_collapsed)
@@ -230,7 +249,7 @@ class DataComponent(QObject):
             self.data_widget.collapseTreeButton.setText(">>")
         else:
             self.data_widget.collapseTreeButton.setText("<<")
-
+    
     def add_new_reefcloud_site(self):
         project = self.metadata_widget.cb_reefcloud_project.currentText()
         site = self.metadata_widget.ed_site.text()
@@ -607,39 +626,58 @@ class DataComponent(QObject):
                 self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
 
 
+    def load_inference_charts(self, coverage_results_file=''):
+        self.show_tab_by_tab_text('Chart')
+
+        self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
+                                                     self.data_widget.chart_tab)
+        
+        pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
+
+        vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
+        vlayout.addWidget(pie_browser)        
+
+        chart_operation = ChartOperation()
+        fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
+        pie_browser.setHtml(fig)
+
+
     def inference_open_folder(self):
         os.startfile(self.survey().folder)
 
     def inference_folder(self):
         # output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'
-        raise Exception("Inference not available")
 
-        # output_folder = 'inference_results'
-        #
-        # self.inference_widget.textBrowser.append("Inferencer starting")
-        # self.inference_widget.textBrowser.append(f"Inferenced photos will be saved in the folder \'{output_folder}\'")
-        #
-        # QApplication.processEvents()
-        #
-        # inference_operation = InferenceOperation(target=self.survey().folder,
-        #                                           target_results_folder_name=output_folder)
-        #
-        # inference_operation.update_interval = 1
-        # self.aims_status_dialog.set_operation_connections(inference_operation)
-        # inference_operation.set_msg_function(lambda msg: self.inference_widget.textBrowser.append(msg))
-        # # # operation.after_run.connect(self.after_sync)
-        # logger.info("done connections")
-        # result = self.aims_status_dialog.threadPool.apply_async(inference_operation.run)
-        # logger.info("thread started")
-        # while not result.ready():
-        #     QApplication.processEvents()
-        # logger.info("thread finished")
-        # self.aims_status_dialog.close()
-        #
-        # if inference_operation.batch_monitor.cancelled:
-        #     self.inference_widget.textBrowser.append("Inferencer was cancelled")
-        # else:
-        #     self.inference_widget.textBrowser.append("Inferencer finished")
+        output_folder = 'inference_results'
+
+        self.inference_widget.textBrowser.append("Inferencer starting")
+        self.inference_widget.textBrowser.append(f"Inferenced photos will be saved in the folder \'{output_folder}\'")
+
+        QApplication.processEvents()
+
+        inference_operation = InferenceOperation(target=self.survey().folder,
+                                                  target_results_folder_name=output_folder)
+
+        inference_operation.update_interval = 1
+        self.aims_status_dialog.set_operation_connections(inference_operation)
+        inference_operation.set_msg_function(lambda msg: self.inference_widget.textBrowser.append(msg))
+        # # operation.after_run.connect(self.after_sync)
+        logger.info("done connections")
+        result = self.aims_status_dialog.threadPool.apply_async(inference_operation.run)
+        logger.info("thread started")
+        while not result.ready():
+            QApplication.processEvents()
+        logger.info("thread finished")
+        self.aims_status_dialog.close()
+
+        if inference_operation.batch_monitor.cancelled:
+            self.inference_widget.textBrowser.append("Inferencer was cancelled")
+        else:
+            self.inference_widget.textBrowser.append("Inferencer finished")
+
+        coverage_file = inference_operation.get_coverage_filepath()
+        self.inference_widget.textBrowser.append(f'Pie Chart from {coverage_file}')
+        self.load_inference_charts(coverage_file)
 
     def camera_tree_selection_changed(self, item_selection: QItemSelection):
         logger.info("camera tree changed")
