@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>769</width>
-    <height>552</height>
+    <height>660</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -20,15 +20,8 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="10" column="0" colspan="2">
+   <item row="9" column="0" colspan="2">
     <widget class="QTextBrowser" name="textBrowser"/>
-   </item>
-   <item row="9" column="0">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>Message Box</string>
-     </property>
-    </widget>
    </item>
    <item row="7" column="0" colspan="2">
     <widget class="QPushButton" name="btnInferenceFolder">
@@ -49,7 +42,14 @@
      </property>
     </widget>
    </item>
-   <item row="11" column="0" colspan="2">
+   <item row="8" column="1">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0" colspan="2">
     <widget class="QPushButton" name="btnInferenceOpenFolder">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -62,10 +62,10 @@
      </property>
     </widget>
    </item>
-   <item row="9" column="1">
-    <widget class="QLabel" name="label">
+   <item row="8" column="0">
+    <widget class="QLabel" name="label_3">
      <property name="text">
-      <string/>
+      <string>Message Box</string>
      </property>
     </widget>
    </item>
