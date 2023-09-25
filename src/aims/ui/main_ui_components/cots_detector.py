@@ -65,10 +65,11 @@ class CotsDetector:
     def callProgram(self, survey_path):
         # run the process
         # `start` takes the exec and a list of arguments
+        script = "/home/reefscan/cots-detector.sh"
         output_path = utils.replace_last(survey_path, "/reefscan/", "/reefscan_eod_cots/")
-        print("Ping me")
-        self.output.append(f"cots_detector.sh {survey_path} {output_path}")
-        self.process.start("cots_detector.sh", [survey_path, output_path])
+        input_path = survey_path
+        self.output.append(f'bash {script} "{input_path}" "{output_path}"')
+        self.process.start("bash", [script, input_path, output_path])
 
 # cancel the process
     def cancel(self):
