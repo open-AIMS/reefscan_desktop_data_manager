@@ -10,7 +10,7 @@ import requests
 surveys_folder = "surveys"
 
 logger = logging.getLogger("")
-def check_reefcloud_metadata(surveys: list[Survey]):
+def check_reefcloud_metadata(surveys: list):
     for survey in surveys:
         best_name = survey.best_name()
 

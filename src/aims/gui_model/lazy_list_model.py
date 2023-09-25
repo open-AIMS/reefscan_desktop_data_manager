@@ -120,8 +120,11 @@ class LazyListModel (QAbstractListModel):
 
     def interrupt(self):
         self.thumbnailMaker.interrupted = True
+        logger.info("will quit")
         self.thumbnailMaker.quit()
-        self.thumbnailMaker.terminate()
+        logger.info("have quit")
+        # self.thumbnailMaker.terminate()
+        logger.info("have terminated")
 
 
     @pyqtSlot(NameAndIcon)
