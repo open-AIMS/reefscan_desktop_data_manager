@@ -21,8 +21,6 @@ boto3
 oauthlib==3.1.1
 requests==2.25.1
 requests-oauthlib==1.3.0
-#pywin32==304
-#pywin32-ctypes==0.2.0
 geopy
 jwt
 simplekml
