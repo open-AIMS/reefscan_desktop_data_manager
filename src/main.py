@@ -89,8 +89,6 @@ if __name__ == "__main__":
     simulated.set_simulated()
 
     logger.info(state.meipass)
-    files = glob.glob(state.meipass + '**/*', recursive=True)
-    logger.info(files)
 
     app = QtWidgets.QApplication(sys.argv)
     logger.info(app.font().pointSize())
@@ -117,7 +115,9 @@ if __name__ == "__main__":
 
 
     try:
-        state.config.set_deep(sys.argv[0].lower().endswith("reefscan-deep.exe"))
+        state.config.set_deep(sys.argv[0].lower().endswith("reefscan-deep.exe")
+                              or (len(sys.argv) > 1 and sys.argv[1].lower() == "deep")
+                              )
 
         dev = len(sys.argv) > 1 and "dev" in sys.argv
         clear_reefcloud = len(sys.argv) > 1 and "clear_reefcloud" in sys.argv
