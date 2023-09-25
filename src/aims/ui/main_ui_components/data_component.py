@@ -249,13 +249,14 @@ class DataComponent(QObject):
     def remove_tab_by_tab_text(self, name_of_tab):
         index = self.get_index_by_tab_text(name_of_tab)
         self.data_widget.tabWidget.removeTab(index)
-    def detect_cots(self):
-        logger.info("Detect COTS")
-        self.cots_detector.callProgram(self.survey().folder)
 
     def show_tab_by_tab_text(self, name_of_tab):
         index = self.get_index_by_tab_text(name_of_tab)
         self.data_widget.tabWidget.setTabEnabled(index, True)
+
+    def detect_cots(self):
+        logger.info("Detect COTS")
+        self.cots_detector.callProgram(self.survey().folder)
 
     def cancel_detect(self):
         logger.info("cancelled detector")
@@ -265,11 +266,13 @@ class DataComponent(QObject):
         self.eod_cots_widget.detectCotsButton.setEnabled(False)
         self.eod_cots_widget.cancelButton.setEnabled(True)
         self.disable_all_workflow_buttons()
+        self.data_widget.tabWidget.setEnabled(False)
 
     def enable_cots_detector(self):
         self.eod_cots_widget.detectCotsButton.setEnabled(True)
         self.eod_cots_widget.cancelButton.setEnabled(False)
         self.enable_workflow_buttons()
+        self.data_widget.tabWidget.setEnabled(True)
 
     def collapseTrees(self):
         self.tree_collapsed = not self.tree_collapsed
