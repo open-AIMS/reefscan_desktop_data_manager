@@ -1,5 +1,4 @@
 import logging
-import string
 import threading
 import time
 
@@ -24,7 +23,7 @@ class ArchiveChecker(QObject):
     def check(self):
         logger.info("do the check")
         self.running = True
-        self.archive_stats.get_archive_stats(state.model)
+        self.archive_stats.get_archive_stats(state.model, hardware_folder=state.config.hardware_data_folder)
         self.running = False
 
     def report(self):
