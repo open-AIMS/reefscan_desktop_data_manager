@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QTextEdit, QTextBrowser
 
 from aims import utils
 
-# Uses a QProcess to start the COTS detector shellf script
+# Uses a QProcess to start the COTS detector shell script
 # QProcess is designed to start in a separate thread and provides signals and slots to monitor and control the process
 
 class CotsDetector:
