@@ -54,7 +54,8 @@ logger = logging.getLogger("")
 PYINSTALLER_COMPILED = getattr(sys, 'frozen', False)
 if not PYINSTALLER_COMPILED:
     try:
-        from aims.operations.inference_operation import InferenceOperation
+        from aims.operations.inference_operation import InferenceOperation, inference_result_folder, \
+    inference_output_coverage_file
         from aims.operations.chart_operation import ChartOperation
     except Exception as e:
         logger.error("Can't load inferencer", e)
@@ -225,7 +226,6 @@ class DataComponent(QObject):
 
         self.inference_widget.btnInferenceOpenFolder.clicked.connect(self.inference_open_folder)
         self.inference_widget.btnInferenceFolder.clicked.connect(self.inference_folder)
-        self.hide_tab_by_tab_text('Chart')
 
         if PYINSTALLER_COMPILED:
             self.remove_tab_by_tab_text('Inference')
@@ -652,24 +652,28 @@ class DataComponent(QObject):
                 self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
 
 
-    def load_inference_charts(self, coverage_results_file=''):
-        self.show_tab_by_tab_text('Chart')
+    def load_inference_charts(self):
+        coverage_results_file = inference_output_coverage_file(self.survey().folder)
+        if os.path.exists(coverage_results_file):
+            self.show_tab_by_tab_text('Chart')
 
-        self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
-                                                     self.data_widget.chart_tab)
+            self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
+                                                         self.data_widget.chart_tab)
 
-        pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
+            pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
 
-        vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
-        vlayout.addWidget(pie_browser)
+            vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
+            vlayout.addWidget(pie_browser)
 
-        chart_operation = ChartOperation()
-        fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
-        pie_browser.setHtml(fig)
+            chart_operation = ChartOperation()
+            fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
+            pie_browser.setHtml(fig)
+        else:
+            self.hide_tab_by_tab_text('Chart')
 
 
     def inference_open_folder(self):
-        utils.open_file(self.survey().folder)
+        utils.open_file(inference_result_folder(self.survey().folder))
 
     def inference_folder(self):
         # output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'
@@ -681,8 +685,7 @@ class DataComponent(QObject):
 
         QApplication.processEvents()
 
-        inference_operation = InferenceOperation(target=self.survey().folder,
-                                                  target_results_folder_name=output_folder)
+        inference_operation = InferenceOperation(target=self.survey().folder)
 
         inference_operation.update_interval = 1
         self.aims_status_dialog.set_operation_connections(inference_operation)
@@ -813,6 +816,7 @@ class DataComponent(QObject):
                 logger.info(f"Error loading map\n{e}")
             self.load_thumbnails()
             self.load_marks()
+            self.load_inference_charts()
 
         self.set_hint()
 
