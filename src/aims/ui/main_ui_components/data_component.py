@@ -20,7 +20,7 @@ from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 from reefscanner.basic_model.survey import Survey
 
-from aims import data_loader
+from aims import data_loader, utils
 from aims.state import state
 from aims.gui_model.lazy_list_model import LazyListModel
 from aims.gui_model.marks_model import MarksModel
@@ -48,15 +48,16 @@ these operations but it is too large for the purposes
 of a pyinstaller executable
 """
 import sys
+logger = logging.getLogger("")
+
 PYINSTALLER_COMPILED = getattr(sys, 'frozen', False)
 if not PYINSTALLER_COMPILED:
     try:
         from aims.operations.inference_operation import InferenceOperation
         from aims.operations.chart_operation import ChartOperation
-    except:
+    except Exception as e:
+        logger.error("Can't load inferencer", e)
         PYINSTALLER_COMPILED = True
-
-logger = logging.getLogger("")
 
 
 def utc_to_local(utc_str, timezone):
@@ -547,11 +548,11 @@ class DataComponent(QObject):
             label.setPixmap(pixmap)
 
     def open_folder(self):
-        os.startfile(self.survey().folder)
+        utils.open_file(self.survey().folder)
 
     def open_mark(self):
         if self.mark_filename is not None:
-            os.startfile(self.mark_filename)
+            utils.open_file(self.mark_filename)
 
     def open_mark_folder(self):
         if self.mark_filename is not None:
@@ -562,13 +563,13 @@ class DataComponent(QObject):
                 # logger.info(command)
                 subprocess.call(command)
             except:
-                os.startfile(self.mark_filename, "open")
+                utils.open_file(self.mark_filename, "open")
 
     def enhanced_folder(self):
-        return self.survey().folder.replace("reefscan", "reefscan_enhanced")
+        return utils.replace_last(self.survey().folder, "/reefscan/", "/reefscan_enhanced/")
 
     def enhance_open_folder(self):
-        os.startfile(self.enhanced_folder())
+        utils.open_file(self.enhanced_folder())
 
     def enhance_photos_folder(self):
         output_suffix = "_enh"
@@ -643,7 +644,7 @@ class DataComponent(QObject):
 
 
     def inference_open_folder(self):
-        os.startfile(self.survey().folder)
+        utils.open_file(self.survey().folder)
 
     def inference_folder(self):
         # output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'

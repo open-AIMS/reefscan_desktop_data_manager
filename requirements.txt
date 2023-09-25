@@ -7,12 +7,14 @@ shortuuid
 PyQtWebEngine
 reefscanner @ git+https://github.com/AIMS/reefscan-data-model@v1.1.2
 #reefscanner @ file:///C:/aa_git_root/techdev/reef_scanner_data_model/dist/reefscanner-1.1.1.2-py3-none-any.whl
-photoenhancer @ git+https://github.com/open-AIMS/photo_enhancer@v1.1.11
+photoenhancer @ git+https://github.com/open-AIMS/photo_enhancer@v1.1.12
 #photoenhancer @ file:///C:/aa_git_root/techdev/photo_enhancer/dist/photoenhancer-1.1.9.2-py3-none-any.whl
 pandas
 smbprotocol
 fabric2
-pywin32
+psutil;sys_platform == 'linux'
+pywin32;sys_platform == 'windows'
+pywin32;sys_platform == 'win32'
 tzlocal
 boto3
 oauthlib==3.1.1
@@ -21,7 +23,7 @@ requests-oauthlib==1.3.0
 geopy
 jwt
 simplekml
-opencv-python
+opencv-python-headless
 glob2
 matplotlib
 #reefscanner @ file:///C:/Users/pteneder/Documents/reefscan_desktop_integrations/reefscan_desktop_data_manager/reefscanner-1.0.4.1-py3-none-any.whl
@@ -29,6 +31,4 @@ matplotlib
 shapely
 alphashape
 gpxpy
-pyping
-plotly
 ping3

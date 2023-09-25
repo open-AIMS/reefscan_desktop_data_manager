@@ -3,6 +3,7 @@ import os
 from PyQt5.QtCore import QObject
 from PyQt5.QtWidgets import QFileDialog
 
+from aims import utils
 from aims.operations.kml_to_geojson import make_geojson
 
 
@@ -61,7 +62,7 @@ class RoutesComponent(QObject):
         self.set_hint()
 
     def open_folder(self):
-        os.startfile(self.widget.outputFolderLabel.text().strip())
+        utils.open_file(self.widget.outputFolderLabel.text().strip())
 
 
 
