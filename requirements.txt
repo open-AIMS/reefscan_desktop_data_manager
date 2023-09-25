@@ -24,12 +24,6 @@ geopy
 jwt
 simplekml
 opencv-python-headless
-#tensorflow-cpu==2.9.2
-#keras==2.9
-#scikit-learn
-=========
-opencv-python
->>>>>>>>> Temporary merge branch 2
 glob2
 matplotlib
 #reefscanner @ file:///C:/Users/pteneder/Documents/reefscan_desktop_integrations/reefscan_desktop_data_manager/reefscanner-1.0.4.1-py3-none-any.whl
