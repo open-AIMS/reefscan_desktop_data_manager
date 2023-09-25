@@ -26,6 +26,7 @@ from aims.gui_model.lazy_list_model import LazyListModel
 from aims.gui_model.marks_model import MarksModel
 from aims.gui_model.tree_model import TreeModelMaker, checked_survey_ids
 from aims.operations.kml_maker import make_kml
+from aims.ui.main_ui_components.cots_detector import CotsDetector
 from aims2.operations2.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.stats.survey_stats import SurveyStats
 from aims.ui.main_ui_components.utils import clearLayout
@@ -71,7 +72,7 @@ def utc_to_local(utc_str, timezone):
 
 
 class DataComponent(QObject):
-    def __init__(self, hint_function):
+    def __init__(self, hint_function, disable_all_workflow_buttons, enable_workflow_buttons):
         super().__init__()
         self.data_widget = None
         self.metadata_widget = None
@@ -92,10 +93,16 @@ class DataComponent(QObject):
         self.time_zone = None
         self.site_lookup = {}
         self.hint_function = hint_function
+        # for long running processes we can disable the workflow buttons
+        # and enable them when the process is complete
+        self.disable_all_workflow_buttons = disable_all_workflow_buttons
+        self.enable_workflow_buttons = enable_workflow_buttons
 
         self.clipboard: typing.Optional[Survey] = None
         self.current_tab = 2
         self.tree_collapsed = False
+        self.cots_detector: CotsDetector = None
+
 
     def tab_changed(self, index):
         logger.info(index)
@@ -160,6 +167,8 @@ class DataComponent(QObject):
                                                      self.data_widget.marks_tab)
         self.enhance_widget = self.load_sequence_frame(f'{state.meipass}resources/enhance.ui',
                                                      self.data_widget.enhance_tab)
+        self.eod_cots_widget = self.load_sequence_frame(f'{state.meipass}resources/eod_cots.ui',
+                                                     self.data_widget.eod_cots_tab)
         self.inference_widget = self.load_sequence_frame(f'{state.meipass}resources/inference.ui',
                                                      self.data_widget.inference_tab)
 
@@ -169,10 +178,6 @@ class DataComponent(QObject):
                                                         self.data_widget.metadata_tab)
         self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui',
                                                      self.data_widget.marks_tab)
-        self.enhance_widget = self.load_sequence_frame(f'{state.meipass}resources/enhance.ui',
-                                                     self.data_widget.enhance_tab)
-        self.inference_widget = self.load_sequence_frame(f'{state.meipass}resources/inference.ui',
-                                                     self.data_widget.inference_tab)
 
         self.lookups()
         self.data_widget.tabWidget.currentChanged.connect(self.tab_changed)
@@ -226,10 +231,17 @@ class DataComponent(QObject):
             self.remove_tab_by_tab_text('Inference')
             self.remove_tab_by_tab_text('Chart')
 
+        self.eod_cots_widget.detectCotsButton.clicked.connect(self.detect_cots)
+        self.eod_cots_widget.cancelButton.clicked.connect(self.cancel_detect)
+        self.cots_detector = CotsDetector(output=self.eod_cots_widget.detectorOutput,
+                                          parent=self,
+                                          enable_function=self.enable_cots_detector,
+                                          disable_function=self.disable_cots_detector)
+
     def get_index_by_tab_text(self, name_of_tab):
         for i in range(self.data_widget.tabWidget.count()):
             if self.data_widget.tabWidget.tabText(i) == name_of_tab:
-                return i  
+                return i
 
     def hide_tab_by_tab_text(self, name_of_tab):
         index = self.get_index_by_tab_text(name_of_tab)
@@ -242,7 +254,27 @@ class DataComponent(QObject):
     def show_tab_by_tab_text(self, name_of_tab):
         index = self.get_index_by_tab_text(name_of_tab)
         self.data_widget.tabWidget.setTabEnabled(index, True)
-    
+
+    def detect_cots(self):
+        logger.info("Detect COTS")
+        self.cots_detector.callProgram(self.survey().folder)
+
+    def cancel_detect(self):
+        logger.info("cancelled detector")
+        self.cots_detector.cancel()
+
+    def disable_cots_detector(self):
+        self.eod_cots_widget.detectCotsButton.setEnabled(False)
+        self.eod_cots_widget.cancelButton.setEnabled(True)
+        self.disable_all_workflow_buttons()
+        self.data_widget.tabWidget.setEnabled(False)
+
+    def enable_cots_detector(self):
+        self.eod_cots_widget.detectCotsButton.setEnabled(True)
+        self.eod_cots_widget.cancelButton.setEnabled(False)
+        self.enable_workflow_buttons()
+        self.data_widget.tabWidget.setEnabled(True)
+
     def collapseTrees(self):
         self.tree_collapsed = not self.tree_collapsed
         self.data_widget.treesWidget.setVisible(not self.tree_collapsed)
@@ -250,7 +282,7 @@ class DataComponent(QObject):
             self.data_widget.collapseTreeButton.setText(">>")
         else:
             self.data_widget.collapseTreeButton.setText("<<")
-    
+
     def add_new_reefcloud_site(self):
         project = self.metadata_widget.cb_reefcloud_project.currentText()
         site = self.metadata_widget.ed_site.text()
@@ -583,14 +615,8 @@ class DataComponent(QObject):
         if not disable_dehazing:
             output_suffix = output_suffix + "_dehaze"
 
-        # output_folder = self.enhance_widget.textEditOutputFolder.toPlainText() if self.enhance_widget.checkBoxOutputFolder.isChecked() else 'enhanced'
-        # output_suffix = self.enhance_widget.textEditSuffix.toPlainText() if self.enhance_widget.checkBoxSuffix.isChecked() else None
-
         self.enhance_widget.textBrowser.append("Photoenhancer starting")
         self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved in the folder \'{output_folder}\'")
-        # if self.enhance_widget.checkBoxSuffix.isChecked():
-        #     self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved with the suffix \'_{output_suffix}\'")
-        #     self.enhance_widget.textBrowser.append(f"Enhanced photos will be saved with the suffix \'_{output_suffix}\'")
         if self.enhance_widget.checkBoxDisableDenoising.isChecked():
             self.enhance_widget.textBrowser.append("Denoising step is skipped for faster performance.")
         if self.enhance_widget.checkBoxDisableDehazing.isChecked():
@@ -598,7 +624,6 @@ class DataComponent(QObject):
 
 
         QApplication.processEvents()
-        # photoenhance(target=self.survey().folder, load=float(cpu_load_string), suffix=output_suffix, stronger_contrast_deep=str(stronger_enhancement), disable_denoising=str(disable_denoising))
 
         enhance_operation = EnhancePhotoOperation(target=self.survey().folder,
                                                   load=float(cpu_load_string),
@@ -632,11 +657,11 @@ class DataComponent(QObject):
 
         self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
                                                      self.data_widget.chart_tab)
-        
+
         pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
 
         vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
-        vlayout.addWidget(pie_browser)        
+        vlayout.addWidget(pie_browser)
 
         chart_operation = ChartOperation()
         fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)

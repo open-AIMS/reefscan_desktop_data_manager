@@ -1,7 +1,7 @@
 inferencer @ git+https://github.com/open-AIMS/reefscan_inference@main
 #inferencer @ file:///C:/aa_git_root/techdev/reefscan_inference/dist/inferencer-1.1.4.1-py3-none-any.whl
 #inferencer @ file:///C:/Users/pteneder/Documents/reefscan_desktop_integrations/reefscan_desktop_data_manager/inferencer-1.1.5-py3-none-any.whl
-tensorflow-cpu==2.9.2
+tensorflow==2.9.2
 keras==2.9
 scikit-learn
 plotly
