@@ -70,6 +70,8 @@ class CotsDetector:
         input_path = survey_path
         self.output.append(f'bash {script} "{input_path}" "{output_path}"')
         self.process.start("bash", [script, input_path, output_path])
+# leaving this here because it is useful while testing on windows
+#        self.process.start("ping", ["127.0.0.1"])
 
 # cancel the process
     def cancel(self):
