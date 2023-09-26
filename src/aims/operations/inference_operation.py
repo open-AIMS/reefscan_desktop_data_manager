@@ -13,7 +13,18 @@ from inferencer.batch_monitor import BatchMonitor
 
 import csv
 
+from aims.utils import replace_last
+
 logger = logging.getLogger("")
+
+
+def inference_result_folder(target):
+    return replace_last(target, "/reefscan/", "/reefscan_inference/")
+
+
+def inference_output_coverage_file(target):
+    return os.path.join(inference_result_folder(target), 'coverage.csv')
+
 
 class InferenceOperation(AbstractOperation):
     msg_func = lambda msg: None
@@ -25,25 +36,19 @@ class InferenceOperation(AbstractOperation):
 
     TEST_IMAGES_PATH = 'C:\\reefscan\\reefscan-inf-test-images'
 
-    def __init__(self, target=TEST_IMAGES_PATH, target_results_folder_name='results', points_csv_file='', output_results_file='', output_coverage_file=''):
+    def __init__(self, target=TEST_IMAGES_PATH):
         super().__init__()
         self.target = target
 
-        results_folder = os.path.join(target, target_results_folder_name)
+        results_folder = inference_result_folder(target)
         features_folder = os.path.join(results_folder, 'features')
 
         os.makedirs(results_folder, exist_ok=True)
         os.makedirs(features_folder, exist_ok=True)
 
-        if output_results_file:
-            self.output_results_file = output_results_file
-        else:
-            self.output_results_file = os.path.join(results_folder, 'results.csv')
+        self.output_results_file = os.path.join(results_folder, 'results.csv')
  
-        if output_coverage_file:
-            self.output_coverage_file = output_coverage_file
-        else:
-            self.output_coverage_file = os.path.join(results_folder, 'coverage.csv')
+        self.output_coverage_file = inference_output_coverage_file(target)
 
         self.features_path = os.path.join(features_folder, 'features.csv')
         self.temp_features_path = os.path.join(features_folder, 'temp_features.csv')
