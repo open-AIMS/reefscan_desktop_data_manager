@@ -45,6 +45,7 @@ class EnhancePhotoOperation(AbstractOperation):
         t.join()
 
     def cancel(self):
+        super().cancel()
         logger.info("enhance photo operation says cancel")
         self.batch_monitor.set_cancelled()
         if self.msg_func is not None:

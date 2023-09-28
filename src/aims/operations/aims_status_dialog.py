@@ -26,7 +26,7 @@ class AimsStatusDialog(QObject):
         self.progress_dialog.setMinimumDuration(10)
         self.progress_dialog.setWindowModality(Qt.WindowModal)
         # self.progress_dialog.setAutoClose(True)
-        self.progress_dialog.setAttribute(Qt.WA_DeleteOnClose, True);
+        self.progress_dialog.setAttribute(Qt.WA_DeleteOnClose, True)
 
     def set_progress_value(self, params):
         (i, label) = params
@@ -54,6 +54,9 @@ class AimsStatusDialog(QObject):
         operation.exception.connect(self.throw_exception)
 
     def close(self):
+        # Close seems to trigger the cancel signal and sometimes we need to know
+        # that the job was cancelled by the user
+        self.progress_dialog.canceled.disconnect(self.operation.cancel)
         self.progress_dialog.close()
         # timer = Timer(0.5, self.progress_dialog.close)
         # timer.start()
