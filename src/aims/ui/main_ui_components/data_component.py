@@ -75,7 +75,7 @@ def utc_to_local(utc_str, timezone):
 
 
 class DataComponent(QObject):
-    def __init__(self, hint_function, disable_all_workflow_buttons, enable_workflow_buttons):
+    def __init__(self, hint_function):
         super().__init__()
         self.data_widget = None
         self.metadata_widget = None
@@ -96,10 +96,6 @@ class DataComponent(QObject):
         self.time_zone = None
         self.site_lookup = {}
         self.hint_function = hint_function
-        # for long running processes we can disable the workflow buttons
-        # and enable them when the process is complete
-        self.disable_all_workflow_buttons = disable_all_workflow_buttons
-        self.enable_workflow_buttons = enable_workflow_buttons
 
         self.clipboard: typing.Optional[Survey] = None
         self.current_tab = 2
@@ -279,18 +275,6 @@ class DataComponent(QObject):
     def cancel_detect(self):
         logger.info("cancelled detector")
         self.cots_detector.cancel()
-
-    def disable_cots_detector(self):
-        self.eod_cots_widget.detectCotsButton.setEnabled(False)
-        self.eod_cots_widget.cancelButton.setEnabled(True)
-        self.disable_all_workflow_buttons()
-        self.data_widget.tabWidget.setEnabled(False)
-
-    def enable_cots_detector(self):
-        self.eod_cots_widget.detectCotsButton.setEnabled(True)
-        self.eod_cots_widget.cancelButton.setEnabled(False)
-        self.enable_workflow_buttons()
-        self.data_widget.tabWidget.setEnabled(True)
 
     def collapseTrees(self):
         self.tree_collapsed = not self.tree_collapsed
