@@ -10,7 +10,7 @@ from aims.operations.BatchResult import BatchResult
 
 class CotsDetector:
 
-    def __init__(self, output: QTextEdit, parent: QObject, enable_function, disable_function):
+    def __init__(self, output: QTextEdit, parent: QObject):
         super().__init__()
         self.output: QTextBrowser = output
         self.process = QProcess(parent)
@@ -18,8 +18,6 @@ class CotsDetector:
         self.process.readyReadStandardError.connect(self.errorReady)
         self.process.errorOccurred.connect(self.error_occured)
         self.process.stateChanged.connect(self.handle_state)
-        self.enable_function = enable_function
-        self.disable_function = disable_function
         self.batch_result = BatchResult()
 
 # Picks up errors that are not written to standard error
@@ -45,10 +43,8 @@ class CotsDetector:
         state_name = states[state]
         print(f"State changed: {state_name}")
         if state == QProcess.NotRunning:
-            self.enable_function()
             self.batch_result.finished = True
         else:
-            self.disable_function()
             self.batch_result.finished = False
             self.batch_result.cancelled = False
 
@@ -75,9 +71,9 @@ class CotsDetector:
         output_path = utils.replace_last(survey_path, "/reefscan/", "/reefscan_eod_cots/")
         input_path = survey_path
         self.output.append(f'bash {script} "{input_path}" "{output_path}"')
-        self.process.start("bash", [script, input_path, output_path])
+        # self.process.start("bash", [script, input_path, output_path])
 # leaving this here because it is useful while testing on windows
-#        self.process.start("ping", ["127.0.0.1"])
+        self.process.start("ping", ["127.0.0.1"])
 
 # cancel the process
     def cancel(self):
