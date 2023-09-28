@@ -843,6 +843,7 @@ class DataComponent(QObject):
         self.data_widget.tabWidget.setTabEnabled(6, False)
         self.data_widget.tabWidget.setTabEnabled(7, False)
         self.data_widget.tabWidget.setTabEnabled(8, False)
+        self.data_widget.tabWidget.setTabEnabled(9, False)
         self.data_widget.tabWidget.setCurrentIndex(2)
 
     def enable_processing_tabs_only(self):
@@ -862,7 +863,10 @@ class DataComponent(QObject):
 
     def disable_all_tabs(self, index):
         tab_widget:QTabWidget = self.data_widget.tabWidget
-        tab_widget.setEnabled(False)
+        for i in range(9):
+            self.data_widget.tabWidget.setTabEnabled(i, False)
+
+        self.data_widget.tabWidget.setTabEnabled(index, False)
         tab_widget.setCurrentIndex(index)
 
     def enable_all_tabs(self):
@@ -873,6 +877,11 @@ class DataComponent(QObject):
         self.data_widget.tabWidget.setTabEnabled(3, True)
         self.data_widget.tabWidget.setTabEnabled(4, True)
         self.data_widget.tabWidget.setTabEnabled(5, True)
+        self.data_widget.tabWidget.setTabEnabled(6, True)
+        self.data_widget.tabWidget.setTabEnabled(7, True)
+        self.data_widget.tabWidget.setTabEnabled(8, True)
+        self.data_widget.tabWidget.setTabEnabled(9, False)
+
         self.data_widget.tabWidget.setCurrentIndex(self.current_tab)
 
     def explore_tree_selection_changed(self, item_selection: QItemSelection):
