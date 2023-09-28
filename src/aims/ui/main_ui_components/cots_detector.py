@@ -5,6 +5,8 @@ from aims import utils
 
 # Uses a QProcess to start the COTS detector shell script
 # QProcess is designed to start in a separate thread and provides signals and slots to monitor and control the process
+from aims.operations.BatchResult import BatchResult
+
 
 class CotsDetector:
 
@@ -18,6 +20,7 @@ class CotsDetector:
         self.process.stateChanged.connect(self.handle_state)
         self.enable_function = enable_function
         self.disable_function = disable_function
+        self.batch_result = BatchResult()
 
 # Picks up errors that are not written to standard error
     def error_occured(self, error: QProcess.ProcessError):
@@ -43,8 +46,11 @@ class CotsDetector:
         print(f"State changed: {state_name}")
         if state == QProcess.NotRunning:
             self.enable_function()
+            self.batch_result.finished = True
         else:
             self.disable_function()
+            self.batch_result.finished = False
+            self.batch_result.cancelled = False
 
 # write standard output to the output text box
     def outputReady(self):
@@ -75,4 +81,5 @@ class CotsDetector:
 
 # cancel the process
     def cancel(self):
+        self.batch_result.canceled = True
         self.process.kill()
