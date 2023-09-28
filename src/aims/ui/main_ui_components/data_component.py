@@ -75,7 +75,7 @@ def utc_to_local(utc_str, timezone):
 
 
 class DataComponent(QObject):
-    def __init__(self, hint_function):
+    def __init__(self, hint_function, disable_all_workflow_buttons, enable_workflow_buttons):
         super().__init__()
         self.data_widget = None
         self.metadata_widget = None
@@ -96,6 +96,10 @@ class DataComponent(QObject):
         self.time_zone = None
         self.site_lookup = {}
         self.hint_function = hint_function
+        # for long running processes we can disable the workflow buttons
+        # and enable them when the process is complete
+        self.disable_all_workflow_buttons = disable_all_workflow_buttons
+        self.enable_workflow_buttons = enable_workflow_buttons
 
         self.clipboard: typing.Optional[Survey] = None
         self.current_tab = 2
@@ -233,9 +237,8 @@ class DataComponent(QObject):
         self.eod_cots_widget.detectCotsButton.clicked.connect(self.detect_cots)
         self.eod_cots_widget.cancelButton.clicked.connect(self.cancel_detect)
         self.cots_detector = CotsDetector(output=self.eod_cots_widget.detectorOutput,
-                                          parent=self,
-                                          enable_function=self.enable_cots_detector,
-                                          disable_function=self.disable_cots_detector)
+                                          parent=self
+                                          )
 
     def get_index_by_tab_text(self, name_of_tab):
         for i in range(self.data_widget.tabWidget.count()):
@@ -258,6 +261,8 @@ class DataComponent(QObject):
     # if a folder is selected do it for all descendant surveys of that folder
     def detect_cots(self):
         self.disable_everything()
+        self.eod_cots_widget.detectCotsButton.setEnabled(False)
+        self.eod_cots_widget.cancelButton.setEnabled(True)
 
         try:
             survey_infos = self.get_all_descendants(self.selected_index)
@@ -271,6 +276,8 @@ class DataComponent(QObject):
                     return
         finally:
             self.enable_everything()
+            self.eod_cots_widget.detectCotsButton.setEnabled(True)
+            self.eod_cots_widget.cancelButton.setEnabled(False)
 
     def cancel_detect(self):
         logger.info("cancelled detector")
@@ -850,7 +857,7 @@ class DataComponent(QObject):
         for i in range(9):
             self.data_widget.tabWidget.setTabEnabled(i, False)
 
-        self.data_widget.tabWidget.setTabEnabled(index, False)
+        self.data_widget.tabWidget.setTabEnabled(index, True)
         tab_widget.setCurrentIndex(index)
 
     def enable_all_tabs(self):
