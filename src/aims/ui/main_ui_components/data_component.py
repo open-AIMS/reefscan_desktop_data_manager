@@ -686,11 +686,14 @@ class DataComponent(QObject):
     def enable_everything(self):
         self.enable_workflow_buttons()
         self.enable_tabs()
+        self.data_widget.treesWidget.setEnabled(True)
 
     def disable_everything(self):
         current_tab = self.data_widget.tabWidget.currentIndex()
         self.disable_all_workflow_buttons()
         self.disable_all_tabs(current_tab)
+        self.data_widget.treesWidget.setEnabled(False)
+
 
     def load_inference_charts(self):
         coverage_results_file = inference_output_coverage_file(self.survey().folder)
