@@ -12,7 +12,7 @@ from PyQt5.QtCore import QItemSelection, QSize, Qt, QObject
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QWidget, QTableView, QLabel, QListView, \
-    QListWidget, QMessageBox, QMainWindow, QTabWidget
+    QListWidget, QMessageBox, QTabWidget, QCheckBox
 from inferencer.batch_monitor import BatchMonitor as InferencerBatchMonitor
 from photoenhancer import photoenhance
 from pytz import utc
@@ -28,7 +28,7 @@ from aims.gui_model.lazy_list_model import LazyListModel
 from aims.gui_model.marks_model import MarksModel
 from aims.gui_model.tree_model import TreeModelMaker, checked_survey_ids
 from aims.operations.kml_maker import make_kml
-from aims.ui.main_ui_components.cots_detector import CotsDetector
+from aims2.operations2.cots_detector import CotsDetector
 from aims2.operations2.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.stats.survey_stats import SurveyStats
 from aims.ui.main_ui_components.utils import clearLayout
@@ -260,12 +260,14 @@ class DataComponent(QObject):
     # detect cots in all of the photos for the currently selected survey
     # if a folder is selected do it for all descendant surveys of that folder
     def detect_cots(self):
+        survey_infos = self.get_all_descendants(self.selected_index)
+        self.detect_cots_for_surveys(survey_infos)
+
+    def detect_cots_for_surveys(self, survey_infos):
         self.disable_everything()
         self.eod_cots_widget.detectCotsButton.setEnabled(False)
         self.eod_cots_widget.cancelButton.setEnabled(True)
-
         try:
-            survey_infos = self.get_all_descendants(self.selected_index)
             for survey_info in survey_infos:
                 survey = state.model.surveys_data[survey_info["survey_id"]]
                 self.cots_detector.callProgram(survey.folder)
@@ -411,6 +413,20 @@ class DataComponent(QObject):
         minutes = (end - start) / 60
 
         logger.info(f"Download Finished in {minutes} minutes")
+
+        find_cots_check_box: QCheckBox = self.data_widget.find_cots_check_box
+        inference_check_box: QCheckBox = self.data_widget.inference_check_box
+        enhance_check_box: QCheckBox = self.data_widget.enhance_check_box
+
+        if find_cots_check_box.checkState() == Qt.Checked:
+            self.data_widget.tabWidget.setCurrentIndex(8)
+            self.detect_cots_for_surveys(surveys)
+        if inference_check_box.checkState() == Qt.Checked:
+            self.inference_surveys(surveys)
+        if enhance_check_box.checkState() == Qt.Checked:
+            self.enhance_photos_for_surveys(surveys, disable_denoising=True, disable_dehazing=True)
+
+
         errorbox = QtWidgets.QMessageBox()
         errorbox.setText(self.tr("Download finished"))
         errorbox.setDetailedText(self.tr("Finished in ") + str(minutes) + self.tr(" minutes"))
@@ -418,6 +434,7 @@ class DataComponent(QObject):
         self.aims_status_dialog.progress_dialog.close()
         QtTest.QTest.qWait(1000)
         errorbox.exec_()
+
         self.initial_disables()
 
     def setup_camera_tree(self):
@@ -615,13 +632,19 @@ class DataComponent(QObject):
 # enhance all of the photos for the currently selected survey
 # if a folder is selected do it for all descendant surveys of that folder
     def enhance_photos(self):
+        survey_infos = self.get_all_descendants(self.selected_index)
+        disable_denoising = self.enhance_widget.checkBoxDisableDenoising.isChecked()
+        disable_dehazing = self.enhance_widget.checkBoxDisableDehazing.isChecked()
+
+        self.enhance_photos_for_surveys(survey_infos, disable_denoising=disable_denoising, disable_dehazing=disable_dehazing)
+
+    def enhance_photos_for_surveys(self, survey_infos, disable_denoising=True, disable_dehazing=True):
         self.disable_everything()
         self.enhance_widget.btnEnhanceFolder.setEnabled(False)
         try:
-            survey_infos = self.get_all_descendants(self.selected_index)
             for survey_info in survey_infos:
                 survey = state.model.surveys_data[survey_info["survey_id"]]
-                result = self.enhance_photos_for_survey(survey)
+                result = self.enhance_photos_for_survey(survey, disable_denoising=disable_denoising, disable_dehazing=disable_dehazing)
                 if result.cancelled:
                     self.enable_everything()
                     return
@@ -629,17 +652,15 @@ class DataComponent(QObject):
             self.enable_everything()
             self.enhance_widget.btnEnhanceFolder.setEnabled(True)
 
-# enhance all of the photos for one survey
+    # enhance all of the photos for one survey
 # returns an object with information as to the successful completion
 # of the operation
-    def enhance_photos_for_survey(self, survey) -> photoenhance.BatchMonitor:
+    def enhance_photos_for_survey(self, survey, disable_denoising=True, disable_dehazing=True) -> photoenhance.BatchMonitor:
 
         output_suffix = "_enh"
         output_folder = self.enhanced_folder(survey.folder)
         # output_suffix = self.enhance_widget.textEditSuffix.toPlainText()
         cpu_load_string = self.enhance_widget.textEditCPULoad.toPlainText()
-        disable_denoising = self.enhance_widget.checkBoxDisableDenoising.isChecked()
-        disable_dehazing = self.enhance_widget.checkBoxDisableDehazing.isChecked()
         if not disable_denoising:
             output_suffix = output_suffix + "_denoise"
         if not disable_dehazing:
@@ -696,23 +717,24 @@ class DataComponent(QObject):
 
 
     def load_inference_charts(self):
-        coverage_results_file = inference_output_coverage_file(self.survey().folder)
-        if os.path.exists(coverage_results_file):
-            self.show_tab_by_tab_text('Chart')
+        if self.survey() is not None:
+            coverage_results_file = inference_output_coverage_file(self.survey().folder)
+            if os.path.exists(coverage_results_file):
+                self.show_tab_by_tab_text('Chart')
 
-            self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
-                                                         self.data_widget.chart_tab)
+                self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
+                                                             self.data_widget.chart_tab)
 
-            pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
+                pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
 
-            vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
-            vlayout.addWidget(pie_browser)
+                vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
+                vlayout.addWidget(pie_browser)
 
-            chart_operation = ChartOperation()
-            fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
-            pie_browser.setHtml(fig)
-        else:
-            self.hide_tab_by_tab_text('Chart')
+                chart_operation = ChartOperation()
+                fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
+                pie_browser.setHtml(fig)
+            else:
+                self.hide_tab_by_tab_text('Chart')
 
 
     def inference_open_folder(self):
@@ -721,9 +743,12 @@ class DataComponent(QObject):
     # inference all of the photos for the currently selected survey
     # if a folder is selected do it for all descendant surveys of that folder
     def inference(self):
+        survey_infos = self.get_all_descendants(self.selected_index)
+        self.inference_surveys(survey_infos)
+
+    def inference_surveys(self, survey_infos):
         try:
             self.disable_everything()
-            survey_infos = self.get_all_descendants(self.selected_index)
             for survey_info in survey_infos:
                 survey = state.model.surveys_data[survey_info["survey_id"]]
                 result = self.inference_survey(survey)
@@ -857,7 +882,7 @@ class DataComponent(QObject):
 
     def disable_all_tabs(self, index):
         tab_widget:QTabWidget = self.data_widget.tabWidget
-        for i in range(9):
+        for i in range(10):
             self.data_widget.tabWidget.setTabEnabled(i, False)
 
         self.data_widget.tabWidget.setTabEnabled(index, True)
@@ -874,7 +899,7 @@ class DataComponent(QObject):
         self.data_widget.tabWidget.setTabEnabled(6, True)
         self.data_widget.tabWidget.setTabEnabled(7, True)
         self.data_widget.tabWidget.setTabEnabled(8, True)
-        self.data_widget.tabWidget.setTabEnabled(9, False)
+        self.data_widget.tabWidget.setTabEnabled(9, True)
 
         self.data_widget.tabWidget.setCurrentIndex(self.current_tab)
 

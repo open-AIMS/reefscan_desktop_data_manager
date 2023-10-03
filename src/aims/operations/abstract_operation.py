@@ -7,7 +7,6 @@ from reefscanner.basic_model.progress_queue import ProgressQueue
 
 logger = logging.getLogger("")
 
-
 class AbstractOperation(QObject):
     set_max = QtCore.pyqtSignal(int)
     set_value = QtCore.pyqtSignal(object)
