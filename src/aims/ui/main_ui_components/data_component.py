@@ -51,13 +51,14 @@ these operations but it is too large for the purposes
 of a pyinstaller executable
 """
 import sys
+
 logger = logging.getLogger("")
 
 PYINSTALLER_COMPILED = getattr(sys, 'frozen', False)
 if not PYINSTALLER_COMPILED:
     try:
         from aims.operations.inference_operation import InferenceOperation, inference_result_folder, \
-    inference_output_coverage_file
+            inference_output_coverage_file
         from aims.operations.chart_operation import ChartOperation
     except Exception as e:
         logger.error("Can't load inferencer", e)
@@ -141,7 +142,7 @@ class DataComponent(QObject):
             if self.survey().wind == "" or self.survey().wind is None:
                 self.survey().wind = self.clipboard.wind
 
-            if self.survey().cloud == "" or self.survey().cloud  is None:
+            if self.survey().cloud == "" or self.survey().cloud is None:
                 self.survey().cloud = self.clipboard.cloud
 
             if self.survey().visibility == "" or self.survey().visibility is None:
@@ -156,7 +157,6 @@ class DataComponent(QObject):
             self.data_to_ui()
             self.ui_to_data()
 
-
     def load_data_screen(self, fixed_drives, aims_status_dialog, time_zone):
 
         self.time_zone = time_zone
@@ -170,11 +170,11 @@ class DataComponent(QObject):
         self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui',
                                                      self.data_widget.marks_tab)
         self.enhance_widget = self.load_sequence_frame(f'{state.meipass}resources/enhance.ui',
-                                                     self.data_widget.enhance_tab)
+                                                       self.data_widget.enhance_tab)
         self.eod_cots_widget = self.load_sequence_frame(f'{state.meipass}resources/eod_cots.ui',
-                                                     self.data_widget.eod_cots_tab)
+                                                        self.data_widget.eod_cots_tab)
         self.inference_widget = self.load_sequence_frame(f'{state.meipass}resources/inference.ui',
-                                                     self.data_widget.inference_tab)
+                                                         self.data_widget.inference_tab)
 
         self.info_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_info.ui',
                                                     self.data_widget.info_tab)
@@ -409,10 +409,7 @@ class DataComponent(QObject):
         self.setup_camera_tree()
         self.load_explore_surveys_tree()
 
-        end = process_time()
-        minutes = (end - start) / 60
-
-        logger.info(f"Download Finished in {minutes} minutes")
+        download_end = process_time()
 
         find_cots_check_box: QCheckBox = self.data_widget.find_cots_check_box
         inference_check_box: QCheckBox = self.data_widget.inference_check_box
@@ -421,15 +418,37 @@ class DataComponent(QObject):
         if find_cots_check_box.checkState() == Qt.Checked:
             self.data_widget.tabWidget.setCurrentIndex(8)
             self.detect_cots_for_surveys(surveys)
+
+        cots_end = process_time()
+
         if inference_check_box.checkState() == Qt.Checked:
             self.inference_surveys(surveys)
+        inference_end = process_time()
+
         if enhance_check_box.checkState() == Qt.Checked:
             self.enhance_photos_for_surveys(surveys, disable_denoising=True, disable_dehazing=True)
+        enhance_end = process_time()
 
+        download_minutes = (download_end - start) / 60
+        logger.info(f"Download Finished in {download_minutes} minutes")
+
+        cots_minutes = (cots_end - download_end) / 60
+        cots_text = f"COTS detect Finished in {cots_minutes} minutes"
+        logger.info(cots_text)
+
+        inference_minutes = (inference_end - cots_end) / 60
+        inference_text = f"Inference Finished in {inference_minutes} minutes"
+        logger.info(inference_text)
+
+        enhance_minutes = (enhance_end - inference_end) / 60
+        enhance_text = f"Enhance Finished in {enhance_minutes} minutes"
+        logger.info(enhance_text)
 
         errorbox = QtWidgets.QMessageBox()
         errorbox.setText(self.tr("Download finished"))
-        errorbox.setDetailedText(self.tr("Finished in ") + str(minutes) + self.tr(" minutes"))
+        errorbox.setDetailedText(self.tr("Finished in ") + str(download_minutes) + self.tr(" minutes") + "\n"
+                                 + cots_text + "\n" + inference_text + "\n" + enhance_text + "\n"
+                                 )
         errorbox.setWindowTitle("ReefScan")
         self.aims_status_dialog.progress_dialog.close()
         QtTest.QTest.qWait(1000)
@@ -551,7 +570,6 @@ class DataComponent(QObject):
             self.survey_id = old_survey_id
             self.data_to_ui()
 
-
             logger.info("rename done")
 
     def kml_for_all(self):
@@ -629,14 +647,15 @@ class DataComponent(QObject):
     def enhance_open_folder(self):
         utils.open_file(self.enhanced_folder(self.survey().folder))
 
-# enhance all of the photos for the currently selected survey
-# if a folder is selected do it for all descendant surveys of that folder
+    # enhance all of the photos for the currently selected survey
+    # if a folder is selected do it for all descendant surveys of that folder
     def enhance_photos(self):
         survey_infos = self.get_all_descendants(self.selected_index)
         disable_denoising = self.enhance_widget.checkBoxDisableDenoising.isChecked()
         disable_dehazing = self.enhance_widget.checkBoxDisableDehazing.isChecked()
 
-        self.enhance_photos_for_surveys(survey_infos, disable_denoising=disable_denoising, disable_dehazing=disable_dehazing)
+        self.enhance_photos_for_surveys(survey_infos, disable_denoising=disable_denoising,
+                                        disable_dehazing=disable_dehazing)
 
     def enhance_photos_for_surveys(self, survey_infos, disable_denoising=True, disable_dehazing=True):
         self.disable_everything()
@@ -644,7 +663,8 @@ class DataComponent(QObject):
         try:
             for survey_info in survey_infos:
                 survey = state.model.surveys_data[survey_info["survey_id"]]
-                result = self.enhance_photos_for_survey(survey, disable_denoising=disable_denoising, disable_dehazing=disable_dehazing)
+                result = self.enhance_photos_for_survey(survey, disable_denoising=disable_denoising,
+                                                        disable_dehazing=disable_dehazing)
                 if result.cancelled:
                     self.enable_everything()
                     return
@@ -653,9 +673,10 @@ class DataComponent(QObject):
             self.enhance_widget.btnEnhanceFolder.setEnabled(True)
 
     # enhance all of the photos for one survey
-# returns an object with information as to the successful completion
-# of the operation
-    def enhance_photos_for_survey(self, survey, disable_denoising=True, disable_dehazing=True) -> photoenhance.BatchMonitor:
+    # returns an object with information as to the successful completion
+    # of the operation
+    def enhance_photos_for_survey(self, survey, disable_denoising=True,
+                                  disable_dehazing=True) -> photoenhance.BatchMonitor:
 
         output_suffix = "_enh"
         output_folder = self.enhanced_folder(survey.folder)
@@ -672,7 +693,6 @@ class DataComponent(QObject):
             self.enhance_widget.textBrowser.append("Denoising step is skipped for faster performance.")
         if self.enhance_widget.checkBoxDisableDehazing.isChecked():
             self.enhance_widget.textBrowser.append("Dehazing step is skipped for faster performance.")
-
 
         QApplication.processEvents()
 
@@ -695,7 +715,6 @@ class DataComponent(QObject):
         logger.info("thread finished")
         self.aims_status_dialog.close()
 
-
         if enhance_operation.batch_monitor.finished:
             self.enhance_widget.textBrowser.append("Photoenhancer finished")
         else:
@@ -714,7 +733,6 @@ class DataComponent(QObject):
         self.disable_all_workflow_buttons()
         self.disable_all_tabs(current_tab)
         self.data_widget.treesWidget.setEnabled(False)
-
 
     def load_inference_charts(self):
         if self.survey() is not None:
@@ -735,7 +753,6 @@ class DataComponent(QObject):
                 pie_browser.setHtml(fig)
             else:
                 self.hide_tab_by_tab_text('Chart')
-
 
     def inference_open_folder(self):
         utils.open_file(inference_result_folder(self.survey().folder))
@@ -835,7 +852,7 @@ class DataComponent(QObject):
                 self.survey_list = state.model.surveys_data
                 self.camera_selected = False
 
-# Based on the current state this method will enable the appropriate tabs
+    # Based on the current state this method will enable the appropriate tabs
     def enable_tabs(self):
         current_tab = self.data_widget.tabWidget.currentIndex()
         if self.camera_selected:
@@ -881,7 +898,7 @@ class DataComponent(QObject):
             self.data_widget.tabWidget.setCurrentIndex(1)
 
     def disable_all_tabs(self, index):
-        tab_widget:QTabWidget = self.data_widget.tabWidget
+        tab_widget: QTabWidget = self.data_widget.tabWidget
         for i in range(10):
             self.data_widget.tabWidget.setTabEnabled(i, False)
 
@@ -950,12 +967,11 @@ class DataComponent(QObject):
 
         self.set_hint()
 
-
-# if a single sequence is selected the processing tabs (enhance, inference and EOD) should
-# process only that sequence
-# If a folder is selected it should process all of the sequences in that folder
-# This method changes the words on the buttons to reflect that
-# Also some features are disabled
+    # if a single sequence is selected the processing tabs (enhance, inference and EOD) should
+    # process only that sequence
+    # If a folder is selected it should process all of the sequences in that folder
+    # This method changes the words on the buttons to reflect that
+    # Also some features are disabled
     def setup_processing_button_names(self):
         folder_name = self.selected_index.data()
         if self.survey_id is None:
