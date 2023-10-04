@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 import os
 import shutil
@@ -9,10 +10,10 @@ from time import process_time
 
 from PyQt5 import uic, QtWidgets, QtTest
 from PyQt5.QtCore import QItemSelection, QSize, Qt, QObject
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QStandardItemModel, QStandardItem
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QWidget, QTableView, QLabel, QListView, \
-    QListWidget, QMessageBox, QMainWindow, QTabWidget
+    QListWidget, QMessageBox, QMainWindow, QTabWidget, QHeaderView
 from pytz import utc
 from reefscanner.basic_model.exif_utils import get_exif_data
 from reefscanner.basic_model.model_helper import rename_folders
@@ -36,6 +37,10 @@ from aims2.reefcloud2.reefcloud_utils import create_reefcloud_site
 
 from aims.operations.enhance_photo_operation import EnhancePhotoOperation
 
+import sys
+logger = logging.getLogger("")
+
+
 """
 Check if code is run through a pyinstaller executable.
 sys.frozen will be False if run through pyinstaller
@@ -48,9 +53,6 @@ due to file size requirements, i.e. tensorflow is required for
 these operations but it is too large for the purposes
 of a pyinstaller executable
 """
-import sys
-logger = logging.getLogger("")
-
 PYINSTALLER_COMPILED = getattr(sys, 'frozen', False)
 if not PYINSTALLER_COMPILED:
     try:
@@ -109,6 +111,8 @@ class DataComponent(QObject):
         logger.info(index)
         if index == 2:
             self.draw_map()
+        if index == self.get_index_by_tab_text('Real-Time-COTS'):
+            self.display_realtime_detections()
 
     def copy(self):
         self.ui_to_data()
@@ -168,6 +172,9 @@ class DataComponent(QObject):
                                                      self.data_widget.marks_tab)
         self.enhance_widget = self.load_sequence_frame(f'{state.meipass}resources/enhance.ui',
                                                      self.data_widget.enhance_tab)
+        self.realtime_cots_widget = self.load_sequence_frame(f'{state.meipass}resources/realtime_cots.ui',
+                                                     self.data_widget.realtime_cots_tab)
+        
         self.eod_cots_widget = self.load_sequence_frame(f'{state.meipass}resources/eod_cots.ui',
                                                      self.data_widget.eod_cots_tab)
         self.inference_widget = self.load_sequence_frame(f'{state.meipass}resources/inference.ui',
@@ -254,6 +261,50 @@ class DataComponent(QObject):
     def show_tab_by_tab_text(self, name_of_tab):
         index = self.get_index_by_tab_text(name_of_tab)
         self.data_widget.tabWidget.setTabEnabled(index, True)
+
+    def read_realtime_detections(self):
+        target=self.survey().folder
+        cots_detections_list = []
+
+        # Iterate through all files in the folder
+        for filename in os.listdir(target):
+            file_path = os.path.join(target, filename)
+
+            # Check if the file is a cots sequence JSON file
+            if filename.startswith("cots_sequence_") and filename.endswith(".json") and os.path.isfile(file_path):
+                with open(file_path, 'r') as file:
+                    try:
+                        # Load the JSON content
+                        json_data = json.load(file)
+
+                        best_detection = json_data['maximum_scores'][0]
+
+                        best_class_id = best_detection['class_id']
+                        best_score = best_detection['maximum_score']
+                        sequence_id = json_data['sequence_id']
+
+                        cots_detections_info = (sequence_id, best_class_id, best_score)
+                        cots_detections_list.append(cots_detections_info)
+                    except json.JSONDecodeError as e:
+                        print(f"Error decoding JSON in {filename}: {e}")
+
+        return cots_detections_list
+
+    def display_realtime_detections(self):
+
+        cots_detections_data = self.read_realtime_detections()
+
+        # Create a QStandardItemModel
+        item_model = QStandardItemModel(self)
+        item_model.setHorizontalHeaderLabels(["Sequence ID", "Class ID", "Maximum Score"])
+        for row in cots_detections_data:
+            item_model.appendRow([QStandardItem(str(row[0])), 
+                                  QStandardItem(str(row[1])), 
+                                  QStandardItem(str(row[2])), 
+                                  ])
+
+        self.realtime_cots_widget.tableView.setModel(item_model)
+        self.realtime_cots_widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
     def detect_cots(self):
         logger.info("Detect COTS")
@@ -653,23 +704,24 @@ class DataComponent(QObject):
 
 
     def load_inference_charts(self):
-        coverage_results_file = inference_output_coverage_file(self.survey().folder)
-        if os.path.exists(coverage_results_file):
-            self.show_tab_by_tab_text('Chart')
+        if not PYINSTALLER_COMPILED:
+            coverage_results_file = inference_output_coverage_file(self.survey().folder)
+            if os.path.exists(coverage_results_file):
+                self.show_tab_by_tab_text('Chart')
 
-            self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
-                                                         self.data_widget.chart_tab)
+                self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
+                                                            self.data_widget.chart_tab)
 
-            pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
+                pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
 
-            vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
-            vlayout.addWidget(pie_browser)
+                vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
+                vlayout.addWidget(pie_browser)
 
-            chart_operation = ChartOperation()
-            fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
-            pie_browser.setHtml(fig)
-        else:
-            self.hide_tab_by_tab_text('Chart')
+                chart_operation = ChartOperation()
+                fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
+                pie_browser.setHtml(fig)
+            else:
+                self.hide_tab_by_tab_text('Chart')
 
 
     def inference_open_folder(self):
