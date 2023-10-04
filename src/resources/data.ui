@@ -208,6 +208,24 @@ QGroupBox::title{
            <property name="text">
             <string>Enhance Photos</string>
            </property>
+           <property name="maximumSize">
+            <size>
+             <width>450</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="headerHidden">
+            <bool>true</bool>
+           </property>
+           <attribute name="headerMinimumSectionSize">
+            <number>450</number>
+           </attribute>
+           <attribute name="headerDefaultSectionSize">
+            <number>900</number>
+           </attribute>
+           <attribute name="headerStretchLastSection">
+            <bool>false</bool>
+           </attribute>
           </widget>
          </item>
          <item row="3" column="0" colspan="3">
@@ -310,7 +328,7 @@ QGroupBox::title{
            <property name="headerHidden">
             <bool>true</bool>
            </property>
-           <attribute name="headerDefaultSectionSize">
+           <attribute name="headerMinimumSectionSize">
             <number>900</number>
            </attribute>
            <attribute name="headerMinimumSectionSize">
@@ -318,6 +336,8 @@ QGroupBox::title{
            </attribute>
            <attribute name="headerStretchLastSection">
             <bool>false</bool>
+           <attribute name="headerDefaultSectionSize">
+            <number>900</number>
            </attribute>
           </widget>
          </item>
@@ -403,7 +423,7 @@ QGroupBox::title{
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>8</number>
      </property>
      <widget class="QWidget" name="empty_tab">
       <attribute name="title">
@@ -428,7 +448,7 @@ QGroupBox::title{
       </attribute>
       <layout class="QGridLayout" name="gridLayout_5">
        <item row="0" column="0">
-        <widget class="QWebEngineView" name="mapView">
+        <widget class="QWebEngineView" name="mapView" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>
@@ -441,7 +461,7 @@ QGroupBox::title{
            <height>120</height>
           </size>
          </property>
-         <property name="url">
+         <property name="url" stdset="0">
           <url>
            <string>about:blank</string>
           </url>
@@ -526,6 +546,12 @@ QGroupBox::title{
       </attribute>
       <layout class="QGridLayout" name="gridLayout_9"/>
      </widget>
+     <widget class="QWidget" name="realtime_cots_tab">
+      <attribute name="title">
+       <string>Real-Time-COTS</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_10"/>
+     </widget>
      <widget class="QWidget" name="eod_cots_tab">
       <attribute name="title">
        <string>End-Of-Day-COTS</string>
@@ -536,7 +562,7 @@ QGroupBox::title{
       <attribute name="title">
        <string>Chart</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_10"/>
+      <layout class="QGridLayout" name="gridLayout_12"/>
      </widget>
     </widget>
    </item>
