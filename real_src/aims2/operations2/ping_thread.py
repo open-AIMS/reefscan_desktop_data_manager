@@ -34,6 +34,8 @@ class PingThread(QObject):
         print("start")
         self.cancelled = False
         thread = Thread(target=self.ping_task)
+        # daemon threads will stop when the main thread stops
+        thread.daemon = True
         thread.start()
 
     def cancel(self):
