@@ -795,26 +795,26 @@ class DataComponent(QObject):
             coverage_results_file = inference_output_coverage_file(self.survey().folder)
             if os.path.exists(coverage_results_file):
                 self.show_tab_by_tab_text('Chart')
-        if not PYINSTALLER_COMPILED:
-            coverage_results_file = inference_output_coverage_file(self.survey().folder)
-            if os.path.exists(coverage_results_file):
-                self.show_tab_by_tab_text('Chart')
+            if not PYINSTALLER_COMPILED:
+                coverage_results_file = inference_output_coverage_file(self.survey().folder)
+                if os.path.exists(coverage_results_file):
+                    self.show_tab_by_tab_text('Chart')
 
-                self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
-                                                             self.data_widget.chart_tab)
-                self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
-                                                            self.data_widget.chart_tab)
+                    self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
+                                                                 self.data_widget.chart_tab)
+                    self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
+                                                                self.data_widget.chart_tab)
 
-                pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
+                    pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
 
-                vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
-                vlayout.addWidget(pie_browser)
+                    vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
+                    vlayout.addWidget(pie_browser)
 
-                chart_operation = ChartOperation()
-                fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
-                pie_browser.setHtml(fig)
-            else:
-                self.hide_tab_by_tab_text('Chart')
+                    chart_operation = ChartOperation()
+                    fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
+                    pie_browser.setHtml(fig)
+                else:
+                    self.hide_tab_by_tab_text('Chart')
 
     def inference_open_folder(self):
         utils.open_file(inference_result_folder(self.survey().folder))
