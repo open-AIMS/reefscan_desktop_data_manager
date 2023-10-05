@@ -13,7 +13,9 @@ from PyQt5.QtCore import QItemSelection, QSize, Qt, QObject
 from PyQt5.QtGui import QPixmap, QStandardItemModel, QStandardItem
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QWidget, QTableView, QLabel, QListView, \
-    QListWidget, QMessageBox, QMainWindow, QTabWidget, QHeaderView
+    QListWidget, QMessageBox, QTabWidget, QCheckBox, QHeaderView
+from inferencer.batch_monitor import BatchMonitor as InferencerBatchMonitor
+from photoenhancer import photoenhance
 from pytz import utc
 from reefscanner.basic_model.exif_utils import get_exif_data
 from reefscanner.basic_model.model_helper import rename_folders
@@ -27,7 +29,7 @@ from aims.gui_model.lazy_list_model import LazyListModel
 from aims.gui_model.marks_model import MarksModel
 from aims.gui_model.tree_model import TreeModelMaker, checked_survey_ids
 from aims.operations.kml_maker import make_kml
-from aims.ui.main_ui_components.cots_detector import CotsDetector
+from aims2.operations2.cots_detector import CotsDetector
 from aims2.operations2.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.stats.survey_stats import SurveyStats
 from aims.ui.main_ui_components.utils import clearLayout
@@ -53,11 +55,15 @@ due to file size requirements, i.e. tensorflow is required for
 these operations but it is too large for the purposes
 of a pyinstaller executable
 """
+import sys
+
+logger = logging.getLogger("")
+
 PYINSTALLER_COMPILED = getattr(sys, 'frozen', False)
 if not PYINSTALLER_COMPILED:
     try:
         from aims.operations.inference_operation import InferenceOperation, inference_result_folder, \
-    inference_output_coverage_file
+            inference_output_coverage_file
         from aims.operations.chart_operation import ChartOperation
     except Exception as e:
         logger.error("Can't load inferencer", e)
@@ -105,7 +111,8 @@ class DataComponent(QObject):
         self.current_tab = 2
         self.tree_collapsed = False
         self.cots_detector: CotsDetector = None
-
+        self.selected_index = None
+        self.camera_tree_selected = False
 
     def tab_changed(self, index):
         logger.info(index)
@@ -142,7 +149,7 @@ class DataComponent(QObject):
             if self.survey().wind == "" or self.survey().wind is None:
                 self.survey().wind = self.clipboard.wind
 
-            if self.survey().cloud == "" or self.survey().cloud  is None:
+            if self.survey().cloud == "" or self.survey().cloud is None:
                 self.survey().cloud = self.clipboard.cloud
 
             if self.survey().visibility == "" or self.survey().visibility is None:
@@ -157,7 +164,6 @@ class DataComponent(QObject):
             self.data_to_ui()
             self.ui_to_data()
 
-
     def load_data_screen(self, fixed_drives, aims_status_dialog, time_zone):
 
         self.time_zone = time_zone
@@ -171,14 +177,14 @@ class DataComponent(QObject):
         self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui',
                                                      self.data_widget.marks_tab)
         self.enhance_widget = self.load_sequence_frame(f'{state.meipass}resources/enhance.ui',
-                                                     self.data_widget.enhance_tab)
+                                                       self.data_widget.enhance_tab)
         self.realtime_cots_widget = self.load_sequence_frame(f'{state.meipass}resources/realtime_cots.ui',
                                                      self.data_widget.realtime_cots_tab)
-        
+
         self.eod_cots_widget = self.load_sequence_frame(f'{state.meipass}resources/eod_cots.ui',
-                                                     self.data_widget.eod_cots_tab)
+                                                        self.data_widget.eod_cots_tab)
         self.inference_widget = self.load_sequence_frame(f'{state.meipass}resources/inference.ui',
-                                                     self.data_widget.inference_tab)
+                                                         self.data_widget.inference_tab)
 
         self.info_widget = self.load_sequence_frame(f'{state.meipass}resources/sequence_info.ui',
                                                     self.data_widget.info_tab)
@@ -225,14 +231,14 @@ class DataComponent(QObject):
         self.data_widget.mapView.loadFinished.connect(self.map_load_finished)
 
         self.enhance_widget.btnEnhanceOpenFolder.clicked.connect(self.enhance_open_folder)
-        self.enhance_widget.btnEnhanceFolder.clicked.connect(self.enhance_photos_folder)
+        self.enhance_widget.btnEnhanceFolder.clicked.connect(self.enhance_photos)
 
         self.enhance_widget.textEditCPULoad.setPlainText("0.8")
         self.enhance_widget.checkBoxDisableDenoising.setChecked(False)
         self.enhance_widget.checkBoxDisableDehazing.setChecked(False)
 
         self.inference_widget.btnInferenceOpenFolder.clicked.connect(self.inference_open_folder)
-        self.inference_widget.btnInferenceFolder.clicked.connect(self.inference_folder)
+        self.inference_widget.btnInferenceFolder.clicked.connect(self.inference)
 
         if PYINSTALLER_COMPILED:
             self.remove_tab_by_tab_text('Inference')
@@ -241,9 +247,8 @@ class DataComponent(QObject):
         self.eod_cots_widget.detectCotsButton.clicked.connect(self.detect_cots)
         self.eod_cots_widget.cancelButton.clicked.connect(self.cancel_detect)
         self.cots_detector = CotsDetector(output=self.eod_cots_widget.detectorOutput,
-                                          parent=self,
-                                          enable_function=self.enable_cots_detector,
-                                          disable_function=self.disable_cots_detector)
+                                          parent=self
+                                          )
 
     def get_index_by_tab_text(self, name_of_tab):
         for i in range(self.data_widget.tabWidget.count()):
@@ -262,7 +267,10 @@ class DataComponent(QObject):
         index = self.get_index_by_tab_text(name_of_tab)
         self.data_widget.tabWidget.setTabEnabled(index, True)
 
+    # detect cots in all of the photos for the currently selected survey
+    # if a folder is selected do it for all descendant surveys of that folder
     def read_realtime_detections(self):
+
         target=self.survey().folder
         cots_detections_list = []
 
@@ -291,40 +299,47 @@ class DataComponent(QObject):
         return cots_detections_list
 
     def display_realtime_detections(self):
-
+        if self.survey() is None:
+            return
         cots_detections_data = self.read_realtime_detections()
 
         # Create a QStandardItemModel
         item_model = QStandardItemModel(self)
         item_model.setHorizontalHeaderLabels(["Sequence ID", "Class ID", "Maximum Score"])
         for row in cots_detections_data:
-            item_model.appendRow([QStandardItem(str(row[0])), 
-                                  QStandardItem(str(row[1])), 
-                                  QStandardItem(str(row[2])), 
+            item_model.appendRow([QStandardItem(str(row[0])),
+                                  QStandardItem(str(row[1])),
+                                  QStandardItem(str(row[2])),
                                   ])
 
         self.realtime_cots_widget.tableView.setModel(item_model)
         self.realtime_cots_widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
     def detect_cots(self):
-        logger.info("Detect COTS")
-        self.cots_detector.callProgram(self.survey().folder)
+        survey_infos = self.get_all_descendants(self.selected_index)
+        self.detect_cots_for_surveys(survey_infos)
+
+    def detect_cots_for_surveys(self, survey_infos):
+        self.disable_everything()
+        self.eod_cots_widget.detectCotsButton.setEnabled(False)
+        self.eod_cots_widget.cancelButton.setEnabled(True)
+        try:
+            for survey_info in survey_infos:
+                survey = state.model.surveys_data[survey_info["survey_id"]]
+                self.cots_detector.callProgram(survey.folder)
+                while not self.cots_detector.batch_result.finished:
+                    QApplication.processEvents()
+                if self.cots_detector.batch_result.finished:
+                    self.enable_everything()
+                    return
+        finally:
+            self.enable_everything()
+            self.eod_cots_widget.detectCotsButton.setEnabled(True)
+            self.eod_cots_widget.cancelButton.setEnabled(False)
 
     def cancel_detect(self):
         logger.info("cancelled detector")
         self.cots_detector.cancel()
-
-    def disable_cots_detector(self):
-        self.eod_cots_widget.detectCotsButton.setEnabled(False)
-        self.eod_cots_widget.cancelButton.setEnabled(True)
-        self.disable_all_workflow_buttons()
-        self.data_widget.tabWidget.setEnabled(False)
-
-    def enable_cots_detector(self):
-        self.eod_cots_widget.detectCotsButton.setEnabled(True)
-        self.eod_cots_widget.cancelButton.setEnabled(False)
-        self.enable_workflow_buttons()
-        self.data_widget.tabWidget.setEnabled(True)
 
     def collapseTrees(self):
         self.tree_collapsed = not self.tree_collapsed
@@ -450,17 +465,51 @@ class DataComponent(QObject):
         self.setup_camera_tree()
         self.load_explore_surveys_tree()
 
-        end = process_time()
-        minutes = (end - start) / 60
+        download_end = process_time()
 
-        logger.info(f"Download Finished in {minutes} minutes")
+        find_cots_check_box: QCheckBox = self.data_widget.find_cots_check_box
+        inference_check_box: QCheckBox = self.data_widget.inference_check_box
+        enhance_check_box: QCheckBox = self.data_widget.enhance_check_box
+
+        if find_cots_check_box.checkState() == Qt.Checked:
+            self.data_widget.tabWidget.setCurrentIndex(8)
+            self.detect_cots_for_surveys(surveys)
+
+        cots_end = process_time()
+
+        if inference_check_box.checkState() == Qt.Checked:
+            self.inference_surveys(surveys)
+        inference_end = process_time()
+
+        if enhance_check_box.checkState() == Qt.Checked:
+            self.enhance_photos_for_surveys(surveys, disable_denoising=True, disable_dehazing=True)
+        enhance_end = process_time()
+
+        download_minutes = (download_end - start) / 60
+        logger.info(f"Download Finished in {download_minutes} minutes")
+
+        cots_minutes = (cots_end - download_end) / 60
+        cots_text = f"COTS detect Finished in {cots_minutes} minutes"
+        logger.info(cots_text)
+
+        inference_minutes = (inference_end - cots_end) / 60
+        inference_text = f"Inference Finished in {inference_minutes} minutes"
+        logger.info(inference_text)
+
+        enhance_minutes = (enhance_end - inference_end) / 60
+        enhance_text = f"Enhance Finished in {enhance_minutes} minutes"
+        logger.info(enhance_text)
+
         errorbox = QtWidgets.QMessageBox()
         errorbox.setText(self.tr("Download finished"))
-        errorbox.setDetailedText(self.tr("Finished in ") + str(minutes) + self.tr(" minutes"))
+        errorbox.setDetailedText(self.tr("Finished in ") + str(download_minutes) + self.tr(" minutes") + "\n"
+                                 + cots_text + "\n" + inference_text + "\n" + enhance_text + "\n"
+                                 )
         errorbox.setWindowTitle("ReefScan")
         self.aims_status_dialog.progress_dialog.close()
         QtTest.QTest.qWait(1000)
         errorbox.exec_()
+
         self.initial_disables()
 
     def setup_camera_tree(self):
@@ -648,19 +697,47 @@ class DataComponent(QObject):
             except:
                 utils.open_file(self.mark_filename, "open")
 
-    def enhanced_folder(self):
-        return utils.replace_last(self.survey().folder, "/reefscan/", "/reefscan_enhanced/")
+    def enhanced_folder(self, survey):
+        return utils.replace_last(survey, "/reefscan/", "/reefscan_enhanced/")
 
     def enhance_open_folder(self):
-        utils.open_file(self.enhanced_folder())
+        utils.open_file(self.enhanced_folder(self.survey().folder))
 
-    def enhance_photos_folder(self):
-        output_suffix = "_enh"
-        output_folder = self.enhanced_folder()
-        # output_suffix = self.enhance_widget.textEditSuffix.toPlainText()
-        cpu_load_string = self.enhance_widget.textEditCPULoad.toPlainText()
+    # enhance all of the photos for the currently selected survey
+    # if a folder is selected do it for all descendant surveys of that folder
+    def enhance_photos(self):
+        survey_infos = self.get_all_descendants(self.selected_index)
         disable_denoising = self.enhance_widget.checkBoxDisableDenoising.isChecked()
         disable_dehazing = self.enhance_widget.checkBoxDisableDehazing.isChecked()
+
+        self.enhance_photos_for_surveys(survey_infos, disable_denoising=disable_denoising,
+                                        disable_dehazing=disable_dehazing)
+
+    def enhance_photos_for_surveys(self, survey_infos, disable_denoising=True, disable_dehazing=True):
+        self.disable_everything()
+        self.enhance_widget.btnEnhanceFolder.setEnabled(False)
+        try:
+            for survey_info in survey_infos:
+                survey = state.model.surveys_data[survey_info["survey_id"]]
+                result = self.enhance_photos_for_survey(survey, disable_denoising=disable_denoising,
+                                                        disable_dehazing=disable_dehazing)
+                if result.cancelled:
+                    self.enable_everything()
+                    return
+        finally:
+            self.enable_everything()
+            self.enhance_widget.btnEnhanceFolder.setEnabled(True)
+
+    # enhance all of the photos for one survey
+    # returns an object with information as to the successful completion
+    # of the operation
+    def enhance_photos_for_survey(self, survey, disable_denoising=True,
+                                  disable_dehazing=True) -> photoenhance.BatchMonitor:
+
+        output_suffix = "_enh"
+        output_folder = self.enhanced_folder(survey.folder)
+        # output_suffix = self.enhance_widget.textEditSuffix.toPlainText()
+        cpu_load_string = self.enhance_widget.textEditCPULoad.toPlainText()
         if not disable_denoising:
             output_suffix = output_suffix + "_denoise"
         if not disable_dehazing:
@@ -673,10 +750,9 @@ class DataComponent(QObject):
         if self.enhance_widget.checkBoxDisableDehazing.isChecked():
             self.enhance_widget.textBrowser.append("Dehazing step is skipped for faster performance.")
 
-
         QApplication.processEvents()
 
-        enhance_operation = EnhancePhotoOperation(target=self.survey().folder,
+        enhance_operation = EnhancePhotoOperation(target=survey.folder,
                                                   load=float(cpu_load_string),
                                                   suffix=output_suffix,
                                                   output_folder=output_folder,
@@ -695,49 +771,86 @@ class DataComponent(QObject):
         logger.info("thread finished")
         self.aims_status_dialog.close()
 
-
         if enhance_operation.batch_monitor.finished:
             self.enhance_widget.textBrowser.append("Photoenhancer finished")
         else:
             if enhance_operation.batch_monitor.cancelled:
                 self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
 
+        return enhance_operation.batch_monitor
+
+    def enable_everything(self):
+        self.enable_workflow_buttons()
+        self.enable_tabs()
+        self.data_widget.treesWidget.setEnabled(True)
+
+    def disable_everything(self):
+        current_tab = self.data_widget.tabWidget.currentIndex()
+        self.disable_all_workflow_buttons()
+        self.disable_all_tabs(current_tab)
+        self.data_widget.treesWidget.setEnabled(False)
 
     def load_inference_charts(self):
-        if not PYINSTALLER_COMPILED:
+        if self.survey() is not None:
             coverage_results_file = inference_output_coverage_file(self.survey().folder)
             if os.path.exists(coverage_results_file):
                 self.show_tab_by_tab_text('Chart')
+            if not PYINSTALLER_COMPILED:
+                coverage_results_file = inference_output_coverage_file(self.survey().folder)
+                if os.path.exists(coverage_results_file):
+                    self.show_tab_by_tab_text('Chart')
 
-                self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
-                                                            self.data_widget.chart_tab)
+                    self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
+                                                                 self.data_widget.chart_tab)
+                    self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
+                                                                self.data_widget.chart_tab)
 
-                pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
+                    pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
 
-                vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
-                vlayout.addWidget(pie_browser)
+                    vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
+                    vlayout.addWidget(pie_browser)
 
-                chart_operation = ChartOperation()
-                fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
-                pie_browser.setHtml(fig)
-            else:
-                self.hide_tab_by_tab_text('Chart')
-
+                    chart_operation = ChartOperation()
+                    fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
+                    pie_browser.setHtml(fig)
+                else:
+                    self.hide_tab_by_tab_text('Chart')
 
     def inference_open_folder(self):
         utils.open_file(inference_result_folder(self.survey().folder))
 
-    def inference_folder(self):
+    # inference all of the photos for the currently selected survey
+    # if a folder is selected do it for all descendant surveys of that folder
+    def inference(self):
+        survey_infos = self.get_all_descendants(self.selected_index)
+        self.inference_surveys(survey_infos)
+
+    def inference_surveys(self, survey_infos):
+        try:
+            self.disable_everything()
+            for survey_info in survey_infos:
+                survey = state.model.surveys_data[survey_info["survey_id"]]
+                result = self.inference_survey(survey)
+                if result.cancelled:
+                    self.enable_everything()
+                    return
+        finally:
+            self.enable_everything()
+
+    # enhance all of the photos for one survey
+    # returns an object with information as to the successful completion
+    # of the operation
+
+    def inference_survey(self, survey: Survey) -> InferencerBatchMonitor:
         # output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'
 
         output_folder = 'inference_results'
 
-        self.inference_widget.textBrowser.append("Inferencer starting")
-        self.inference_widget.textBrowser.append(f"Inferenced photos will be saved in the folder \'{output_folder}\'")
+        self.inference_widget.textBrowser.append(f"Inferencer starting for {survey.best_name()}")
 
         QApplication.processEvents()
 
-        inference_operation = InferenceOperation(target=self.survey().folder)
+        inference_operation = InferenceOperation(target=survey.folder)
 
         inference_operation.update_interval = 1
         self.aims_status_dialog.set_operation_connections(inference_operation)
@@ -758,9 +871,12 @@ class DataComponent(QObject):
 
         coverage_file = inference_operation.get_coverage_filepath()
         self.inference_widget.textBrowser.append(f'Pie Chart from {coverage_file}')
-        self.load_inference_charts(coverage_file)
+        self.load_inference_charts()
+        return inference_operation.batch_monitor
 
     def camera_tree_selection_changed(self, item_selection: QItemSelection):
+        self.camera_tree_selected = True
+
         logger.info("camera tree changed")
         self.check_save()
         if self.data_widget.surveysTree.selectionModel() is not None:
@@ -770,22 +886,19 @@ class DataComponent(QObject):
         if len(item_selection.indexes()) == 0:
             return ()
 
-        selected_index = self.find_selected_tree_index(item_selection)
-        self.set_survey_id_and_list_from_selected_index(selected_index)
+        self.selected_index = self.find_selected_tree_index(item_selection)
+        self.set_survey_id_and_list_from_selected_index()
 
         # logger.info(f"survey_id {self.survey_id}")
         # logger.info(f"survey {self.survey()}")
 
-        if self.survey_id is None:
-            self.disable_all_tabs(0)
-        else:
-            self.enable_metadata_tab_only()
+        self.enable_tabs()
 
         self.data_to_ui()
         self.set_hint()
 
-    def set_survey_id_and_list_from_selected_index(self, selected_index):
-        selected_index_data = selected_index.data(Qt.UserRole)
+    def set_survey_id_and_list_from_selected_index(self):
+        selected_index_data = self.selected_index.data(Qt.UserRole)
         if selected_index_data == None:
             self.survey_id = None
             self.survey_list = None
@@ -801,32 +914,58 @@ class DataComponent(QObject):
                 self.survey_list = state.model.surveys_data
                 self.camera_selected = False
 
+    # Based on the current state this method will enable the appropriate tabs
+    def enable_tabs(self):
+        if self.data_widget.tabWidget.currentIndex() != 0:
+            self.current_tab = self.data_widget.tabWidget.currentIndex()
+        if self.camera_selected:
+            if self.survey_id is None:
+                self.disable_all_tabs(0)
+            else:
+                self.enable_metadata_tab_only()
+        else:
+            if self.survey_id is None:
+                self.enable_processing_tabs_only()
+            else:
+                self.enable_all_tabs()
+        if self.data_widget.tabWidget.isTabEnabled(self.current_tab):
+            self.data_widget.tabWidget.setCurrentIndex(self.current_tab)
+
     def enable_metadata_tab_only(self):
+        self.disable_all_tabs(None)
         self.data_widget.tabWidget.setEnabled(True)
-        self.data_widget.tabWidget.setTabEnabled(0, False)
-        self.data_widget.tabWidget.setTabEnabled(1, False)
         self.data_widget.tabWidget.setTabEnabled(2, True)
-        self.data_widget.tabWidget.setTabEnabled(3, False)
-        self.data_widget.tabWidget.setTabEnabled(4, False)
-        self.data_widget.tabWidget.setTabEnabled(5, False)
         self.data_widget.tabWidget.setCurrentIndex(2)
 
+    def enable_processing_tabs_only(self):
+        self.disable_all_tabs(None)
+        self.data_widget.tabWidget.setEnabled(True)
+        self.data_widget.tabWidget.setTabEnabled(1, True)
+        self.data_widget.tabWidget.setTabEnabled(6, True)
+        self.data_widget.tabWidget.setTabEnabled(7, True)
+        self.data_widget.tabWidget.setTabEnabled(8, True)
+        if self.data_widget.tabWidget.currentIndex() not in [1, 6, 7, 8]:
+            self.data_widget.tabWidget.setCurrentIndex(1)
+
     def disable_all_tabs(self, index):
-        tab_widget:QTabWidget = self.data_widget.tabWidget
-        tab_widget.setEnabled(False)
-        tab_widget.setCurrentIndex(index)
+        tab_widget: QTabWidget = self.data_widget.tabWidget
+        tabs_count = tab_widget.count()
+        for i in range(tabs_count + 1):
+            self.data_widget.tabWidget.setTabEnabled(i, False)
+
+        if index is not None:
+            self.data_widget.tabWidget.setTabEnabled(index, True)
+            tab_widget.setCurrentIndex(index)
 
     def enable_all_tabs(self):
-        self.data_widget.tabWidget.setEnabled(True)
-        self.data_widget.tabWidget.setTabEnabled(0, False)
-        self.data_widget.tabWidget.setTabEnabled(1, True)
-        self.data_widget.tabWidget.setTabEnabled(2, True)
-        self.data_widget.tabWidget.setTabEnabled(3, True)
-        self.data_widget.tabWidget.setTabEnabled(4, True)
-        self.data_widget.tabWidget.setTabEnabled(5, True)
-        self.data_widget.tabWidget.setCurrentIndex(self.current_tab)
+        tab_widget: QTabWidget = self.data_widget.tabWidget
+        tabs_count = tab_widget.count()
+        tab_widget.setEnabled(True)
+        for i in range(tabs_count + 1):
+            self.data_widget.tabWidget.setTabEnabled(i, True)
 
     def explore_tree_selection_changed(self, item_selection: QItemSelection):
+        self.camera_tree_selected = False
         if self.data_widget.tabWidget.isEnabled():
             self.current_tab = self.data_widget.tabWidget.currentIndex()
 
@@ -840,26 +979,26 @@ class DataComponent(QObject):
         if len(item_selection.indexes()) == 0:
             return ()
 
-        selected_index = self.find_selected_tree_index(item_selection)
-        self.set_survey_id_and_list_from_selected_index(selected_index)
+        self.selected_index = self.find_selected_tree_index(item_selection)
+        self.set_survey_id_and_list_from_selected_index()
 
+        self.setup_processing_button_names()
+        self.enable_tabs()
         if self.survey_id is None:
-            self.disable_all_tabs(1)
             # logger.info(selected_index.data(Qt.DisplayRole))
             # logger.info("columns " + str(selected_index.model().columnCount()))
             # logger.info("rows " + str(selected_index.model().rowCount()))
             # logger.info("children: " + str(len(selected_index.model().children())))
 
-            descendant_surveys = self.get_all_descendants(selected_index)
+            descendant_surveys = self.get_all_descendants(self.selected_index)
             survey_stats = SurveyStats()
             survey_stats.calculate_surveys(descendant_surveys)
             self.survey_stats_to_ui(survey_stats)
-            self.non_survey_to_stats_ui(selected_index.data(Qt.DisplayRole))
+            self.non_survey_to_stats_ui(self.selected_index.data(Qt.DisplayRole))
 
             logger.info(descendant_surveys)
 
         else:
-            self.enable_all_tabs()
 
             self.data_to_ui()
             try:
@@ -871,6 +1010,31 @@ class DataComponent(QObject):
             self.load_inference_charts()
 
         self.set_hint()
+
+    # if a single sequence is selected the processing tabs (enhance, inference and EOD) should
+    # process only that sequence
+    # If a folder is selected it should process all of the sequences in that folder
+    # This method changes the words on the buttons to reflect that
+    # Also some features are disabled
+    def setup_processing_button_names(self):
+        folder_name = self.selected_index.data()
+        if self.survey_id is None:
+            self.enhance_widget.btnEnhanceOpenFolder.setEnabled(False)
+            self.inference_widget.btnInferenceOpenFolder.setEnabled(False)
+            if folder_name == "Local Drive":
+                self.enhance_widget.btnEnhanceFolder.setText(f"Enhance all photos")
+                self.inference_widget.btnInferenceFolder.setText(f"Inference all photos")
+                self.eod_cots_widget.detectCotsButton.setText(f"Detect COTS in all photos")
+            else:
+                self.enhance_widget.btnEnhanceFolder.setText(f"Enhance all photos for {folder_name}")
+                self.inference_widget.btnInferenceFolder.setText(f"Inference all photos for {folder_name}")
+                self.eod_cots_widget.detectCotsButton.setText(f"Detect COTS in all photos for {folder_name}")
+        else:
+            self.enhance_widget.btnEnhanceOpenFolder.setEnabled(True)
+            self.inference_widget.btnInferenceOpenFolder.setEnabled(True)
+            self.enhance_widget.btnEnhanceFolder.setText(f"Enhance Photos for sequence {folder_name}")
+            self.inference_widget.btnInferenceFolder.setText(f"Inference photos for {folder_name}")
+            self.eod_cots_widget.detectCotsButton.setText(f"Detect COTS in photos for {folder_name}")
 
     def find_selected_tree_index(self, item_selection):
         for index in item_selection.indexes():

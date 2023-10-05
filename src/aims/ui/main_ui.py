@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QTextBrowser
 from PyQt5 import QtWidgets, uic, QtCore
 
 from aims import data_loader
-from aims.operations.ping_thread import PingThread
+from aims2.operations2.ping_thread import PingThread
 from aims.state import state
 import sys
 import logging

@@ -7,7 +7,6 @@ from reefscanner.basic_model.progress_queue import ProgressQueue
 
 logger = logging.getLogger("")
 
-
 class AbstractOperation(QObject):
     set_max = QtCore.pyqtSignal(int)
     set_value = QtCore.pyqtSignal(object)
@@ -27,9 +26,10 @@ class AbstractOperation(QObject):
         logger.info("done set up sync")
 
     def cancel(self):
-        print ("abstract operation says cancel")
+        print("abstract operation says cancel")
         logger.info("abstract operation says cancel")
-        self.sync.cancel()
+        if self.sync is not None:
+            self.sync.cancel()
 
     def consumer(self):
         logger.info(f"consumer started {self.progress_value}")
