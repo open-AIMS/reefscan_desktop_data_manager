@@ -32,3 +32,4 @@ shapely
 alphashape
 gpxpy
 ping3
+wheel
