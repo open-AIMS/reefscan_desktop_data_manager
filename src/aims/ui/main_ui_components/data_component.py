@@ -13,10 +13,9 @@ from PyQt5.QtCore import QItemSelection, QSize, Qt, QObject
 from PyQt5.QtGui import QPixmap, QStandardItemModel, QStandardItem
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QWidget, QTableView, QLabel, QListView, \
-    QListWidget, QMessageBox, QTabWidget, QCheckBox
+    QListWidget, QMessageBox, QTabWidget, QCheckBox, QHeaderView
 from inferencer.batch_monitor import BatchMonitor as InferencerBatchMonitor
 from photoenhancer import photoenhance
-    QListWidget, QMessageBox, QMainWindow, QTabWidget, QHeaderView
 from pytz import utc
 from reefscanner.basic_model.exif_utils import get_exif_data
 from reefscanner.basic_model.model_helper import rename_folders
@@ -179,7 +178,6 @@ class DataComponent(QObject):
                                                      self.data_widget.marks_tab)
         self.enhance_widget = self.load_sequence_frame(f'{state.meipass}resources/enhance.ui',
                                                        self.data_widget.enhance_tab)
-                                                     self.data_widget.enhance_tab)
         self.realtime_cots_widget = self.load_sequence_frame(f'{state.meipass}resources/realtime_cots.ui',
                                                      self.data_widget.realtime_cots_tab)
 
@@ -272,6 +270,7 @@ class DataComponent(QObject):
     # detect cots in all of the photos for the currently selected survey
     # if a folder is selected do it for all descendant surveys of that folder
     def read_realtime_detections(self):
+
         target=self.survey().folder
         cots_detections_list = []
 
@@ -300,7 +299,8 @@ class DataComponent(QObject):
         return cots_detections_list
 
     def display_realtime_detections(self):
-
+        if self.survey() is None:
+            return
         cots_detections_data = self.read_realtime_detections()
 
         # Create a QStandardItemModel
@@ -916,7 +916,8 @@ class DataComponent(QObject):
 
     # Based on the current state this method will enable the appropriate tabs
     def enable_tabs(self):
-        current_tab = self.data_widget.tabWidget.currentIndex()
+        if self.data_widget.tabWidget.currentIndex() != 0:
+            self.current_tab = self.data_widget.tabWidget.currentIndex()
         if self.camera_selected:
             if self.survey_id is None:
                 self.disable_all_tabs(0)
@@ -927,60 +928,41 @@ class DataComponent(QObject):
                 self.enable_processing_tabs_only()
             else:
                 self.enable_all_tabs()
-        if self.data_widget.tabWidget.isTabEnabled(current_tab):
-            self.data_widget.tabWidget.setCurrentIndex(current_tab)
+        if self.data_widget.tabWidget.isTabEnabled(self.current_tab):
+            self.data_widget.tabWidget.setCurrentIndex(self.current_tab)
 
     def enable_metadata_tab_only(self):
+        self.disable_all_tabs(None)
         self.data_widget.tabWidget.setEnabled(True)
-        self.data_widget.tabWidget.setTabEnabled(0, False)
-        self.data_widget.tabWidget.setTabEnabled(1, False)
         self.data_widget.tabWidget.setTabEnabled(2, True)
-        self.data_widget.tabWidget.setTabEnabled(3, False)
-        self.data_widget.tabWidget.setTabEnabled(4, False)
-        self.data_widget.tabWidget.setTabEnabled(5, False)
-        self.data_widget.tabWidget.setTabEnabled(6, False)
-        self.data_widget.tabWidget.setTabEnabled(7, False)
-        self.data_widget.tabWidget.setTabEnabled(8, False)
-        self.data_widget.tabWidget.setTabEnabled(9, False)
         self.data_widget.tabWidget.setCurrentIndex(2)
 
     def enable_processing_tabs_only(self):
+        self.disable_all_tabs(None)
         self.data_widget.tabWidget.setEnabled(True)
-        self.data_widget.tabWidget.setTabEnabled(0, False)
         self.data_widget.tabWidget.setTabEnabled(1, True)
-        self.data_widget.tabWidget.setTabEnabled(2, False)
-        self.data_widget.tabWidget.setTabEnabled(3, False)
-        self.data_widget.tabWidget.setTabEnabled(4, False)
-        self.data_widget.tabWidget.setTabEnabled(5, False)
         self.data_widget.tabWidget.setTabEnabled(6, True)
         self.data_widget.tabWidget.setTabEnabled(7, True)
         self.data_widget.tabWidget.setTabEnabled(8, True)
-        self.data_widget.tabWidget.setTabEnabled(9, False)
         if self.data_widget.tabWidget.currentIndex() not in [1, 6, 7, 8]:
             self.data_widget.tabWidget.setCurrentIndex(1)
 
     def disable_all_tabs(self, index):
         tab_widget: QTabWidget = self.data_widget.tabWidget
-        for i in range(10):
+        tabs_count = tab_widget.count()
+        for i in range(tabs_count + 1):
             self.data_widget.tabWidget.setTabEnabled(i, False)
 
-        self.data_widget.tabWidget.setTabEnabled(index, True)
-        tab_widget.setCurrentIndex(index)
+        if index is not None:
+            self.data_widget.tabWidget.setTabEnabled(index, True)
+            tab_widget.setCurrentIndex(index)
 
     def enable_all_tabs(self):
-        self.data_widget.tabWidget.setEnabled(True)
-        self.data_widget.tabWidget.setTabEnabled(0, False)
-        self.data_widget.tabWidget.setTabEnabled(1, True)
-        self.data_widget.tabWidget.setTabEnabled(2, True)
-        self.data_widget.tabWidget.setTabEnabled(3, True)
-        self.data_widget.tabWidget.setTabEnabled(4, True)
-        self.data_widget.tabWidget.setTabEnabled(5, True)
-        self.data_widget.tabWidget.setTabEnabled(6, True)
-        self.data_widget.tabWidget.setTabEnabled(7, True)
-        self.data_widget.tabWidget.setTabEnabled(8, True)
-        self.data_widget.tabWidget.setTabEnabled(9, True)
-
-        self.data_widget.tabWidget.setCurrentIndex(self.current_tab)
+        tab_widget: QTabWidget = self.data_widget.tabWidget
+        tabs_count = tab_widget.count()
+        tab_widget.setEnabled(True)
+        for i in range(tabs_count + 1):
+            self.data_widget.tabWidget.setTabEnabled(i, True)
 
     def explore_tree_selection_changed(self, item_selection: QItemSelection):
         self.camera_tree_selected = False
