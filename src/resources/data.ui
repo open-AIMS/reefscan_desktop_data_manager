@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1360</width>
-    <height>715</height>
+    <width>1378</width>
+    <height>708</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -205,27 +205,15 @@ QGroupBox::title{
          </item>
          <item row="4" column="2">
           <widget class="QCheckBox" name="enhance_check_box">
-           <property name="text">
-            <string>Enhance Photos</string>
-           </property>
            <property name="maximumSize">
             <size>
              <width>450</width>
              <height>16777215</height>
             </size>
            </property>
-           <property name="headerHidden">
-            <bool>true</bool>
+           <property name="text">
+            <string>Enhance Photos</string>
            </property>
-           <attribute name="headerMinimumSectionSize">
-            <number>450</number>
-           </attribute>
-           <attribute name="headerDefaultSectionSize">
-            <number>900</number>
-           </attribute>
-           <attribute name="headerStretchLastSection">
-            <bool>false</bool>
-           </attribute>
           </widget>
          </item>
          <item row="3" column="0" colspan="3">
@@ -328,7 +316,7 @@ QGroupBox::title{
            <property name="headerHidden">
             <bool>true</bool>
            </property>
-           <attribute name="headerMinimumSectionSize">
+           <attribute name="headerDefaultSectionSize">
             <number>900</number>
            </attribute>
            <attribute name="headerMinimumSectionSize">
@@ -336,8 +324,6 @@ QGroupBox::title{
            </attribute>
            <attribute name="headerStretchLastSection">
             <bool>false</bool>
-           <attribute name="headerDefaultSectionSize">
-            <number>900</number>
            </attribute>
           </widget>
          </item>
@@ -448,7 +434,7 @@ QGroupBox::title{
       </attribute>
       <layout class="QGridLayout" name="gridLayout_5">
        <item row="0" column="0">
-        <widget class="QWebEngineView" name="mapView" native="true">
+        <widget class="QWebEngineView" name="mapView">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>
@@ -461,7 +447,7 @@ QGroupBox::title{
            <height>120</height>
           </size>
          </property>
-         <property name="url" stdset="0">
+         <property name="url">
           <url>
            <string>about:blank</string>
           </url>
@@ -546,17 +532,17 @@ QGroupBox::title{
       </attribute>
       <layout class="QGridLayout" name="gridLayout_9"/>
      </widget>
-     <widget class="QWidget" name="realtime_cots_tab">
-      <attribute name="title">
-       <string>Real-Time-COTS</string>
-      </attribute>
-      <layout class="QGridLayout" name="gridLayout_10"/>
-     </widget>
      <widget class="QWidget" name="eod_cots_tab">
       <attribute name="title">
        <string>End-Of-Day-COTS</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_11"/>
+     </widget>
+     <widget class="QWidget" name="realtime_cots_tab">
+      <attribute name="title">
+       <string>Real-Time-COTS</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_10"/>
      </widget>
      <widget class="QWidget" name="chart_tab">
       <attribute name="title">
