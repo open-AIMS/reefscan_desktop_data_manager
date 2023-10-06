@@ -24,11 +24,14 @@ from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 from reefscanner.basic_model.survey import Survey
 
 from aims import data_loader, utils
+from aims.model.cots_detection import CotsDetection
+from aims.model.cots_detection_list import CotsDetectionList
 from aims.state import state
 from aims.gui_model.lazy_list_model import LazyListModel
 from aims.gui_model.marks_model import MarksModel
 from aims.gui_model.tree_model import TreeModelMaker, checked_survey_ids
 from aims.operations.kml_maker import make_kml
+from aims.ui.main_ui_components.cots_display_component import CotsDisplayComponent
 from aims2.operations2.cots_detector import CotsDetector
 from aims2.operations2.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.stats.survey_stats import SurveyStats
@@ -113,6 +116,7 @@ class DataComponent(QObject):
         self.cots_detector: CotsDetector = None
         self.selected_index = None
         self.camera_tree_selected = False
+        self.realtime_cots_component = None
 
     def tab_changed(self, index):
         logger.info(index)
@@ -246,9 +250,8 @@ class DataComponent(QObject):
 
         self.eod_cots_widget.detectCotsButton.clicked.connect(self.detect_cots)
         self.eod_cots_widget.cancelButton.clicked.connect(self.cancel_detect)
-        self.cots_detector = CotsDetector(output=self.eod_cots_widget.detectorOutput,
-                                          parent=self
-                                          )
+        self.realtime_cots_component = CotsDisplayComponent(self.realtime_cots_widget)
+
 
     def get_index_by_tab_text(self, name_of_tab):
         for i in range(self.data_widget.tabWidget.count()):
@@ -267,53 +270,13 @@ class DataComponent(QObject):
         index = self.get_index_by_tab_text(name_of_tab)
         self.data_widget.tabWidget.setTabEnabled(index, True)
 
-    # detect cots in all of the photos for the currently selected survey
-    # if a folder is selected do it for all descendant surveys of that folder
-    def read_realtime_detections(self):
-
-        target=self.survey().folder
-        cots_detections_list = []
-
-        # Iterate through all files in the folder
-        for filename in os.listdir(target):
-            file_path = os.path.join(target, filename)
-
-            # Check if the file is a cots sequence JSON file
-            if filename.startswith("cots_sequence_") and filename.endswith(".json") and os.path.isfile(file_path):
-                with open(file_path, 'r') as file:
-                    try:
-                        # Load the JSON content
-                        json_data = json.load(file)
-
-                        best_detection = json_data['maximum_scores'][0]
-
-                        best_class_id = best_detection['class_id']
-                        best_score = best_detection['maximum_score']
-                        sequence_id = json_data['sequence_id']
-
-                        cots_detections_info = (sequence_id, best_class_id, best_score)
-                        cots_detections_list.append(cots_detections_info)
-                    except json.JSONDecodeError as e:
-                        print(f"Error decoding JSON in {filename}: {e}")
-
-        return cots_detections_list
 
     def display_realtime_detections(self):
         if self.survey() is None:
             return
-        cots_detections_data = self.read_realtime_detections()
 
-        # Create a QStandardItemModel
-        item_model = QStandardItemModel(self)
-        item_model.setHorizontalHeaderLabels(["Sequence ID", "Class ID", "Maximum Score"])
-        for row in cots_detections_data:
-            item_model.appendRow([QStandardItem(str(row[0])),
-                                  QStandardItem(str(row[1])),
-                                  QStandardItem(str(row[2])),
-                                  ])
+        self.realtime_cots_component.display_realtime_detections(self.survey().folder)
 
-        self.realtime_cots_widget.tableView.setModel(item_model)
-        self.realtime_cots_widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
     def detect_cots(self):
         survey_infos = self.get_all_descendants(self.selected_index)
