@@ -250,6 +250,10 @@ class DataComponent(QObject):
 
         self.eod_cots_widget.detectCotsButton.clicked.connect(self.detect_cots)
         self.eod_cots_widget.cancelButton.clicked.connect(self.cancel_detect)
+        self.cots_detector = CotsDetector(output=self.eod_cots_widget.detectorOutput,
+                                          parent=self
+                                          )
+
         self.realtime_cots_component = CotsDisplayComponent(self.realtime_cots_widget)
 
 
