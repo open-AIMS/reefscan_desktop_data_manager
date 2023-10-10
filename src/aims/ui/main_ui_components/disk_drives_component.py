@@ -88,6 +88,9 @@ class DiskDrivesComponent(QObject):
 
     def connect(self):
         state.config.backup = self.widget.cbBackup.isChecked()
+        # I am leaving this commented code here because it is useful for viewing
+        # historic data. Perhaps we need a proper feature for this.
+        # state.primary_drive = "Z:/field_data/Trip7565_TorresSTrait_Solander_NAMMA/20210530_Erub/ReefScan_raw/"
         state.primary_drive = self.widget.driveComboBox.currentData()
         state.primary_folder = get_primary_folder(state.primary_drive)
         if not os.path.exists(state.primary_folder):
