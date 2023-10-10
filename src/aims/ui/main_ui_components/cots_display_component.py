@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QObject, QItemSelection, Qt, QRect
+from PyQt5.QtCore import QObject, QItemSelection, Qt, QRect, QByteArray
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QImage, QPixmap, QPainter, QPen, QColor, QFont
 from PyQt5.QtWidgets import QHeaderView, QTableView, QAbstractItemView, QLabel
 
@@ -9,6 +9,9 @@ from aims.model.proportional_rectangle import ProportionalRectangle
 
 # This class handles the visualisation of COTS detections as a table
 # it shows photos of COTS for each COTS sequence
+from aims.utils import read_binary_file_support_samba
+
+
 class CotsDisplayComponent(QObject):
     def __init__(self, realtime_cots_widget):
         super().__init__()
@@ -22,10 +25,14 @@ class CotsDisplayComponent(QObject):
         self.realtime_cots_widget.button_previous.clicked.connect(self.previous)
 
     # detect and display  cots in all of the photos for the currently selected survey
-    def display_realtime_detections(self, folder):
+    # This could be from the disk or the camera (samba = True for camera data)
+    def display_realtime_detections(self, folder, samba):
         # read_realtime_files returns true if the data is changes
         # If it is not changed don't do anything
-        if self.realtime_cots_detection_list.read_realtime_files(folder):
+        if self.realtime_cots_detection_list.read_realtime_files(folder, samba):
+
+
+            self.item_model.clear()
 
             # Create a QStandardItemModel
             self.item_model.setHorizontalHeaderLabels(["Sequence ID", "Class ID", "Maximum Score"])
@@ -58,6 +65,7 @@ class CotsDisplayComponent(QObject):
         self.show_photo()
 
     # Show the current photo, highlight the COTS and enable the appropriate buttons
+    # This could be from the disk or the camera so we need to allow for that
     def show_photo(self):
         if self.photos is None:
             return
@@ -68,7 +76,9 @@ class CotsDisplayComponent(QObject):
         # determine the width available to display the photo
         available_width = label_photo.width()
 
-        image = QImage(photo)
+        file_contents: bytes = read_binary_file_support_samba(photo, self.realtime_cots_detection_list.samba)
+        image = QImage()
+        image.loadFromData(file_contents, format='JPG')
         image_width = image.width()
         image_height = image.height()
         pixmap = QPixmap.fromImage(image)
