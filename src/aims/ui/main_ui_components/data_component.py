@@ -116,12 +116,10 @@ class DataComponent(QObject):
         self.cots_detector: CotsDetector = None
         self.selected_index = None
         self.camera_tree_selected = False
-        self.realtime_cots_component = None
+        self.realtime_cots_component: CotsDisplayComponent = None
 
     def tab_changed(self, index):
         logger.info(index)
-        if index == 2:
-            self.draw_map()
 
     def copy(self):
         self.ui_to_data()
@@ -861,6 +859,10 @@ class DataComponent(QObject):
 
         self.data_to_ui()
         self.display_realtime_detections(samba=True)
+        try:
+            self.draw_map(samba=True)
+        except Exception as e:
+            logger.info(f"Error loading map\n{e}")
 
         self.set_hint()
 
@@ -898,12 +900,14 @@ class DataComponent(QObject):
         if self.data_widget.tabWidget.isTabEnabled(self.current_tab):
             self.data_widget.tabWidget.setCurrentIndex(self.current_tab)
 
+# show the metadata_tab, the map tab and the realtime COTS tab
     def enable_metadata_tab_only(self):
         self.disable_all_tabs(None)
         self.data_widget.tabWidget.setEnabled(True)
         self.data_widget.tabWidget.setTabEnabled(2, True)
+        self.data_widget.tabWidget.setTabEnabled(3, True)
         self.data_widget.tabWidget.setTabEnabled(9, True)
-        if self.data_widget.tabWidget.currentIndex() not in [2, 9]:
+        if self.data_widget.tabWidget.currentIndex() not in [2, 3, 9]:
             self.data_widget.tabWidget.setCurrentIndex(2)
 
     def enable_processing_tabs_only(self):
@@ -970,14 +974,14 @@ class DataComponent(QObject):
         else:
 
             self.data_to_ui()
-            try:
-                self.draw_map()
-            except Exception as e:
-                logger.info(f"Error loading map\n{e}")
             self.load_thumbnails()
             self.load_marks()
             self.load_inference_charts()
             self.display_realtime_detections(samba=False)
+            try:
+                self.draw_map(samba=False)
+            except Exception as e:
+                logger.info(f"Error loading map\n{e}")
 
         self.set_hint()
 
@@ -1208,11 +1212,16 @@ class DataComponent(QObject):
         self.data_widget.surveysTree.selectionModel().selectionChanged.connect(self.explore_tree_selection_changed)
         self.survey_id = None
 
-    def draw_map(self):
+    def draw_map(self, samba):
         # logger.info("draw map")
         if self.survey_id is not None:
             folder = self.survey().folder
-            html_str = map_html_str(folder, False)
+            try:
+                cots_waypoints = self.realtime_cots_component.realtime_cots_detection_list.cots_waypoints
+            except:
+                cots_waypoints = []
+
+            html_str = map_html_str(folder, cots_waypoints, samba)
             # logger.info(html_str)
             if html_str is not None:
                 view: QWebEngineView = self.data_widget.mapView

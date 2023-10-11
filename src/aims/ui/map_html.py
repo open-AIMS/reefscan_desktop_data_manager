@@ -1,8 +1,12 @@
 import logging
 
 from reefscanner.basic_model.photo_csv_maker import track, make_photo_csv
+
+from aims.model.cots_detection_list import CotsDetectionList
+
 logger = logging.getLogger("")
 html_str = """
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -39,17 +43,37 @@ html_str = """
         `
         <div style=
         "background-color: #00FFFF;
+      width: 7px;
+      height: 7px;
+      display: block;
+      transform: translate(-50%,-50%);
+      position: relative;
+      border-radius: 100%;
+      border: 0px solid #FFFFFF;
+      opacity: 0.7;">
+        </div>
+        `
+    });
+	
+     var red_square = L.divIcon({
+      className: 'map-magnitude-icon',
+       iconAnchor: [0, 0],
+      popupAnchor: [0, 0],
+      iconSize: [10, 10],
+       html: 
+        `
+ <div style=
+        "background-color: #FF0000;
       width: 10px;
       height: 10px;
       display: block;
       transform: translate(-50%,-50%);
       position: relative;
-      border-radius: 100%;
-      border: 1px solid #FFFFFF;
+      border: 0px solid #FFFFFF;
       opacity: 0.7;">
         </div>
-        `
-    });
+		`
+    });	
       
 	var mymap = L.map("mapid");
 	
@@ -60,7 +84,8 @@ html_str = """
 	googleSat.addTo(mymap);
 	
 	var latlngs = ___PASTE_TRACK_HERE___
-	
+	var cots_points = ___PASTE_COTS_HERE___
+		
 	
 //	 var polyline = L.polyline(latlngs, {color: 'red'}).addTo(mymap);
 	var markersLayer = L.featureGroup();
@@ -72,6 +97,12 @@ html_str = """
         marker.bindPopup(makePopup(l[2]))
 	}
 	
+    for (const c of cots_points) {
+        const marker = L.marker([c[0], c[1]]);
+        marker.setIcon(red_square)
+        marker.addTo(markersLayer);
+        marker.bindPopup(makePopup(c[2]))
+	}
 	
 
 
@@ -103,7 +134,7 @@ html_str = """
 
 
 
-def map_html_str(folder, samba):
+def map_html_str(folder, cots_waypoints, samba):
     # try:
     #     make_photo_csv(folder)
     # except Exception as e:
@@ -119,7 +150,11 @@ def map_html_str(folder, samba):
             return "<html>No Map</html"
 
         track_str = str(_track)
-        return html_str.replace("___PASTE_TRACK_HERE___", track_str)
+        html = html_str.replace("___PASTE_TRACK_HERE___", track_str)
+        html = html.replace("___PASTE_COTS_HERE___", str(cots_waypoints))
+        print(html)
+
+        return html
     except Exception as e:
         raise UserWarning(e)
 
