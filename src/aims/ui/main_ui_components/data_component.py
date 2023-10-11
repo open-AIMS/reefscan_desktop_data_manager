@@ -122,8 +122,6 @@ class DataComponent(QObject):
         logger.info(index)
         if index == 2:
             self.draw_map()
-        if index == self.get_index_by_tab_text('Real-Time-COTS'):
-            self.display_realtime_detections()
 
     def copy(self):
         self.ui_to_data()
@@ -275,11 +273,11 @@ class DataComponent(QObject):
         self.data_widget.tabWidget.setTabEnabled(index, True)
 
 
-    def display_realtime_detections(self):
+    def display_realtime_detections(self, samba):
         if self.survey() is None:
             return
 
-        self.realtime_cots_component.display_realtime_detections(self.survey().folder)
+        self.realtime_cots_component.display_realtime_detections(self.survey().folder, samba)
 
 
     def detect_cots(self):
@@ -862,6 +860,8 @@ class DataComponent(QObject):
         self.enable_tabs()
 
         self.data_to_ui()
+        self.display_realtime_detections(samba=True)
+
         self.set_hint()
 
     def set_survey_id_and_list_from_selected_index(self):
@@ -902,7 +902,9 @@ class DataComponent(QObject):
         self.disable_all_tabs(None)
         self.data_widget.tabWidget.setEnabled(True)
         self.data_widget.tabWidget.setTabEnabled(2, True)
-        self.data_widget.tabWidget.setCurrentIndex(2)
+        self.data_widget.tabWidget.setTabEnabled(9, True)
+        if self.data_widget.tabWidget.currentIndex() not in [2, 9]:
+            self.data_widget.tabWidget.setCurrentIndex(2)
 
     def enable_processing_tabs_only(self):
         self.disable_all_tabs(None)
@@ -975,6 +977,7 @@ class DataComponent(QObject):
             self.load_thumbnails()
             self.load_marks()
             self.load_inference_charts()
+            self.display_realtime_detections(samba=False)
 
         self.set_hint()
 
