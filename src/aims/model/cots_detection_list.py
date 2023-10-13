@@ -85,7 +85,7 @@ class CotsDetectionList():
         # concat the array of waypoint data frames into one and convert to a list
         if len(cots_waypoint_dfs) > 0:
             self.cots_waypoints = pd.concat(cots_waypoint_dfs).values.tolist()
-            print(self.cots_waypoints)
+
         else:
             self.cots_waypoints = []
 
