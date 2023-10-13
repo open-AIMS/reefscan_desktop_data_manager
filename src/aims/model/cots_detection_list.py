@@ -2,6 +2,9 @@ import json
 import ntpath
 import os
 import pandas as pd
+
+from PIL import Image
+from PIL import UnidentifiedImageError
 from PyQt5.QtCore import QObject
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
@@ -11,6 +14,8 @@ from aims.model.proportional_rectangle import ProportionalRectangle
 # This stores all the information for COTS detections for a reefscan sequence
 from aims.utils import read_json_file_support_samba
 
+import logging
+logger = logging.getLogger("")
 
 class CotsDetectionList():
     def __init__(self):
@@ -43,10 +48,24 @@ class CotsDetectionList():
 
         self.folder = folder
         self.samba = samba
+        
         self.load_waypoints()
         self.read_realtime_sequence_files()
         self.read_realtime_image_files()
         return True
+
+    def read_eod_files(self, folder: str, samba: bool):
+        if self.folder == folder:
+            return False
+        
+        self.cots_detections_list = []
+        self.image_rectangles_by_filename = {}
+
+        self.folder = folder
+        self.samba = samba
+        self.read_eod_detection_files(folder)
+        return True             
+
 
     # Read the information from the cots_image_*.json files. Each file corresponds to a photo
     # and has the location of the COTS stored in the file as a rectangle (proprtional to the size of the photo)
@@ -123,6 +142,132 @@ class CotsDetectionList():
                     self.cots_detections_list.append(cots_detections_info)
                 except Exception as e:
                     print(f"Error decoding JSON in {filename}: {e}")
+
+    def read_eod_detection_files(self, folder: str):
+
+        # Function to get the related folder containing the eod json files
+        def get_eod_detections_dir(images_folder):
+            parent_dir  = os.path.abspath(os.path.join(images_folder, '..'))
+            eod_dir = f'{parent_dir}_eod_cots'
+            seq_dir_name = os.path.basename(images_folder)
+            eod_json_dir = os.path.join(eod_dir, seq_dir_name, 'final')
+            return eod_json_dir
+
+        # Function to normalize bounding box dimensions from 
+        # pixel-based absolute to relative
+        def normalize_box_dims(image_path, left, top, width, height):
+            try:
+                with Image.open(image_path) as img:
+                    img_width, img_height = img.size
+            except UnidentifiedImageError:
+                logger.info(f'Unable to read {image_path}')
+                img_width = 1
+                img_height = 1
+            return (float(left) / img_width,
+                    float(top) / img_height,
+                    float(width) / img_width,
+                    float(height) / img_height)
+        
+        # Data structure for monitoring eod detections where one
+        # can insert a detection with the same sequence id (annotation id). 
+        # This data structure will perform the necessary checks and will
+        # preserve the highest detection score if there are duplicates
+        # Additionally it will accumulate the image filenames for each detection.
+        class EodDetectionsDict():
+            def __init__(self):
+                self.reference_dict = {}
+
+            def insert(self, cots_detection_item: CotsDetection, image_path):
+                sequence_id = cots_detection_item.sequence_id
+                current_images = []                
+                if sequence_id not in self.reference_dict:
+                    self.reference_dict[sequence_id] = cots_detection_item
+                else:
+                    current_images = self.reference_dict[sequence_id].images
+                    old_detection = self.reference_dict[sequence_id]
+                    if cots_detection_item.best_score > old_detection.best_score:
+                        self.reference_dict[sequence_id] = cots_detection_item
+                        
+                if image_path not in current_images:
+                    current_images.append(image_path)
+                    self.reference_dict[sequence_id].images = current_images
+
+
+            def extract_to_list(self):
+                return [i for i in self.reference_dict.values()]
+
+
+        detection_ref = EodDetectionsDict()
+        self.cots_detections_list = []
+        ops = get_file_ops(self.samba)
+
+        # this will be an array of single row data frames
+        # one for each image with cots
+        cots_waypoint_dfs = []
+
+        eod_cots_folder = get_eod_detections_dir(folder)
+
+        # Iterate through the json files in the eod cots folder
+        for filename in ops.listdir(eod_cots_folder):
+            file_path = f"{eod_cots_folder}/{filename}"
+
+            # Check if the file is a JSON file
+            if filename.endswith(".json") and os.path.isfile(file_path):
+                try:
+                    # Load the JSON content from local disk or samba drive
+                    json_data = read_json_file_support_samba(file_path, self.samba)
+
+                    # Check if the file is an EOD COTS detection file based on keys
+                    if 'frame_filename' and 'data' in json_data:
+
+                        detections_list = json_data['data']['detections']
+
+                        photo_file_name = ntpath.basename(json_data["frame_filename"])
+                        photo_file_name_path = f"{self.folder}/{photo_file_name}"
+
+                        for detection in detections_list:
+                            class_id = 0
+                            sequence_id = detection['annotation_id']
+                            score = detection['score']
+                            cots_detections_info = CotsDetection(sequence_id=sequence_id,
+                                                                best_class_id=class_id,
+                                                                best_score=score,
+                                                                images=[]
+                                                                )
+                            detection_ref.insert(cots_detections_info, photo_file_name_path)
+
+                        rectangles = []
+                        for result in detections_list:
+                            px_left = result["x"]
+                            px_top = result["y"]
+                            px_width = result["width"]
+                            px_height = result["height"]
+                            sequence_id = result["annotation_id"]
+                            left, top, width, height = normalize_box_dims(photo_file_name_path, px_left, px_top, px_width, px_height)
+                            rectangle = ProportionalRectangle(left, top, width, height, sequence_id)
+                            rectangles.append(rectangle)
+                        self.image_rectangles_by_filename[photo_file_name_path] = rectangles
+                        # cots_waypoint_dfs.append(self.waypoint_by_filename(photo_file_name))
+
+                except json.JSONDecodeError as e:
+                    print(f"Error decoding JSON in {filename}: {e}")
+
+        # Convert the EOD detection dictionary to list
+        self.cots_detections_list = detection_ref.extract_to_list()
+        
+        for key in self.image_rectangles_by_filename:
+            for rect in self.image_rectangles_by_filename[key]:
+                rect: ProportionalRectangle
+                logger.info(f'{key}')
+                logger.info(f'{rect.sequence_id} {rect.top} {rect.left} {rect.width} {rect.height}')
+
+
+        # # concat the array of waypoint data frames into one and convert to a list
+        # if len(cots_waypoint_dfs) > 0:
+        #     self.cots_waypoints = pd.concat(cots_waypoint_dfs).values.tolist()
+        #     print(self.cots_waypoints)
+        # else:
+        #     self.cots_waypoints = []
 
     def image_list(self, detection_list):
         images = []

@@ -58,10 +58,6 @@ due to file size requirements, i.e. tensorflow is required for
 these operations but it is too large for the purposes
 of a pyinstaller executable
 """
-import sys
-
-logger = logging.getLogger("")
-
 PYINSTALLER_COMPILED = getattr(sys, 'frozen', False)
 if not PYINSTALLER_COMPILED:
     try:
@@ -117,6 +113,7 @@ class DataComponent(QObject):
         self.selected_index = None
         self.camera_tree_selected = False
         self.realtime_cots_component: CotsDisplayComponent = None
+        self.eod_cots_component = None
 
     def tab_changed(self, index):
         logger.info(index)
@@ -251,6 +248,7 @@ class DataComponent(QObject):
                                           )
 
         self.realtime_cots_component = CotsDisplayComponent(self.realtime_cots_widget)
+        self.eod_cots_component = CotsDisplayComponent(self.eod_cots_widget)
 
 
     def get_index_by_tab_text(self, name_of_tab):
@@ -277,6 +275,11 @@ class DataComponent(QObject):
 
         self.realtime_cots_component.display_realtime_detections(self.survey().folder, samba)
 
+    def display_eod_detections(self, samba):
+        if self.survey() is None:
+            return
+
+        self.eod_cots_component.display_eod_detections(self.survey().folder, samba)
 
     def detect_cots(self):
         survey_infos = self.get_all_descendants(self.selected_index)
@@ -755,9 +758,6 @@ class DataComponent(QObject):
 
     def load_inference_charts(self):
         if self.survey() is not None:
-            coverage_results_file = inference_output_coverage_file(self.survey().folder)
-            if os.path.exists(coverage_results_file):
-                self.show_tab_by_tab_text('Chart')
             if not PYINSTALLER_COMPILED:
                 coverage_results_file = inference_output_coverage_file(self.survey().folder)
                 if os.path.exists(coverage_results_file):
@@ -859,6 +859,8 @@ class DataComponent(QObject):
 
         self.data_to_ui()
         self.display_realtime_detections(samba=True)
+        self.display_eod_detections(samba=True)
+
         try:
             self.draw_map(samba=True)
         except Exception as e:
@@ -974,10 +976,12 @@ class DataComponent(QObject):
         else:
 
             self.data_to_ui()
+            self.display_realtime_detections(samba=False)
+            self.display_eod_detections(samba=False)
             self.load_thumbnails()
             self.load_marks()
             self.load_inference_charts()
-            self.display_realtime_detections(samba=False)
+
             try:
                 self.draw_map(samba=False)
             except Exception as e:
@@ -1217,7 +1221,7 @@ class DataComponent(QObject):
         if self.survey_id is not None:
             folder = self.survey().folder
             try:
-                cots_waypoints = self.realtime_cots_component.realtime_cots_detection_list.cots_waypoints
+                cots_waypoints = self.realtime_cots_component.cots_detection_list.cots_waypoints
             except:
                 cots_waypoints = []
 
