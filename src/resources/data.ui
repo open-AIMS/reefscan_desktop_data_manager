@@ -409,7 +409,7 @@ QGroupBox::title{
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>8</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="empty_tab">
       <attribute name="title">
@@ -432,29 +432,7 @@ QGroupBox::title{
       <attribute name="title">
        <string>Map</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_5">
-       <item row="0" column="0">
-        <widget class="QWebEngineView" name="mapView">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>120</height>
-          </size>
-         </property>
-         <property name="url">
-          <url>
-           <string>about:blank</string>
-          </url>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <layout class="QGridLayout" name="gridLayout_5"/>
      </widget>
      <widget class="QWidget" name="thumbnails_tab">
       <attribute name="title">
@@ -554,13 +532,6 @@ QGroupBox::title{
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>QWebEngineView</class>
-   <extends>QWidget</extends>
-   <header location="global">QtWebEngineWidgets/QWebEngineView</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
