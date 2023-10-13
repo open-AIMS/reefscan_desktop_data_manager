@@ -13,48 +13,55 @@ from aims.utils import read_binary_file_support_samba
 
 
 class CotsDisplayComponent(QObject):
-    def __init__(self, realtime_cots_widget):
+    def __init__(self, cots_widget):
         super().__init__()
-        self.realtime_cots_detection_list = CotsDetectionList()
-        self.realtime_cots_widget = realtime_cots_widget
+        self.cots_detection_list = CotsDetectionList()
+        self.cots_widget = cots_widget
         self.item_model = QStandardItemModel(self)
         self.photos=None
         self.selected_photo = 0
         self.sequence_id = None
-        self.realtime_cots_widget.button_next.clicked.connect(self.next)
-        self.realtime_cots_widget.button_previous.clicked.connect(self.previous)
+        self.cots_widget.button_next.clicked.connect(self.next)
+        self.cots_widget.button_previous.clicked.connect(self.previous)
 
-    # detect and display  cots in all of the photos for the currently selected survey
-    # This could be from the disk or the camera (samba = True for camera data)
+    def create_cots_detections_table(self):
+        # Create a QStandardItemModel
+        self.item_model.setHorizontalHeaderLabels(["Sequence ID", "Class ID", "Maximum Score"])
+        row: CotsDetection
+        for row in self.cots_detection_list.cots_detections_list:
+            sequence_id_item = QStandardItem(str(row.sequence_id))
+            class_item = QStandardItem(str(row.best_class))
+            score_item = QStandardItem(str(row.best_score))
+            sequence_id_item.setData(row, Qt.UserRole)
+            class_item.setData(row, Qt.UserRole)
+            score_item.setData(row, Qt.UserRole)
+            self.item_model.appendRow([sequence_id_item,
+                                        class_item,
+                                        score_item,
+                                        ])
+
+        table_view: QTableView = self.cots_widget.tableView
+        table_view.setModel(self.item_model)
+        table_view.setSelectionMode(QAbstractItemView.SingleSelection)
+        table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
+        table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        table_view.selectionModel().currentChanged.connect(self.selection_changed)
+
+
+    # detect and display realtime cots detections in all of the photos for the currently selected survey
     def display_realtime_detections(self, folder, samba):
         # read_realtime_files returns true if the data is changes
         # If it is not changed don't do anything
-        if self.realtime_cots_detection_list.read_realtime_files(folder, samba):
+        if self.cots_detection_list.read_realtime_files(folder, samba):
+            self.create_cots_detections_table()
 
+    # detect and display eod cots detections in all of the photos for the currently selected survey
+    def display_eod_detections(self, folder, samba):
+        # read_eod_files returns true if the data is changes
+        # If it is not changed don't do anything
+        if self.cots_detection_list.read_eod_files(folder, samba):
+            self.create_cots_detections_table()
 
-            self.item_model.clear()
-
-            # Create a QStandardItemModel
-            self.item_model.setHorizontalHeaderLabels(["Sequence ID", "Class ID", "Maximum Score"])
-            row: CotsDetection
-            for row in self.realtime_cots_detection_list.cots_detections_list:
-                sequence_id_item = QStandardItem(str(row.sequence_id))
-                class_item = QStandardItem(str(row.best_class))
-                score_item = QStandardItem(str(row.best_score))
-                sequence_id_item.setData(row, Qt.UserRole)
-                class_item.setData(row, Qt.UserRole)
-                score_item.setData(row, Qt.UserRole)
-                self.item_model.appendRow([sequence_id_item,
-                                           class_item,
-                                           score_item,
-                                           ])
-
-            table_view: QTableView = self.realtime_cots_widget.tableView
-            table_view.setModel(self.item_model)
-            table_view.setSelectionMode(QAbstractItemView.SingleSelection)
-            table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
-            table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-            table_view.selectionModel().currentChanged.connect(self.selection_changed)
 
     # When the user selects a row in the table, the photos for that sequence are displayed
     def selection_changed(self, current, previous):
@@ -71,12 +78,12 @@ class CotsDisplayComponent(QObject):
             return
 
         photo = self.photos[self.selected_photo]
-        label_photo: QLabel = self.realtime_cots_widget.label_photo
+        label_photo: QLabel = self.cots_widget.label_photo
 
         # determine the width available to display the photo
         available_width = label_photo.width()
 
-        file_contents: bytes = read_binary_file_support_samba(photo, self.realtime_cots_detection_list.samba)
+        file_contents: bytes = read_binary_file_support_samba(photo, self.cots_detection_list.samba)
         image = QImage()
         image.loadFromData(file_contents, format='JPG')
         image_width = image.width()
@@ -84,17 +91,20 @@ class CotsDisplayComponent(QObject):
         pixmap = QPixmap.fromImage(image)
 
         # Get rectangles for all the COTS in the photo
-        rectangles = self.realtime_cots_detection_list.image_rectangles_by_filename[photo]
+        rectangles = self.cots_detection_list.image_rectangles_by_filename[photo]
         self.draw_rectangles(pixmap, image_height, image_width, rectangles)
 
         pixmap = pixmap.scaled(available_width, 99999, aspectRatioMode=Qt.KeepAspectRatio)
 
-        self.realtime_cots_widget.label_photo.setPixmap(pixmap)
-        self.realtime_cots_widget.label_photo.show()
+        self.cots_widget.label_photo.setPixmap(pixmap)
+        self.cots_widget.label_photo.show()
 
         # enable appropriate buttons
-        self.realtime_cots_widget.button_next.setEnabled(self.selected_photo < len(self.photos)-1)
-        self.realtime_cots_widget.button_previous.setEnabled(self.selected_photo > 0)
+        self.cots_widget.button_next.setEnabled(self.selected_photo < len(self.photos)-1)
+        self.cots_widget.button_previous.setEnabled(self.selected_photo > 0)
+
+        self.cots_widget.label_photo.setAlignment(Qt.AlignCenter)
+
 
     # Draw the rectangles over the photo
     # The cots for the current sequence will have a red rectangle. Yellow rectangles for the others
@@ -102,7 +112,7 @@ class CotsDisplayComponent(QObject):
         painter = QPainter()
         painter.begin(pixmap)
         pen = QPen(Qt.red)
-        pen.setWidth(10)
+        pen.setWidth(15)
         pen.setStyle(Qt.SolidLine)
         painter.setPen(pen)
         rectangle: ProportionalRectangle
