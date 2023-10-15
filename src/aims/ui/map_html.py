@@ -135,10 +135,10 @@ html_str = """
 
 
 def map_html_str(folder, cots_waypoints, samba):
-    try:
-        make_photo_csv(folder)
-    except Exception as e:
-        pass
+    # try:
+    #     make_photo_csv(folder)
+    # except Exception as e:
+    #     pass
     try:
         try:
             _track = track(folder, samba)

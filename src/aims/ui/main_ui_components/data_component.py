@@ -34,6 +34,7 @@ from aims.gui_model.tree_model import TreeModelMaker, checked_survey_ids
 from aims.operations.kml_maker import make_kml
 from aims.ui.main_ui_components.cots_display_component import CotsDisplayComponent
 from aims.ui.main_ui_components.map_component import MapComponent
+from aims.ui.map_html import map_html_str
 from aims2.operations2.cots_detector import CotsDetector
 from aims2.operations2.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.stats.survey_stats import SurveyStats
@@ -45,7 +46,7 @@ from aims2.reefcloud2.reefcloud_utils import create_reefcloud_site
 from aims.operations.enhance_photo_operation import EnhancePhotoOperation
 
 import sys
-logger = logging.getLogger("")
+logger = logging.getLogger("DataComponent")
 
 
 """
@@ -114,12 +115,8 @@ class DataComponent(QObject):
         self.cots_detector: CotsDetector = None
         self.selected_index = None
         self.camera_tree_selected = False
-        self.realtime_cots_component: CotsDisplayComponent = None
-        self.eod_cots_component = None
+        self.cots_display_component: CotsDisplayComponent = None
         self.map_component: MapComponent = None
-
-    def tab_changed(self, index):
-        logger.info(index)
 
     def copy(self):
         self.ui_to_data()
@@ -178,8 +175,8 @@ class DataComponent(QObject):
                                                      self.data_widget.marks_tab)
         self.enhance_widget = self.load_sequence_frame(f'{state.meipass}resources/enhance.ui',
                                                        self.data_widget.enhance_tab)
-        self.realtime_cots_widget = self.load_sequence_frame(f'{state.meipass}resources/realtime_cots.ui',
-                                                     self.data_widget.realtime_cots_tab)
+        self.cots_display_widget = self.load_sequence_frame(f'{state.meipass}resources/cots_display.ui',
+                                                            self.data_widget.cots_display_tab)
 
         self.eod_cots_widget = self.load_sequence_frame(f'{state.meipass}resources/eod_cots.ui',
                                                         self.data_widget.eod_cots_tab)
@@ -196,7 +193,7 @@ class DataComponent(QObject):
                                                      self.data_widget.map_tab)
 
         self.lookups()
-        self.data_widget.tabWidget.currentChanged.connect(self.tab_changed)
+
         self.data_widget.renameFoldersButton.clicked.connect(self.rename_folders)
         self.data_widget.refreshButton.clicked.connect(self.refresh)
         self.data_widget.kmlForAllButton.clicked.connect(self.kml_for_all)
@@ -251,9 +248,8 @@ class DataComponent(QObject):
                                           parent=self
                                           )
 
-        self.realtime_cots_component = CotsDisplayComponent(self.realtime_cots_widget)
-        self.eod_cots_component = CotsDisplayComponent(self.eod_cots_widget)
-        self.map_component = MapComponent(self.map_widget, self.realtime_cots_component)
+        self.cots_display_component = CotsDisplayComponent(self.cots_display_widget)
+        self.map_component = MapComponent(self.map_widget, self.cots_display_component)
 
 
     def get_index_by_tab_text(self, name_of_tab):
@@ -274,17 +270,11 @@ class DataComponent(QObject):
         self.data_widget.tabWidget.setTabEnabled(index, True)
 
 
-    def display_realtime_detections(self, samba):
+    def display_cots_detections(self, samba):
         if self.survey() is None:
             return
 
-        self.realtime_cots_component.display_realtime_detections(self.survey().folder, samba)
-
-    def display_eod_detections(self, samba):
-        if self.survey() is None:
-            return
-
-        self.eod_cots_component.display_eod_detections(self.survey().folder, samba)
+        self.cots_display_component.read_data(self.survey().folder, samba)
 
     def detect_cots(self):
         survey_infos = self.get_all_descendants(self.selected_index)
@@ -615,7 +605,7 @@ class DataComponent(QObject):
             raise Exception("Choose a survey first")
 
         if not state.read_only:
-            cots_waypoints = self.realtime_cots_component.realtime_cots_detection_list.cots_waypoints
+            cots_waypoints = self.cots_display_component.realtime_cots_detection_list.cots_waypoints
             make_kml(survey=self.survey(), cots_waypoints=cots_waypoints)
 
     def refresh(self):
@@ -885,8 +875,7 @@ class DataComponent(QObject):
         self.enable_tabs()
 
         self.data_to_ui()
-        self.display_realtime_detections(samba=True)
-        self.display_eod_detections(samba=True)
+        self.display_cots_detections(samba=True)
 
         try:
             self.map_component.draw_map(self.survey(), samba=True)
@@ -929,7 +918,7 @@ class DataComponent(QObject):
         if self.data_widget.tabWidget.isTabEnabled(self.current_tab):
             self.data_widget.tabWidget.setCurrentIndex(self.current_tab)
 
-# show the metadata_tab, the map tab and the realtime COTS tab
+# show the metadata_tab, the map tab and the COTS photos tab
     def enable_metadata_tab_only(self):
         self.disable_all_tabs(None)
         self.data_widget.tabWidget.setEnabled(True)
@@ -1003,8 +992,7 @@ class DataComponent(QObject):
         else:
 
             self.data_to_ui()
-            self.display_realtime_detections(samba=False)
-            self.display_eod_detections(samba=False)
+            self.display_cots_detections(samba=False)
             self.load_thumbnails()
             self.load_marks()
             self.load_inference_charts()
@@ -1248,7 +1236,7 @@ class DataComponent(QObject):
         if self.survey_id is not None:
             folder = self.survey().folder
             try:
-                cots_waypoints = self.realtime_cots_component.cots_detection_list.cots_waypoints
+                cots_waypoints = self.cots_display_component.realtime_cots_detection_list.cots_waypoints
             except:
                 cots_waypoints = []
 

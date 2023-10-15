@@ -409,7 +409,7 @@ QGroupBox::title{
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>4</number>
+      <number>8</number>
      </property>
      <widget class="QWidget" name="empty_tab">
       <attribute name="title">
@@ -516,9 +516,9 @@ QGroupBox::title{
       </attribute>
       <layout class="QGridLayout" name="gridLayout_11"/>
      </widget>
-     <widget class="QWidget" name="realtime_cots_tab">
+     <widget class="QWidget" name="cots_display_tab">
       <attribute name="title">
-       <string>Real-Time-COTS</string>
+       <string>COTS Photos</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_10"/>
      </widget>
