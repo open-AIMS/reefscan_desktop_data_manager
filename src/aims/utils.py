@@ -1,4 +1,5 @@
 import array
+import json
 import os, sys, subprocess
 import tempfile
 
@@ -58,3 +59,8 @@ def read_binary_file(file) -> bytes:
         filebytes.frombytes(fileR.read())
 
     return bytes(filebytes)
+
+def write_json_file(filename, dict):
+    jsonStr = json.dumps(dict)
+    with open(filename, "w") as file:
+        file.write(jsonStr)
