@@ -152,7 +152,6 @@ def map_html_str(folder, cots_waypoints, samba):
         track_str = str(_track)
         html = html_str.replace("___PASTE_TRACK_HERE___", track_str)
         html = html.replace("___PASTE_COTS_HERE___", str(cots_waypoints))
-        print(html)
 
         return html
     except Exception as e:
