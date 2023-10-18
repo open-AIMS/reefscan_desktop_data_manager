@@ -26,24 +26,27 @@ from reefscanner.basic_model.survey import Survey
 from aims import data_loader, utils
 from aims.model.cots_detection import CotsDetection
 from aims.model.cots_detection_list import CotsDetectionList
+from aims.operations.load_data import reefcloud_subsample
 from aims.state import state
 from aims.gui_model.lazy_list_model import LazyListModel
 from aims.gui_model.marks_model import MarksModel
 from aims.gui_model.tree_model import TreeModelMaker, checked_survey_ids
 from aims.operations.kml_maker import make_kml
 from aims.ui.main_ui_components.cots_display_component import CotsDisplayComponent
+from aims.ui.main_ui_components.map_component import MapComponent
+from aims.ui.map_html import map_html_str
 from aims2.operations2.cots_detector import CotsDetector
 from aims2.operations2.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.stats.survey_stats import SurveyStats
 from aims.ui.main_ui_components.utils import clearLayout
-from aims.ui.map_html import map_html_str
+
 from aims2.operations2.camera_utils import delete_archives, get_kilo_bytes_used
 from aims2.reefcloud2.reefcloud_utils import create_reefcloud_site
 
 from aims.operations.enhance_photo_operation import EnhancePhotoOperation
 
 import sys
-logger = logging.getLogger("")
+logger = logging.getLogger("DataComponent")
 
 
 """
@@ -58,10 +61,6 @@ due to file size requirements, i.e. tensorflow is required for
 these operations but it is too large for the purposes
 of a pyinstaller executable
 """
-import sys
-
-logger = logging.getLogger("")
-
 PYINSTALLER_COMPILED = getattr(sys, 'frozen', False)
 if not PYINSTALLER_COMPILED:
     try:
@@ -116,10 +115,8 @@ class DataComponent(QObject):
         self.cots_detector: CotsDetector = None
         self.selected_index = None
         self.camera_tree_selected = False
-        self.realtime_cots_component: CotsDisplayComponent = None
-
-    def tab_changed(self, index):
-        logger.info(index)
+        self.cots_display_component: CotsDisplayComponent = None
+        self.map_component: MapComponent = None
 
     def copy(self):
         self.ui_to_data()
@@ -178,8 +175,8 @@ class DataComponent(QObject):
                                                      self.data_widget.marks_tab)
         self.enhance_widget = self.load_sequence_frame(f'{state.meipass}resources/enhance.ui',
                                                        self.data_widget.enhance_tab)
-        self.realtime_cots_widget = self.load_sequence_frame(f'{state.meipass}resources/realtime_cots.ui',
-                                                     self.data_widget.realtime_cots_tab)
+        self.cots_display_widget = self.load_sequence_frame(f'{state.meipass}resources/cots_display.ui',
+                                                            self.data_widget.cots_display_tab)
 
         self.eod_cots_widget = self.load_sequence_frame(f'{state.meipass}resources/eod_cots.ui',
                                                         self.data_widget.eod_cots_tab)
@@ -192,9 +189,11 @@ class DataComponent(QObject):
                                                         self.data_widget.metadata_tab)
         self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui',
                                                      self.data_widget.marks_tab)
+        self.map_widget = self.load_sequence_frame(f'{state.meipass}resources/map.ui',
+                                                     self.data_widget.map_tab)
 
         self.lookups()
-        self.data_widget.tabWidget.currentChanged.connect(self.tab_changed)
+
         self.data_widget.renameFoldersButton.clicked.connect(self.rename_folders)
         self.data_widget.refreshButton.clicked.connect(self.refresh)
         self.data_widget.kmlForAllButton.clicked.connect(self.kml_for_all)
@@ -228,7 +227,6 @@ class DataComponent(QObject):
 
         self.initial_disables()
         self.set_hint()
-        self.data_widget.mapView.loadFinished.connect(self.map_load_finished)
 
         self.enhance_widget.btnEnhanceOpenFolder.clicked.connect(self.enhance_open_folder)
         self.enhance_widget.btnEnhanceFolder.clicked.connect(self.enhance_photos)
@@ -250,7 +248,8 @@ class DataComponent(QObject):
                                           parent=self
                                           )
 
-        self.realtime_cots_component = CotsDisplayComponent(self.realtime_cots_widget)
+        self.cots_display_component = CotsDisplayComponent(self.cots_display_widget)
+        self.map_component = MapComponent(self.map_widget, self.cots_display_component)
 
 
     def get_index_by_tab_text(self, name_of_tab):
@@ -271,12 +270,11 @@ class DataComponent(QObject):
         self.data_widget.tabWidget.setTabEnabled(index, True)
 
 
-    def display_realtime_detections(self, samba):
+    def display_cots_detections(self, samba):
         if self.survey() is None:
             return
 
-        self.realtime_cots_component.display_realtime_detections(self.survey().folder, samba)
-
+        self.cots_display_component.read_data(self.survey().folder, samba)
 
     def detect_cots(self):
         survey_infos = self.get_all_descendants(self.selected_index)
@@ -593,15 +591,22 @@ class DataComponent(QObject):
 
     def kml_for_all(self):
         if not state.read_only:
+            realtime_cots_detection_list = CotsDetectionList()
             for survey in state.model.surveys_data.values():
-                make_kml(survey)
+                try:
+                    realtime_cots_detection_list.read_realtime_files(survey.folder, samba=False)
+                    make_kml(survey, realtime_cots_detection_list.cots_waypoints)
+                except Exception as e:
+                    logger.error(f"Error making kml for {survey.best_name()}", e)
+
 
     def kml_for_one(self):
         if self.survey() is None:
             raise Exception("Choose a survey first")
 
         if not state.read_only:
-            make_kml(survey=self.survey())
+            cots_waypoints = self.cots_display_component.realtime_cots_detection_list.cots_waypoints
+            make_kml(survey=self.survey(), cots_waypoints=cots_waypoints)
 
     def refresh(self):
         self.check_save()
@@ -684,7 +689,7 @@ class DataComponent(QObject):
                 survey = state.model.surveys_data[survey_info["survey_id"]]
                 result = self.enhance_photos_for_survey(survey, disable_denoising=disable_denoising,
                                                         disable_dehazing=disable_dehazing)
-                if result.cancelled:
+                if not result:
                     self.enable_everything()
                     return
         finally:
@@ -692,10 +697,17 @@ class DataComponent(QObject):
             self.enhance_widget.btnEnhanceFolder.setEnabled(True)
 
     # enhance all of the photos for one survey
-    # returns an object with information as to the successful completion
-    # of the operation
+    # returns true if successful false otherwise
     def enhance_photos_for_survey(self, survey, disable_denoising=True,
-                                  disable_dehazing=True) -> photoenhance.BatchMonitor:
+                                  disable_dehazing=True) -> bool:
+
+        subsampled_image_folder = survey.folder.replace("/reefscan/", "/reefscan_reefcloud/")
+
+        success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
+                                                            self.aims_status_dialog)
+        if not success:
+            self.aims_status_dialog.close()
+            return False
 
         output_suffix = "_enh"
         output_folder = self.enhanced_folder(survey.folder)
@@ -715,7 +727,7 @@ class DataComponent(QObject):
 
         QApplication.processEvents()
 
-        enhance_operation = EnhancePhotoOperation(target=survey.folder,
+        enhance_operation = EnhancePhotoOperation(target=subsampled_image_folder,
                                                   load=float(cpu_load_string),
                                                   suffix=output_suffix,
                                                   output_folder=output_folder,
@@ -740,7 +752,7 @@ class DataComponent(QObject):
             if enhance_operation.batch_monitor.cancelled:
                 self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
 
-        return enhance_operation.batch_monitor
+        return not enhance_operation.batch_monitor.cancelled
 
     def enable_everything(self):
         self.enable_workflow_buttons()
@@ -755,9 +767,6 @@ class DataComponent(QObject):
 
     def load_inference_charts(self):
         if self.survey() is not None:
-            coverage_results_file = inference_output_coverage_file(self.survey().folder)
-            if os.path.exists(coverage_results_file):
-                self.show_tab_by_tab_text('Chart')
             if not PYINSTALLER_COMPILED:
                 coverage_results_file = inference_output_coverage_file(self.survey().folder)
                 if os.path.exists(coverage_results_file):
@@ -804,7 +813,15 @@ class DataComponent(QObject):
     # returns an object with information as to the successful completion
     # of the operation
 
-    def inference_survey(self, survey: Survey) -> InferencerBatchMonitor:
+    def inference_survey(self, survey: Survey) -> bool:
+        subsampled_image_folder = survey.folder.replace("/reefscan/", "/reefscan_reefcloud/")
+
+        success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
+                                                            self.aims_status_dialog)
+        if not success:
+            self.aims_status_dialog.close()
+            return False
+
         # output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'
 
         output_folder = 'inference_results'
@@ -813,7 +830,7 @@ class DataComponent(QObject):
 
         QApplication.processEvents()
 
-        inference_operation = InferenceOperation(target=survey.folder)
+        inference_operation = InferenceOperation(target=subsampled_image_folder)
 
         inference_operation.update_interval = 1
         self.aims_status_dialog.set_operation_connections(inference_operation)
@@ -835,7 +852,7 @@ class DataComponent(QObject):
         coverage_file = inference_operation.get_coverage_filepath()
         self.inference_widget.textBrowser.append(f'Pie Chart from {coverage_file}')
         self.load_inference_charts()
-        return inference_operation.batch_monitor
+        return not inference_operation.batch_monitor.cancelled
 
     def camera_tree_selection_changed(self, item_selection: QItemSelection):
         self.camera_tree_selected = True
@@ -858,11 +875,12 @@ class DataComponent(QObject):
         self.enable_tabs()
 
         self.data_to_ui()
-        self.display_realtime_detections(samba=True)
+        self.display_cots_detections(samba=True)
+
         try:
-            self.draw_map(samba=True)
+            self.map_component.draw_map(self.survey(), samba=True)
         except Exception as e:
-            logger.info(f"Error loading map\n{e}")
+            logger.error(f"Error loading map\n{e}", e)
 
         self.set_hint()
 
@@ -900,7 +918,7 @@ class DataComponent(QObject):
         if self.data_widget.tabWidget.isTabEnabled(self.current_tab):
             self.data_widget.tabWidget.setCurrentIndex(self.current_tab)
 
-# show the metadata_tab, the map tab and the realtime COTS tab
+# show the metadata_tab, the map tab and the COTS photos tab
     def enable_metadata_tab_only(self):
         self.disable_all_tabs(None)
         self.data_widget.tabWidget.setEnabled(True)
@@ -974,14 +992,15 @@ class DataComponent(QObject):
         else:
 
             self.data_to_ui()
+            self.display_cots_detections(samba=False)
             self.load_thumbnails()
             self.load_marks()
             self.load_inference_charts()
-            self.display_realtime_detections(samba=False)
+
             try:
-                self.draw_map(samba=False)
+                self.map_component.draw_map(self.survey(), samba=False)
             except Exception as e:
-                logger.info(f"Error loading map\n{e}")
+                logger.info(f"Error loading map\n{e}", e)
 
         self.set_hint()
 
@@ -1217,7 +1236,7 @@ class DataComponent(QObject):
         if self.survey_id is not None:
             folder = self.survey().folder
             try:
-                cots_waypoints = self.realtime_cots_component.realtime_cots_detection_list.cots_waypoints
+                cots_waypoints = self.cots_display_component.realtime_cots_detection_list.cots_waypoints
             except:
                 cots_waypoints = []
 
