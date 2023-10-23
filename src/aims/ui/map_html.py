@@ -31,8 +31,8 @@ html_str = """
 <div id="mapid" style="width: 100%; height: 100%; position: absolute; top:0; bottom:0"></div>
 <script>
 
-     function makePopup(image) {
-        return image +'<br/><a href=file:///' + image + ' target="_">a</a>';
+     function makePopup(msg) {
+        return msg ;
     }
      var icon = L.divIcon({
       className: 'map-magnitude-icon',
@@ -94,7 +94,6 @@ html_str = """
         const marker = L.marker([l[0], l[1]]);
         marker.setIcon(icon)
         marker.addTo(markersLayer);
-        marker.bindPopup(makePopup(l[2]))
 	}
 	
     for (const c of cots_points) {
@@ -152,6 +151,8 @@ def map_html_str(folder, cots_waypoints, samba):
         track_str = str(_track)
         html = html_str.replace("___PASTE_TRACK_HERE___", track_str)
         html = html.replace("___PASTE_COTS_HERE___", str(cots_waypoints))
+
+        # print(html)
 
         return html
     except Exception as e:

@@ -5,9 +5,7 @@ import pandas as pd
 
 from PIL import Image
 from PIL import UnidentifiedImageError
-from PyQt5.QtCore import QObject
 from reefscanner.basic_model.json_utils import read_json_file
-from reefscanner.basic_model.photo_csv_maker import make_photo_csv
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
 from aims.model.cots_detection import CotsDetection, serialize_cots_detection_list, de_serialize_cots_detection_list
@@ -52,7 +50,8 @@ class CotsDetectionList():
                 "image_rectangles_by_filename": serialize_proportional_rectangle_lookup(self.image_rectangles_by_filename),
                 "samba": self.samba,
                 "cots_waypoints": self.cots_waypoints,
-                "has_data": self.has_data
+                "has_data": self.has_data,
+                "folder": self.folder
                 }
 
         write_json_file(cache_file, dict)
@@ -67,6 +66,9 @@ class CotsDetectionList():
 
         try:
             dict = read_json_file(cache_file)
+            folder_from_cache = dict.get("folder")
+            if folder_from_cache is None or folder_from_cache != self.folder:
+                return False
             self.cots_detections_list = de_serialize_cots_detection_list(dict["cots_detections_list"])
             self.image_rectangles_by_filename = de_serialize_proportional_rectangle_lookup(dict["image_rectangles_by_filename"])
             self.samba = dict["samba"]
@@ -92,7 +94,7 @@ class CotsDetectionList():
 
     # Read the real time cots detections from files
     # Returns true if the data is modified otherwise false
-    def read_realtime_files(self, folder: str, samba: bool):
+    def read_realtime_files(self, folder: str, samba: bool, use_cache=True):
 
         # If the folder is the same as the one passed
         if self.folder == folder:
@@ -102,8 +104,9 @@ class CotsDetectionList():
         self.folder = folder
         self.samba = samba
         # try cache first
-        if self.de_serialize(eod=False):
-            return True
+        if use_cache:
+            if self.de_serialize(eod=False):
+                return True
 
         self.cots_detections_list = []
         self.image_rectangles_by_filename = {}
@@ -115,7 +118,7 @@ class CotsDetectionList():
         self.serialize(eod=False)
         return True
 
-    def read_eod_files(self, folder: str, samba: bool):
+    def read_eod_files(self, folder: str, samba: bool, use_cache=True):
         if self.folder == folder:
             self.has_data = False
             return False
@@ -123,12 +126,14 @@ class CotsDetectionList():
         self.folder = folder
         self.samba = samba
         # try cache first
-        if self.de_serialize(eod=True):
-            return True
+        if use_cache:
+            if self.de_serialize(eod=True):
+                return True
 
         self.cots_detections_list = []
         self.image_rectangles_by_filename = {}
 
+        self.load_waypoints()
         self.read_eod_detection_files(folder)
         self.has_data = True
         self.serialize(eod=True)
@@ -147,27 +152,38 @@ class CotsDetectionList():
         for filename in ops.listdir(self.folder):
             file_path = f"{self.folder}/{filename}"
             # Check if the file is a cots image JSON file
-            if filename.startswith("cots_image_") and filename.endswith(".json") and ops.exists(file_path):
+            if ((filename.startswith("cots_image_") and filename.endswith(".json")) or filename.endswith(".jpg.json")) and ops.exists(file_path):
                 try:
                     # Load the JSON content from local disk or samba drive
                     json_data = read_json_file_support_samba(file_path, self.samba)
                     results = json_data["results"]
 
+                    sequence_ids = "sequences: "
+                    comma = ", "
                     if len(results) > 0:
                         photo_file_name = ntpath.basename(json_data["header"]["frame_id"])
                         photo_file_name_path = f"{self.folder}/{photo_file_name}"
                         rectangles = []
+                        max_score = 0
                         for result in results:
                             left = result["detection"]["left_x"]
                             top = result["detection"]["top_y"]
                             width = result["detection"]["width"]
                             height = result["detection"]["height"]
                             sequence_id = result["sequence_id"]
+                            sequence_ids = f"{sequence_ids}{comma}{sequence_id}"
                             rectangle = ProportionalRectangle(left, top, width, height, sequence_id)
                             rectangles.append(rectangle)
+                            for detection in result["detection"]["detection_results"]:
+                                score = detection["score"]
+                                if score > max_score:
+                                    max_score = score
 
                         self.image_rectangles_by_filename[photo_file_name_path] = rectangles
-                        cots_waypoint_dfs.append(self.waypoint_by_filename(photo_file_name))
+                        waypoint_df = self.waypoint_by_filename(photo_file_name)
+                        waypoint_df["sequence_ids"] = sequence_ids
+                        waypoint_df["score"] = max_score
+                        cots_waypoint_dfs.append(waypoint_df)
                 except Exception as e:
                     logger.error(f"Error decoding JSON in {filename}: {e}", e)
         # concat the array of waypoint data frames into one and convert to a list
@@ -296,17 +312,23 @@ class CotsDetectionList():
 
                         # Check if the file is an EOD COTS detection file based on keys
                         if 'frame_filename' and 'data' in json_data:
-
                             detections_list = json_data['data']['detections']
                             if len(detections_list) > 0:
 
                                 photo_file_name = ntpath.basename(json_data["frame_filename"])
                                 photo_file_name_path = f"{self.folder}/{photo_file_name}"
 
+                                max_score=0
+                                sequence_ids = "sequences: "
+                                comma = ""
                                 for detection in detections_list:
                                     class_id = 0
                                     sequence_id = detection['annotation_id']
+                                    sequence_ids = f"{sequence_ids}{comma}{sequence_id}"
+                                    comma = ", "
                                     score = detection['score']
+                                    if score > max_score:
+                                        max_score = score
 
                                     cots_detections_info = CotsDetection(sequence_id=sequence_id,
                                                                         best_class_id=class_id,
@@ -315,6 +337,10 @@ class CotsDetectionList():
                                                                         )
                                     detection_ref.insert(cots_detections_info, photo_file_name_path)
 
+                                cots_waypoint_df = self.waypoint_by_filename(photo_file_name)
+                                cots_waypoint_df["sequence_ids"] = sequence_ids
+                                cots_waypoint_df["score"] = max_score
+                                cots_waypoint_dfs.append(cots_waypoint_df)
                                 rectangles = []
                                 for result in detections_list:
                                     px_left = result["x"]
@@ -335,6 +361,13 @@ class CotsDetectionList():
 
                     except json.JSONDecodeError as e:
                         print(f"Error decoding JSON in {filename}: {e}")
+
+            if len(cots_waypoint_dfs) > 0:
+                self.cots_waypoints = pd.concat(cots_waypoint_dfs).values.tolist()
+
+            else:
+                self.cots_waypoints = []
+
         print ("building finished")
         # Convert the EOD detection dictionary to list
         self.cots_detections_list = detection_ref.extract_to_list()
@@ -343,7 +376,11 @@ class CotsDetectionList():
     def image_list(self, detection_list):
         images = []
         for detection in detection_list:
-            photo_file_name = ntpath.basename(detection["image"]["header"]["frame_id"])
+            try:
+                photo_file_name = ntpath.basename(detection["filename"])
+            except:
+                # I changed the format while we are still in development but I want to support the old format for a little while
+                photo_file_name = ntpath.basename(detection["image"]["header"]["frame_id"])
             images.append(f"{self.folder}/{photo_file_name}")
         return images
 
@@ -367,5 +404,7 @@ class CotsDetectionList():
         self.waypoint_dataframe.set_index (["filename_string"])
 
     def waypoint_by_filename(self, filename):
-        waypoint_df = self.waypoint_dataframe[self.waypoint_dataframe["filename_string"] == filename]
+        waypoint_df = self.waypoint_dataframe[self.waypoint_dataframe["filename_string"] == filename][["latitude", "longitude"]]
         return waypoint_df
+
+
