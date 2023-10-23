@@ -56,7 +56,10 @@ class AimsStatusDialog(QObject):
     def close(self):
         # Close seems to trigger the cancel signal and sometimes we need to know
         # that the job was cancelled by the user
-        self.progress_dialog.canceled.disconnect(self.operation.cancel)
+        try:
+            self.progress_dialog.canceled.disconnect(self.operation.cancel)
+        except:
+            pass
         self.progress_dialog.close()
         # timer = Timer(0.5, self.progress_dialog.close)
         # timer.start()

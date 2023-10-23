@@ -1,12 +1,12 @@
 import logging
+import os
 
 from PyQt5.QtCore import QObject, QItemSelection, Qt, QRect, QByteArray
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QImage, QPixmap, QPainter, QPen, QColor, QFont
-from PyQt5.QtWidgets import QHeaderView, QTableView, QAbstractItemView, QLabel, QCheckBox
+from PyQt5.QtWidgets import QHeaderView, QTableView, QAbstractItemView, QLabel, QCheckBox, QSizePolicy
 
 from aims import utils
 from aims.model.cots_detection import CotsDetection
-from aims.model.cots_detection_list import CotsDetectionList
 from aims.model.proportional_rectangle import ProportionalRectangle
 
 
@@ -17,11 +17,8 @@ logger = logging.getLogger("CotsDisplayComponent")
 
 
 class CotsDisplayComponent(QObject):
-    def __init__(self, cots_widget):
+    def __init__(self, cots_widget, cots_display_params):
         super().__init__()
-        self.realtime_cots_detection_list = CotsDetectionList()
-        self.eod_cots_detection_list = CotsDetectionList()
-        self.cots_detection_list = None
         self.cots_widget = cots_widget
         self.item_model = QStandardItemModel(self)
         self.photos=None
@@ -33,28 +30,38 @@ class CotsDisplayComponent(QObject):
         eod_check_box.stateChanged.connect(self.create_cots_detections_table)
         self.cots_widget.refreshButton.clicked.connect(self.create_cots_detections_table)
         self.cots_widget.openPhotoButton.clicked.connect(self.open_photo)
+        self.cots_display_params = cots_display_params
+
+    def show(self):
+        if self.cots_display_params.eod:
+            self.cots_widget.eod_check_box.setCheckState(Qt.Checked)
+        else:
+            self.cots_widget.eod_check_box.setCheckState(Qt.Unchecked)
+
+        self.cots_widget.minimumScoreTextBox.setText(str(self.cots_display_params.minimum_score))
+        self.create_cots_detections_table()
+        self.cots_widget.graphicsView.setVisible(False)
+
+
 
     def create_cots_detections_table(self):
         eod_check_box: QCheckBox = self.cots_widget.eod_check_box
-        if eod_check_box.checkState() == Qt.Checked:
-            self.cots_detection_list = self.eod_cots_detection_list
-        else:
-            self.cots_detection_list = self.realtime_cots_detection_list
+        self.cots_display_params.eod = eod_check_box.checkState() == Qt.Checked
 
         try:
-            minimum_score = float(self.cots_widget.minimumScoreTextBox.text())
+            self.cots_display_params.minimum_score = float(self.cots_widget.minimumScoreTextBox.text())
         except Exception as e:
             logger.warn("error getting minimum score", e)
-            minimum_score = 0
+            self.cots_display_params.minimum_score = 0
 
-        if self.cots_detection_list.has_data:
-            # Create a QStandardItemModel
-            self.item_model.clear()
-            # self.clear_photo()
+        self.item_model.clear()
+
+        if self.cots_display_params.cots_detection_list().has_data:
+            self.clear_photo()
             self.item_model.setHorizontalHeaderLabels(["Sequence", "Class", "Score"])
             row: CotsDetection
-            for row in self.cots_detection_list.cots_detections_list:
-                if row.best_score > minimum_score:
+            for row in self.cots_display_params.cots_detection_list().cots_detections_list:
+                if row.best_score > self.cots_display_params.minimum_score:
                     sequence_id_item = QStandardItem(str(row.sequence_id))
                     class_item = QStandardItem(str(row.best_class))
                     score_item = QStandardItem(str(row.best_score))
@@ -73,16 +80,6 @@ class CotsDisplayComponent(QObject):
             table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
             table_view.selectionModel().currentChanged.connect(self.selection_changed)
 
-    def read_data(self, folder, samba):
-
-        self.realtime_cots_detection_list.read_realtime_files(folder, samba)
-        if samba:
-            self.eod_cots_detection_list.has_data = False
-        else:
-            self.eod_cots_detection_list.read_eod_files(folder, samba)
-
-        self.create_cots_detections_table()
-
 
     # When the user selects a row in the table, the photos for that sequence are displayed
     def selection_changed(self, current, previous):
@@ -94,8 +91,12 @@ class CotsDisplayComponent(QObject):
 
 # TODO not working need to google this when I have internet
     def clear_photo(self):
-        self.cots_widget.label_photo.setPixmap(None)
-        self.cots_widget.label_photo.show()
+        table_view:QTableView = self.cots_widget.tableView
+        table_view.sizePolicy().setVerticalPolicy(QSizePolicy.Policy.Expanding)
+        self.cots_widget.graphicsView.setVisible(False)
+        self.cots_widget.button_next.setVisible(False)
+        self.cots_widget.button_previous.setVisible(False)
+
 
     # Show the current photo, highlight the COTS and enable the appropriate buttons
     # This could be from the disk or the camera so we need to allow for that
@@ -103,13 +104,17 @@ class CotsDisplayComponent(QObject):
         if self.photos is None:
             return
 
+        table_view:QTableView = self.cots_widget.tableView
+        table_view.sizePolicy().setVerticalPolicy(QSizePolicy.Policy.Preferred)
+        self.cots_widget.graphicsView.setVisible(True)
+        self.cots_widget.button_next.setVisible(True)
+        self.cots_widget.button_previous.setVisible(True)
+
+
         photo = self.photos[self.selected_photo]
-        label_photo: QLabel = self.cots_widget.label_photo
+        graphicsView: QLabel = self.cots_widget.graphicsView
 
-        # determine the width available to display the photo
-        available_width = label_photo.width()
-
-        file_contents: bytes = read_binary_file_support_samba(photo, self.cots_detection_list.samba)
+        file_contents: bytes = read_binary_file_support_samba(photo, self.cots_display_params.cots_detection_list().samba)
         image = QImage()
         image.loadFromData(file_contents, format='JPG')
         image_width = image.width()
@@ -117,19 +122,17 @@ class CotsDisplayComponent(QObject):
         pixmap = QPixmap.fromImage(image)
 
         # Get rectangles for all the COTS in the photo
-        rectangles = self.cots_detection_list.image_rectangles_by_filename[photo]
+        rectangles = self.cots_display_params.cots_detection_list().image_rectangles_by_filename[photo]
         self.draw_rectangles(pixmap, image_height, image_width, rectangles)
 
-        pixmap = pixmap.scaled(available_width, 99999, aspectRatioMode=Qt.KeepAspectRatio)
-
-        self.cots_widget.label_photo.setPixmap(pixmap)
-        self.cots_widget.label_photo.show()
+        self.cots_widget.graphicsView.setPhoto(pixmap)
+        self.cots_widget.graphicsView.show()
 
         # enable appropriate buttons
         self.cots_widget.button_next.setEnabled(self.selected_photo < len(self.photos)-1)
         self.cots_widget.button_previous.setEnabled(self.selected_photo > 0)
 
-        self.cots_widget.label_photo.setAlignment(Qt.AlignCenter)
+        self.cots_widget.label_file_name.setText(os.path.dirname(photo))
 
 # open the photo in the OS
     def open_photo(self):

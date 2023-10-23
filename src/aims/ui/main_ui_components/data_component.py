@@ -26,6 +26,7 @@ from reefscanner.basic_model.survey import Survey
 from aims import data_loader, utils
 from aims.model.cots_detection import CotsDetection
 from aims.model.cots_detection_list import CotsDetectionList
+from aims.model.cots_display_params import CotsDisplayParams
 from aims.operations.load_data import reefcloud_subsample
 from aims.state import state
 from aims.gui_model.lazy_list_model import LazyListModel
@@ -64,8 +65,7 @@ of a pyinstaller executable
 PYINSTALLER_COMPILED = getattr(sys, 'frozen', False)
 if not PYINSTALLER_COMPILED:
     try:
-        from aims.operations.inference_operation import InferenceOperation, inference_result_folder, \
-            inference_output_coverage_file
+        from aims.operations.inference_operation import InferenceOperation, inference_result_folder
         from aims.operations.chart_operation import ChartOperation
     except Exception as e:
         logger.error("Can't load inferencer", e)
@@ -117,6 +117,13 @@ class DataComponent(QObject):
         self.camera_tree_selected = False
         self.cots_display_component: CotsDisplayComponent = None
         self.map_component: MapComponent = None
+
+    def tab_changed(self, index):
+        logger.info(index)
+        if index == self.get_index_by_tab_text('Map'):
+             self.map_component.show(self.survey())
+        if index == self.get_index_by_tab_text('COTS Photos'):
+            self.cots_display_component.show()
 
     def copy(self):
         self.ui_to_data()
@@ -193,7 +200,6 @@ class DataComponent(QObject):
                                                      self.data_widget.map_tab)
 
         self.lookups()
-
         self.data_widget.renameFoldersButton.clicked.connect(self.rename_folders)
         self.data_widget.refreshButton.clicked.connect(self.refresh)
         self.data_widget.kmlForAllButton.clicked.connect(self.kml_for_all)
@@ -247,10 +253,10 @@ class DataComponent(QObject):
         self.cots_detector = CotsDetector(output=self.eod_cots_widget.detectorOutput,
                                           parent=self
                                           )
-
-        self.cots_display_component = CotsDisplayComponent(self.cots_display_widget)
-        self.map_component = MapComponent(self.map_widget, self.cots_display_component)
-
+        self.cots_display_params = CotsDisplayParams()
+        self.cots_display_component = CotsDisplayComponent(self.cots_display_widget, self.cots_display_params)
+        self.map_component = MapComponent(self.map_widget, self.cots_display_params)
+        self.data_widget.tabWidget.currentChanged.connect(self.tab_changed)
 
     def get_index_by_tab_text(self, name_of_tab):
         for i in range(self.data_widget.tabWidget.count()):
@@ -274,7 +280,7 @@ class DataComponent(QObject):
         if self.survey() is None:
             return
 
-        self.cots_display_component.read_data(self.survey().folder, samba)
+        self.cots_display_params.read_data(self.survey().folder, samba)
 
     def detect_cots(self):
         survey_infos = self.get_all_descendants(self.selected_index)
@@ -290,9 +296,12 @@ class DataComponent(QObject):
                 self.cots_detector.callProgram(survey.folder)
                 while not self.cots_detector.batch_result.finished:
                     QApplication.processEvents()
-                if self.cots_detector.batch_result.finished:
-                    self.enable_everything()
-                    return
+                self.cots_display_component.cots_detection_list.read_eod_files(
+                        f"{survey.folder}", samba=False, use_cache=False)
+
+            if self.cots_detector.batch_result.finished:
+                self.enable_everything()
+                return
         finally:
             self.enable_everything()
             self.eod_cots_widget.detectCotsButton.setEnabled(True)
@@ -470,6 +479,9 @@ class DataComponent(QObject):
         self.aims_status_dialog.progress_dialog.close()
         QtTest.QTest.qWait(1000)
         errorbox.exec_()
+
+        for survey in surveys:
+            self.cots_display_component.cots_detection_list.read_realtime_files(survey.folder, samba=False, use_cache=False)
 
         self.initial_disables()
 
@@ -768,7 +780,7 @@ class DataComponent(QObject):
     def load_inference_charts(self):
         if self.survey() is not None:
             if not PYINSTALLER_COMPILED:
-                coverage_results_file = inference_output_coverage_file(self.survey().folder)
+                coverage_results_file = f"{inference_result_folder(self.survey().folder)}/coverage.csv"
                 if os.path.exists(coverage_results_file):
                     self.show_tab_by_tab_text('Chart')
 
@@ -803,7 +815,7 @@ class DataComponent(QObject):
             for survey_info in survey_infos:
                 survey = state.model.surveys_data[survey_info["survey_id"]]
                 result = self.inference_survey(survey)
-                if result.cancelled:
+                if not result:
                     self.enable_everything()
                     return
         finally:
@@ -815,6 +827,7 @@ class DataComponent(QObject):
 
     def inference_survey(self, survey: Survey) -> bool:
         subsampled_image_folder = survey.folder.replace("/reefscan/", "/reefscan_reefcloud/")
+        output_folder = inference_result_folder(survey.folder)
 
         success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
                                                             self.aims_status_dialog)
@@ -824,13 +837,11 @@ class DataComponent(QObject):
 
         # output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'
 
-        output_folder = 'inference_results'
-
         self.inference_widget.textBrowser.append(f"Inferencer starting for {survey.best_name()}")
 
         QApplication.processEvents()
 
-        inference_operation = InferenceOperation(target=subsampled_image_folder)
+        inference_operation = InferenceOperation(target=subsampled_image_folder, results_folder=output_folder)
 
         inference_operation.update_interval = 1
         self.aims_status_dialog.set_operation_connections(inference_operation)
@@ -849,7 +860,7 @@ class DataComponent(QObject):
         else:
             self.inference_widget.textBrowser.append("Inferencer finished")
 
-        coverage_file = inference_operation.get_coverage_filepath()
+        coverage_file = f"{output_folder}/coverage.csv"
         self.inference_widget.textBrowser.append(f'Pie Chart from {coverage_file}')
         self.load_inference_charts()
         return not inference_operation.batch_monitor.cancelled
@@ -876,11 +887,7 @@ class DataComponent(QObject):
 
         self.data_to_ui()
         self.display_cots_detections(samba=True)
-
-        try:
-            self.map_component.draw_map(self.survey(), samba=True)
-        except Exception as e:
-            logger.error(f"Error loading map\n{e}", e)
+        self.tab_changed(self.current_tab())
 
         self.set_hint()
 
@@ -927,6 +934,9 @@ class DataComponent(QObject):
         self.data_widget.tabWidget.setTabEnabled(9, True)
         if self.data_widget.tabWidget.currentIndex() not in [2, 3, 9]:
             self.data_widget.tabWidget.setCurrentIndex(2)
+
+    def current_tab(self):
+        return self.data_widget.tabWidget.currentIndex()
 
     def enable_processing_tabs_only(self):
         self.disable_all_tabs(None)
@@ -997,10 +1007,7 @@ class DataComponent(QObject):
             self.load_marks()
             self.load_inference_charts()
 
-            try:
-                self.map_component.draw_map(self.survey(), samba=False)
-            except Exception as e:
-                logger.info(f"Error loading map\n{e}", e)
+        self.tab_changed(self.current_tab)
 
         self.set_hint()
 
@@ -1230,24 +1237,6 @@ class DataComponent(QObject):
         tree.expandRecursively(self.surveys_tree_model.invisibleRootItem().index(), 3)
         self.data_widget.surveysTree.selectionModel().selectionChanged.connect(self.explore_tree_selection_changed)
         self.survey_id = None
-
-    def draw_map(self, samba):
-        # logger.info("draw map")
-        if self.survey_id is not None:
-            folder = self.survey().folder
-            try:
-                cots_waypoints = self.cots_display_component.realtime_cots_detection_list.cots_waypoints
-            except:
-                cots_waypoints = []
-
-            html_str = map_html_str(folder, cots_waypoints, samba)
-            # logger.info(html_str)
-            if html_str is not None:
-                view: QWebEngineView = self.data_widget.mapView
-                # view.stop()
-                view.setHtml(html_str)
-
-        # logger.info("finished draw map")
 
     def map_load_finished(self, success):
         logger.info(f"Map loaded success:{success}")
