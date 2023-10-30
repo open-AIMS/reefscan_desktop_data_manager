@@ -10,7 +10,7 @@ import alphashape
 from aims import utils
 
 logger = logging.getLogger("")
-def make_kml(survey: Survey, cots_waypoints):
+def make_kml(survey: Survey, cots_waypoints, minimum_cots_score):
     input_folder = survey.folder
     output_folder = utils.replace_last(survey.folder, "/reefscan/", "/reefscan_kml/")
     points = track(input_folder, False)
@@ -25,7 +25,9 @@ def make_kml(survey: Survey, cots_waypoints):
         kml_file_name = f"{output_folder}-cots.kml"
         kml = simplekml.Kml()
         for point in cots_waypoints:
-            kml.newpoint(coords=[(point[1], point[0])])
+            score_ = point[3]
+            if score_ > minimum_cots_score:
+                kml.newpoint(coords=[(point[1], point[0])])
         kml.save(kml_file_name)
 
     points_for_poly = []

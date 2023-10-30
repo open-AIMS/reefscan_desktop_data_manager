@@ -296,7 +296,7 @@ class DataComponent(QObject):
                 self.cots_detector.callProgram(survey.folder)
                 while not self.cots_detector.batch_result.finished:
                     QApplication.processEvents()
-                self.cots_display_component.cots_detection_list.read_eod_files(
+                self.cots_display_params.cots_detection_list().read_eod_files(
                         f"{survey.folder}", samba=False, use_cache=False)
 
             if self.cots_detector.batch_result.finished:
@@ -481,7 +481,7 @@ class DataComponent(QObject):
         errorbox.exec_()
 
         for survey in surveys:
-            self.cots_display_component.cots_detection_list.read_realtime_files(survey.folder, samba=False, use_cache=False)
+            self.cots_display_params.cots_detection_list().read_realtime_files(survey.folder, samba=False, use_cache=False)
 
         self.initial_disables()
 
@@ -607,7 +607,7 @@ class DataComponent(QObject):
             for survey in state.model.surveys_data.values():
                 try:
                     realtime_cots_detection_list.read_realtime_files(survey.folder, samba=False)
-                    make_kml(survey, realtime_cots_detection_list.cots_waypoints)
+                    make_kml(survey, realtime_cots_detection_list.cots_waypoints, self.cots_display_params.minimum_score)
                 except Exception as e:
                     logger.error(f"Error making kml for {survey.best_name()}", e)
 
@@ -617,8 +617,8 @@ class DataComponent(QObject):
             raise Exception("Choose a survey first")
 
         if not state.read_only:
-            cots_waypoints = self.cots_display_component.realtime_cots_detection_list.cots_waypoints
-            make_kml(survey=self.survey(), cots_waypoints=cots_waypoints)
+            cots_waypoints = self.cots_display_params.realtime_cots_detection_list.cots_waypoints
+            make_kml(survey=self.survey(), cots_waypoints=cots_waypoints, minimum_cots_score=self.cots_display_params.minimum_score)
 
     def refresh(self):
         self.check_save()
