@@ -713,7 +713,7 @@ class DataComponent(QObject):
     def enhance_photos_for_survey(self, survey, disable_denoising=True,
                                   disable_dehazing=True) -> bool:
 
-        subsampled_image_folder = survey.folder.replace("/reefscan/", "/reefscan_reefcloud/")
+        subsampled_image_folder = utils.replace_last(survey.folder.replace, "/reefscan/", "/reefscan_reefcloud/")
 
         success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
                                                             self.aims_status_dialog)
@@ -826,7 +826,7 @@ class DataComponent(QObject):
     # of the operation
 
     def inference_survey(self, survey: Survey) -> bool:
-        subsampled_image_folder = survey.folder.replace("/reefscan/", "/reefscan_reefcloud/")
+        subsampled_image_folder = utils.replace_last(survey.folder, "/reefscan/", "/reefscan_reefcloud/")
         output_folder = inference_result_folder(survey.folder)
 
         success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
