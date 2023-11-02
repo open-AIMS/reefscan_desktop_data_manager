@@ -887,7 +887,7 @@ class DataComponent(QObject):
 
         self.data_to_ui()
         self.display_cots_detections(samba=True)
-        self.tab_changed(self.current_tab())
+        self.tab_changed(self.read_current_tab())
 
         self.set_hint()
 
@@ -911,7 +911,7 @@ class DataComponent(QObject):
     # Based on the current state this method will enable the appropriate tabs
     def enable_tabs(self):
         if self.data_widget.tabWidget.currentIndex() != 0:
-            self.current_tab = self.data_widget.tabWidget.currentIndex()
+            self.current_tab = self.read_current_tab()
         if self.camera_selected:
             if self.survey_id is None:
                 self.disable_all_tabs(0)
@@ -935,7 +935,7 @@ class DataComponent(QObject):
         if self.data_widget.tabWidget.currentIndex() not in [2, 3, 9]:
             self.data_widget.tabWidget.setCurrentIndex(2)
 
-    def current_tab(self):
+    def read_current_tab(self):
         return self.data_widget.tabWidget.currentIndex()
 
     def enable_processing_tabs_only(self):
@@ -968,7 +968,7 @@ class DataComponent(QObject):
     def explore_tree_selection_changed(self, item_selection: QItemSelection):
         self.camera_tree_selected = False
         if self.data_widget.tabWidget.isEnabled():
-            self.current_tab = self.data_widget.tabWidget.currentIndex()
+            self.current_tab = self.read_current_tab()
 
         logger.info("local tree changed")
         self.check_save()
@@ -1007,7 +1007,7 @@ class DataComponent(QObject):
             self.load_marks()
             self.load_inference_charts()
 
-        self.tab_changed(self.current_tab)
+        self.tab_changed(self.read_current_tab())
 
         self.set_hint()
 
