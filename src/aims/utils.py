@@ -48,7 +48,7 @@ def read_binary_file_support_samba(file, samba: bool) -> bytes:
         else:
             contents = read_binary_file(file)
     else:
-        contents = None
+        raise Exception(f"File not found {file}")
     return contents
 
 

@@ -22,10 +22,6 @@ def inference_result_folder(target):
     return replace_last(target, "/reefscan/", "/reefscan_inference/")
 
 
-def inference_output_coverage_file(target):
-    return os.path.join(inference_result_folder(target), 'coverage.csv')
-
-
 class InferenceOperation(AbstractOperation):
     msg_func = lambda msg: None
 
@@ -36,11 +32,11 @@ class InferenceOperation(AbstractOperation):
 
     TEST_IMAGES_PATH = 'C:\\reefscan\\reefscan-inf-test-images'
 
-    def __init__(self, target=TEST_IMAGES_PATH):
+    def __init__(self, target=TEST_IMAGES_PATH, results_folder=TEST_IMAGES_PATH):
         super().__init__()
         self.target = target
 
-        results_folder = inference_result_folder(target)
+
         features_folder = os.path.join(results_folder, 'features')
 
         os.makedirs(results_folder, exist_ok=True)
@@ -48,7 +44,7 @@ class InferenceOperation(AbstractOperation):
 
         self.output_results_file = os.path.join(results_folder, 'results.csv')
  
-        self.output_coverage_file = inference_output_coverage_file(target)
+        self.output_coverage_file = os.path.join(results_folder, 'coverage.csv')
 
         self.features_path = os.path.join(features_folder, 'features.csv')
         self.temp_features_path = os.path.join(features_folder, 'temp_features.csv')
