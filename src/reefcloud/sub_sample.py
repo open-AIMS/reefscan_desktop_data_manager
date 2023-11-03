@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import time
 
 from PyQt5.QtCore import QObject
 from reefscanner.basic_model.exif_utils import get_exif_data
@@ -50,6 +51,13 @@ class SubSampler(QObject):
 
 
     def sub_sample_dir(self, image_dir, sample_dir, progress_queue: ProgressQueue):
+
+        if os.path.exists (sample_dir):
+            shutil.rmtree(sample_dir)
+
+        time.sleep(0.1)
+        os.makedirs(sample_dir, exist_ok=True)
+
         if self.has_waypoints(image_dir):
             return self.sub_sample_dir_spatial(image_dir, sample_dir, progress_queue)
         else:
@@ -61,9 +69,6 @@ class SubSampler(QObject):
         _subsampling_folder = self.tr('Subsampling folder')
         progress_queue.set_progress_label(f"{_subsampling_folder} {image_dir}")
 
-        if os.path.exists (sample_dir):
-            shutil.rmtree(sample_dir)
-        os.makedirs(sample_dir, exist_ok=True)
 
         listdir = os.listdir(image_dir)
         listdir.sort()
@@ -82,11 +87,12 @@ class SubSampler(QObject):
                 try:
                     exif = get_exif_data(full_file_name, False)
                     subject_distance = exif["subject_distance"]
+                    if subject_distance is None:
+                        subject_distance = 8
+
                     if target_distance is None:
                         target_distance = subject_distance
 
-                    if target_distance is None:
-                        target_distance = 8
 
                     wp = exif["latitude"], exif["longitude"]
                     keep = self.should_keep(wp, old_wp, target_distance, subject_distance, maximum_subject_distance)
@@ -114,10 +120,6 @@ class SubSampler(QObject):
         _subsampling_folder = self.tr('Subsampling folder')
         progress_queue.set_progress_label(f"{_subsampling_folder} {image_dir}")
 
-        if os.path.exists(sample_dir):
-            shutil.rmtree(sample_dir)
-
-        os.makedirs(sample_dir, exist_ok=True)
 
         listdir = os.listdir(image_dir)
         listdir.sort()
