@@ -448,11 +448,11 @@ class DataComponent(QObject):
         cots_end = process_time()
 
         if inference_check_box.checkState() == Qt.Checked:
-            self.inference_surveys(surveys)
+            self.inference_surveys(surveys, replace=False)
         inference_end = process_time()
 
         if enhance_check_box.checkState() == Qt.Checked:
-            self.enhance_photos_for_surveys(surveys, disable_denoising=True, disable_dehazing=True)
+            self.enhance_photos_for_surveys(surveys, disable_denoising=True, disable_dehazing=True, replace=False)
         enhance_end = process_time()
 
         download_minutes = (download_end - start) / 60
