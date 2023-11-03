@@ -64,3 +64,13 @@ def write_json_file(filename, dict):
     jsonStr = json.dumps(dict)
     with open(filename, "w") as file:
         file.write(jsonStr)
+
+def is_empty_folder(path):
+    try:
+        with os.scandir(path) as it:
+            if any(it):
+                return False
+    except:
+        return True
+
+    return True

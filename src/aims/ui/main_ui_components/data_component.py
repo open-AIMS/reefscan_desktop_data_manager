@@ -686,21 +686,24 @@ class DataComponent(QObject):
     # enhance all of the photos for the currently selected survey
     # if a folder is selected do it for all descendant surveys of that folder
     def enhance_photos(self):
+        # if a specific survey is selected then we replace existing (which currently just means redo the sub-sampling)
+        replace = self.survey() is not None
+
         survey_infos = self.get_all_descendants(self.selected_index)
         disable_denoising = self.enhance_widget.checkBoxDisableDenoising.isChecked()
         disable_dehazing = self.enhance_widget.checkBoxDisableDehazing.isChecked()
 
         self.enhance_photos_for_surveys(survey_infos, disable_denoising=disable_denoising,
-                                        disable_dehazing=disable_dehazing)
+                                        disable_dehazing=disable_dehazing, replace=replace)
 
-    def enhance_photos_for_surveys(self, survey_infos, disable_denoising=True, disable_dehazing=True):
+    def enhance_photos_for_surveys(self, survey_infos, disable_denoising=True, disable_dehazing=True, replace=False):
         self.disable_everything()
         self.enhance_widget.btnEnhanceFolder.setEnabled(False)
         try:
             for survey_info in survey_infos:
                 survey = state.model.surveys_data[survey_info["survey_id"]]
                 result = self.enhance_photos_for_survey(survey, disable_denoising=disable_denoising,
-                                                        disable_dehazing=disable_dehazing)
+                                                        disable_dehazing=disable_dehazing, replace=replace)
                 if not result:
                     self.enable_everything()
                     return
@@ -711,15 +714,15 @@ class DataComponent(QObject):
     # enhance all of the photos for one survey
     # returns true if successful false otherwise
     def enhance_photos_for_survey(self, survey, disable_denoising=True,
-                                  disable_dehazing=True) -> bool:
+                                  disable_dehazing=True, replace=False) -> bool:
 
-        subsampled_image_folder = utils.replace_last(survey.folder.replace, "/reefscan/", "/reefscan_reefcloud/")
-
-        success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
-                                                            self.aims_status_dialog)
-        if not success:
-            self.aims_status_dialog.close()
-            return False
+        subsampled_image_folder = utils.replace_last(survey.folder, "/reefscan/", "/reefscan_reefcloud/")
+        if replace or utils.is_empty_folder(subsampled_image_folder):
+            success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
+                                                                self.aims_status_dialog)
+            if not success:
+                self.aims_status_dialog.close()
+                return False
 
         output_suffix = "_enh"
         output_folder = self.enhanced_folder(survey.folder)
@@ -806,15 +809,17 @@ class DataComponent(QObject):
     # inference all of the photos for the currently selected survey
     # if a folder is selected do it for all descendant surveys of that folder
     def inference(self):
+        # if a specific survey is selected then we replace existing (which currently just means redo the sub-sampling)
+        replace = self.survey() is not None
         survey_infos = self.get_all_descendants(self.selected_index)
-        self.inference_surveys(survey_infos)
+        self.inference_surveys(survey_infos, replace)
 
-    def inference_surveys(self, survey_infos):
+    def inference_surveys(self, survey_infos, replace):
         try:
             self.disable_everything()
             for survey_info in survey_infos:
                 survey = state.model.surveys_data[survey_info["survey_id"]]
-                result = self.inference_survey(survey)
+                result = self.inference_survey(survey, replace=replace)
                 if not result:
                     self.enable_everything()
                     return
@@ -825,45 +830,53 @@ class DataComponent(QObject):
     # returns an object with information as to the successful completion
     # of the operation
 
-    def inference_survey(self, survey: Survey) -> bool:
+    def inference_survey(self, survey: Survey, replace = False) -> bool:
         subsampled_image_folder = utils.replace_last(survey.folder, "/reefscan/", "/reefscan_reefcloud/")
         output_folder = inference_result_folder(survey.folder)
 
-        success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
+        if replace or utils.is_empty_folder(subsampled_image_folder):
+            success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
                                                             self.aims_status_dialog)
-        if not success:
-            self.aims_status_dialog.close()
-            return False
+            if not success:
+                self.aims_status_dialog.close()
+                raise Exception (f"Error subsampling photos for survey {survey.best_name()}")
+
+        if utils.is_empty_folder(subsampled_image_folder):
+            raise Exception(f"No photos to inference in {subsampled_image_folder}")
 
         # output_folder = self.inference_widget.textEditOutputFolder.toPlainText() if self.inference_widget.checkBoxOutputFolder.isChecked() else 'inference_results'
 
-        self.inference_widget.textBrowser.append(f"Inferencer starting for {survey.best_name()}")
+        if replace or utils.is_empty_folder(output_folder):
 
-        QApplication.processEvents()
+            self.inference_widget.textBrowser.append(f"Inferencer starting for {survey.best_name()}")
 
-        inference_operation = InferenceOperation(target=subsampled_image_folder, results_folder=output_folder)
-
-        inference_operation.update_interval = 1
-        self.aims_status_dialog.set_operation_connections(inference_operation)
-        inference_operation.set_msg_function(lambda msg: self.inference_widget.textBrowser.append(msg))
-        # # operation.after_run.connect(self.after_sync)
-        logger.info("done connections")
-        result = self.aims_status_dialog.threadPool.apply_async(inference_operation.run)
-        logger.info("thread started")
-        while not result.ready():
             QApplication.processEvents()
-        logger.info("thread finished")
-        self.aims_status_dialog.close()
 
-        if inference_operation.batch_monitor.cancelled:
-            self.inference_widget.textBrowser.append("Inferencer was cancelled")
+            inference_operation = InferenceOperation(target=subsampled_image_folder, results_folder=output_folder)
+
+            inference_operation.update_interval = 1
+            self.aims_status_dialog.set_operation_connections(inference_operation)
+            inference_operation.set_msg_function(lambda msg: self.inference_widget.textBrowser.append(msg))
+            # # operation.after_run.connect(self.after_sync)
+            logger.info("done connections")
+            result = self.aims_status_dialog.threadPool.apply_async(inference_operation.run)
+            logger.info("thread started")
+            while not result.ready():
+                QApplication.processEvents()
+            logger.info("thread finished")
+            self.aims_status_dialog.close()
+
+            if inference_operation.batch_monitor.cancelled:
+                self.inference_widget.textBrowser.append("Inferencer was cancelled")
+            else:
+                self.inference_widget.textBrowser.append("Inferencer finished")
+
+            coverage_file = f"{output_folder}/coverage.csv"
+            self.inference_widget.textBrowser.append(f'Pie Chart from {coverage_file}')
+            self.load_inference_charts()
+            return not inference_operation.batch_monitor.cancelled
         else:
-            self.inference_widget.textBrowser.append("Inferencer finished")
-
-        coverage_file = f"{output_folder}/coverage.csv"
-        self.inference_widget.textBrowser.append(f'Pie Chart from {coverage_file}')
-        self.load_inference_charts()
-        return not inference_operation.batch_monitor.cancelled
+            return True
 
     def camera_tree_selection_changed(self, item_selection: QItemSelection):
         self.camera_tree_selected = True
