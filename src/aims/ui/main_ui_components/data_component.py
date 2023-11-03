@@ -480,7 +480,8 @@ class DataComponent(QObject):
         QtTest.QTest.qWait(1000)
         errorbox.exec_()
 
-        for survey in surveys:
+        for survey_info in surveys:
+            survey = state.model.surveys_data[survey_info["survey_id"]]
             self.cots_display_params.cots_detection_list().read_realtime_files(survey.folder, samba=False, use_cache=False)
 
         self.initial_disables()
