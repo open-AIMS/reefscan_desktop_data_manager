@@ -115,7 +115,8 @@ class CotsDetectionList():
         self.read_realtime_sequence_files()
         self.read_realtime_image_files()
         self.has_data = True
-        self.serialize(eod=False)
+        if not samba:
+            self.serialize(eod=False)
         return True
 
     def read_eod_files(self, folder: str, samba: bool, use_cache=True):

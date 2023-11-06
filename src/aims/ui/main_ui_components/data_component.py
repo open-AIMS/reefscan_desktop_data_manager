@@ -484,6 +484,8 @@ class DataComponent(QObject):
             survey = state.model.surveys_data[survey_info["survey_id"]]
             self.cots_display_params.cots_detection_list().read_realtime_files(survey.folder, samba=False, use_cache=False)
 
+        self.cots_display_params.init()
+
         self.initial_disables()
 
     def setup_camera_tree(self):
