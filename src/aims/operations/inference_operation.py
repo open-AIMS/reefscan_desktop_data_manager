@@ -32,7 +32,7 @@ class InferenceOperation(AbstractOperation):
 
     TEST_IMAGES_PATH = 'C:\\reefscan\\reefscan-inf-test-images'
 
-    def __init__(self, target=TEST_IMAGES_PATH, results_folder=TEST_IMAGES_PATH):
+    def __init__(self, target=TEST_IMAGES_PATH, results_folder=TEST_IMAGES_PATH, replace=False):
         super().__init__()
         self.target = target
 
@@ -93,6 +93,7 @@ class InferenceOperation(AbstractOperation):
 
 
     def run_inference(self):
+
         try:
             inference(feature_extractor=self.feature_extractor_path,
                   classifier=self.classifier_path,

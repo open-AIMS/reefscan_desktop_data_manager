@@ -5,6 +5,9 @@ from aims.model.cots_detection_list import CotsDetectionList
 
 class CotsDisplayParams:
     def __init__(self):
+        self.init()
+
+    def init(self):
         self.eod = False
         self.minimum_score = 0.5
         self.realtime_cots_detection_list = CotsDetectionList()
