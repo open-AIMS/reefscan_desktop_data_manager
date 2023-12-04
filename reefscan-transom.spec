@@ -20,7 +20,7 @@ a = Analysis(
 )
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 splash = Splash(
-    'src\\resources\\ReefScan_inline_.jpg',
+    'src\\resources\\ReefScan_inline_.png',
     binaries=a.binaries,
     datas=a.datas,
     text_pos=None,
@@ -45,7 +45,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
