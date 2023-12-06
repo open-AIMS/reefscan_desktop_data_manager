@@ -34,7 +34,9 @@ pip pinstall -r requirements.txt
 On Windows:  
 `pyinstaller reefscan-transom.spec`
 `pyinstaller reefscan-dir.spec`
-'pyinstaller -p src -p real_src --noconsole --name reefscan-dir --add-data src\resources\*;resources --icon src\resources\aims_fish.ico --collect-submodules=sspilib --onedir --splash src/resources/ReefScan_inline_.png src\main.py'
+
+pyinstaller -p src -p real_src --noconsole --name reefscan --add-data src\resources\*;resources --icon src\resources\aims_fish.ico --collect-submodules=sspilib --onedir --splash src/resources/ReefScan_inline_.png src\main.py --clean --version-file=version.txt
+
 
 or
 `pyinstaller reefscan-simulated.spec`
