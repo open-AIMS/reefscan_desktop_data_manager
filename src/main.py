@@ -17,7 +17,7 @@ import glob
 # from uncaught_hook import UncaughtHook
 
 from aims.state import state
-from aims.ui.main_ui import MainUi
+from aims.ui.dummy_ui import MainUi
 from aims2 import simulated
 
 
