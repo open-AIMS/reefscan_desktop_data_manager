@@ -13,12 +13,10 @@ from aims.model.proportional_rectangle import ProportionalRectangle, serialize_p
     de_serialize_proportional_rectangle_lookup
 
 # This stores all the information for COTS detections for a reefscan sequence
-from aims.utils import read_json_file_support_samba, replace_last, write_json_file
+from aims.utils import read_json_file_support_samba, replace_last, read_json_file, write_json_file
 
 import logging
 logger = logging.getLogger("")
-
-
 
 class CotsDetectionList():
     def __init__(self):
@@ -29,7 +27,6 @@ class CotsDetectionList():
         # image rectangles by file name contains the location of the COTS in the photos
         # for each image it has a list of rectangles of type ProportionalRectangle marking the location of the COTS
         self.image_rectangles_by_filename = {}
-
         self.folder = None
         # we support showing this information for data that is not already downloaded
         # if it is coming directly from the camera samba is set to true
@@ -238,10 +235,14 @@ class CotsDetectionList():
                     best_score = best_detection['maximum_score']
                     sequence_id = json_data['sequence_id']
                     images = self.image_list(json_data["detection"])
+                    confirmed = None
+                    if 'confirmed' in json_data:
+                        confirmed = json_data['confirmed']
 
                     cots_detections_info = CotsDetection(sequence_id=sequence_id,
                                                          best_class_id=best_class_id,
                                                          best_score=best_score,
+                                                         confirmed=confirmed,
                                                          images=images
                                                          )
                     self.cots_detections_list.append(cots_detections_info)
@@ -249,6 +250,12 @@ class CotsDetectionList():
                     print(f"Error decoding JSON in {filename}: {e}")
 
     def read_eod_detection_files(self, folder: str, eod_cots_folder: str):
+    def get_eod_detections_dir(self, images_folder):
+        eod_json_dir = replace_last(images_folder, "/reefscan/", "/reefscan_eod_cots/")
+        eod_json_dir = f"{eod_json_dir}/final"
+        return eod_json_dir
+
+    def read_eod_detection_files(self, folder: str):
 
         # Function to normalize bounding box dimensions from
         # pixel-based absolute to relative
@@ -342,9 +349,19 @@ class CotsDetectionList():
                                     if score > max_score:
                                         max_score = score
 
+                                    # Check if custom sequence json exists and read 'confirmed' field
+                                    confirmed = None
+                                    sequence_file = self.get_filename_cots_sequence(sequence_id)
+                                    sequence_file_path = f"{eod_cots_folder}/{sequence_file}"
+                                    if os.path.exists(sequence_file_path):
+                                        sequence_json_data = read_json_file(sequence_file_path)
+                                        if sequence_json_data['sequence_id'] == sequence_id:
+                                            confirmed = sequence_json_data['confirmed']
+
                                     cots_detections_info = CotsDetection(sequence_id=sequence_id,
                                                                         best_class_id=class_id,
                                                                         best_score=score,
+                                                                        confirmed=confirmed,
                                                                         images=[]
                                                                         )
                                     detection_ref.insert(cots_detections_info, photo_file_name_path)
@@ -419,4 +436,63 @@ class CotsDetectionList():
         waypoint_df = self.waypoint_dataframe[self.waypoint_dataframe["filename_string"] == filename][["latitude", "longitude"]]
         return waypoint_df
 
+    def get_index_by_sequence_id(self, sequence_id):
+        idx = None
+        for i in range(len(self.cots_detections_list)):
+            if self.cots_detections_list[i].sequence_id == sequence_id:
+                idx = i
 
+        return idx
+
+    def write_confirmed_field_to_cots_sequence(self, sequence_id, eod=False):
+        if eod:
+            cots_folder = self.get_eod_detections_dir(self.folder)
+        else:
+            cots_folder = self.folder
+        json_sequence_file = self.get_filename_cots_sequence(sequence_id)
+        file_path = f"{cots_folder}/{json_sequence_file}"
+        if os.path.exists(file_path):
+            dict = read_json_file(file_path)
+        else:
+            dict = {}
+            dict['sequence_id'] = sequence_id
+
+        selected_idx = self.get_index_by_sequence_id(sequence_id)
+        if selected_idx is not None:
+            dict['confirmed'] = self.cots_detections_list[selected_idx].confirmed
+            write_json_file(file_path, dict)
+
+    def get_filename_cots_sequence(self, sequence_id):
+        suffix = str(sequence_id).zfill(6)
+        return f'cots_sequence_detection_{suffix}.json'
+
+
+    def get_index_by_sequence_id(self, sequence_id):
+        idx = None
+        for i in range(len(self.cots_detections_list)):
+            if self.cots_detections_list[i].sequence_id == sequence_id:
+                idx = i
+
+        return idx
+
+    def write_confirmed_field_to_cots_sequence(self, sequence_id, eod=False):
+        if eod:
+            cots_folder = self.get_eod_detections_dir(self.folder)
+        else:
+            cots_folder = self.folder
+        json_sequence_file = self.get_filename_cots_sequence(sequence_id)
+        file_path = f"{cots_folder}/{json_sequence_file}"
+        if os.path.exists(file_path):
+            dict = read_json_file(file_path)
+        else:
+            dict = {}
+            dict['sequence_id'] = sequence_id
+
+        selected_idx = self.get_index_by_sequence_id(sequence_id)
+        if selected_idx is not None:
+            dict['confirmed'] = self.cots_detections_list[selected_idx].confirmed
+            write_json_file(file_path, dict)
+
+    def get_filename_cots_sequence(self, sequence_id):
+        suffix = str(sequence_id).zfill(6)
+        return f'cots_sequence_detection_{suffix}.json'

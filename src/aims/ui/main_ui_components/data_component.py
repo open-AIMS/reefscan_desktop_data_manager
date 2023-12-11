@@ -38,6 +38,7 @@ from aims2.operations2.cots_detector import CotsDetector
 from aims2.operations2.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.stats.survey_stats import SurveyStats
 from aims.ui.main_ui_components.utils import clearLayout
+import aims.ui.photo_viewer
 
 from aims2.operations2.camera_utils import delete_archives, get_kilo_bytes_used
 from aims2.reefcloud2.reefcloud_utils import create_reefcloud_site
