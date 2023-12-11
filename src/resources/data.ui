@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1378</width>
+    <width>1002</width>
     <height>708</height>
    </rect>
   </property>
@@ -409,7 +409,7 @@ QGroupBox::title{
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>8</number>
+      <number>10</number>
      </property>
      <widget class="QWidget" name="empty_tab">
       <attribute name="title">
