@@ -9,6 +9,7 @@ def de_serialize_cots_detection(dict):
     return CotsDetection(dict["sequence_id"],
                          dict["best_class"],
                          dict["best_score"],
+                         dict["confirmed"],
                          dict["images"]
                          )
 def de_serialize_cots_detection_list(list):
@@ -24,7 +25,7 @@ def serialize_cots_detection_list(list):
     return return_list
 
 class CotsDetection:
-    def __init__(self, sequence_id=None, best_class_id=None, best_score=None, images=[]):
+    def __init__(self, sequence_id=None, best_class_id=None, best_score=None, confirmed=None, images=[]):
         self.sequence_id = sequence_id
         self.best_score = best_score
         if best_class_id == 0:
@@ -34,6 +35,7 @@ class CotsDetection:
         else:
             self.best_class = best_class_id
 
+        self.confirmed = confirmed
         self.images = images
 
     def serialize(self):
@@ -41,6 +43,7 @@ class CotsDetection:
             "sequence_id": self.sequence_id,
             "best_score": self.best_score,
             "best_class": self.best_class,
+            "confirmed": self.confirmed,
             "images": self.images
 
         }
