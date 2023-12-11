@@ -125,6 +125,11 @@ class CotsDisplayComponent(QObject):
         rectangles = self.cots_display_params.cots_detection_list().image_rectangles_by_filename[photo]
         self.draw_rectangles(pixmap, image_height, image_width, rectangles)
 
+        print("photo")
+        print(photo)
+        scar_overlay = self.cots_display_params.cots_detection_list().get_scar_mask_file(photo)
+        print(scar_overlay)
+
         self.cots_widget.graphicsView.setPhoto(pixmap)
         self.cots_widget.graphicsView.show()
 

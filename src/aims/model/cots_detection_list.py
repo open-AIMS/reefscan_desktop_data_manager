@@ -18,6 +18,8 @@ from aims.utils import read_json_file_support_samba, replace_last, write_json_fi
 import logging
 logger = logging.getLogger("")
 
+
+
 class CotsDetectionList():
     def __init__(self):
         # detection list is an array of CotsDection
@@ -27,6 +29,7 @@ class CotsDetectionList():
         # image rectangles by file name contains the location of the COTS in the photos
         # for each image it has a list of rectangles of type ProportionalRectangle marking the location of the COTS
         self.image_rectangles_by_filename = {}
+
         self.folder = None
         # we support showing this information for data that is not already downloaded
         # if it is coming directly from the camera samba is set to true
@@ -37,6 +40,7 @@ class CotsDetectionList():
         self.waypoint_dataframe = None
         self.cots_waypoints = []
         self.has_data = False
+        self.eod_detections_folder = None
 
 # serialize and deserialize for efficiency. Reading the original data files can be quite slow especially for eod files
 # we deliberately do not serialize the waypoint_data_frame because it is only used when from original files
@@ -92,6 +96,19 @@ class CotsDetectionList():
         cache_file = f"{cache_folder}/cots_{suffix}.json"
         return cache_file
 
+    # Function to get the related folder containing the eod json files
+    def get_eod_detections_dir(self, images_folder):
+        eod_json_dir = replace_last(images_folder, "/reefscan/", "/reefscan_eod_cots/")
+        eod_json_dir = f"{eod_json_dir}/final"
+        self.eod_detections_folder = eod_json_dir
+
+    def get_scar_mask_file(self, photo_file):
+        if self.eod_detections_folder is None:
+            return None
+        file_name = os.path.basename(photo_file).replace(".jpg", ".png")
+        return self.eod_detections_folder + "/pixel_prediction_map_" + file_name
+
+
     # Read the real time cots detections from files
     # Returns true if the data is modified otherwise false
     def read_realtime_files(self, folder: str, samba: bool, use_cache=True):
@@ -103,6 +120,7 @@ class CotsDetectionList():
 
         self.folder = folder
         self.samba = samba
+        self.eod_detections_folder = None
         # try cache first
         if use_cache:
             if self.de_serialize(eod=False):
@@ -126,6 +144,7 @@ class CotsDetectionList():
 
         self.folder = folder
         self.samba = samba
+        self.get_eod_detections_dir(folder)
         # try cache first
         if use_cache:
             if self.de_serialize(eod=True):
@@ -135,7 +154,7 @@ class CotsDetectionList():
         self.image_rectangles_by_filename = {}
 
         self.load_waypoints()
-        self.read_eod_detection_files(folder)
+        self.read_eod_detection_files(folder, self.eod_detections_folder)
         self.has_data = True
         self.serialize(eod=True)
         return True             
@@ -229,15 +248,9 @@ class CotsDetectionList():
                 except Exception as e:
                     print(f"Error decoding JSON in {filename}: {e}")
 
-    def read_eod_detection_files(self, folder: str):
+    def read_eod_detection_files(self, folder: str, eod_cots_folder: str):
 
-        # Function to get the related folder containing the eod json files
-        def get_eod_detections_dir(images_folder):
-            eod_json_dir = replace_last(images_folder, "/reefscan/", "/reefscan_eod_cots/")
-            eod_json_dir = f"{eod_json_dir}/final"
-            return eod_json_dir
-
-        # Function to normalize bounding box dimensions from 
+        # Function to normalize bounding box dimensions from
         # pixel-based absolute to relative
         def normalize_box_dims(image_path, left, top, width, height):
             try:
@@ -288,8 +301,6 @@ class CotsDetectionList():
         # this will be an array of single row data frames
         # one for each image with cots
         cots_waypoint_dfs = []
-
-        eod_cots_folder = get_eod_detections_dir(folder)
 
         # keep track of the sequence_id from the JSON which is not really sequence id but
         # is a count of the number of photos for this sequence so far

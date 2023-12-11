@@ -72,7 +72,6 @@ class MainUi(QMainWindow):
 
         self.ui.setWindowState(self.ui.windowState() | Qt.WindowMaximized)
         self.disk_drives_component = None
-        self.ping_thread = None
 
         self.data_component = None
         self.upload_component = None
@@ -127,7 +126,7 @@ class MainUi(QMainWindow):
         self.workflow_widget.uploadButton.setEnabled(False)
 
     def highlight_button(self, button):
-        if self.ping_thread is not None:
+        if self.ping_thread_ is not None:
             self.ping_thread_.cancel()
         self.enable_workflow_buttons()
 
