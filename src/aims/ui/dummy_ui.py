@@ -22,6 +22,8 @@ except ImportError:
     pass
 from tzlocal import get_localzone
 import unicodedata
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+
 
 logger = logging.getLogger("")
 
@@ -146,7 +148,7 @@ class MainUi(QMainWindow):
         self.workflow_widget.dataButton.setEnabled(self.drives_connected)
         self.workflow_widget.connectReefcloudButton.setEnabled(self.drives_connected)
         self.workflow_widget.uploadButton.setEnabled(
-            self.drives_connected and self.reefcloud_connect_component.logged_in())
+            self.drives_connected and self.reefcloud_connect_component is not None and self.reefcloud_connect_component.logged_in())
 
     def setup_workflow(self):
         workflow_widget_file = f'{state.meipass}resources/workflow_bar.ui'
