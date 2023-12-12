@@ -6,14 +6,12 @@ from PyQt5.QtCore import QObject
 
 # serialize and de-serialize to dicts
 def de_serialize_cots_detection(dict):
-    return CotsDetection(dict["sequence_id"],
-                         dict["best_class"],
-                         dict["best_score"],
-                         dict["images"],
-                         dict["avg_score"],
-                         dict["mask_png"]
-                         dict["confirmed"],
-                         dict["images"]
+    return CotsDetection(sequence_id = dict["sequence_id"],
+                         best_class_id = dict["best_class"],
+                         best_score = dict["best_score"],
+                         images = dict["images"],
+                         avg_score= dict["avg_score"],
+                         confirmed= dict["confirmed"],
                          )
 def de_serialize_cots_detection_list(list):
     return_list = []
@@ -28,11 +26,10 @@ def serialize_cots_detection_list(list):
     return return_list
 
 class CotsDetection:
-    def __init__(self, sequence_id=None, best_class_id=None, best_score=None, confirmed=None, images=[], avg_score=None, mask_png=None):
+    def __init__(self, sequence_id=None, best_class_id=None, best_score=None, confirmed=None, images=[], avg_score=None):
         self.sequence_id = sequence_id
         self.best_score = best_score
         self.avg_score = avg_score
-        self.mask_png = mask_png
         if best_class_id == 0:
             self.best_class = "COTS"
         elif best_class_id == 1:
@@ -50,7 +47,6 @@ class CotsDetection:
             "best_class": self.best_class,
             "images": self.images,
             "avg_score": self.avg_score,
-            "mask_png": self.mask_png
             "confirmed": self.confirmed,
             "images": self.images
 
