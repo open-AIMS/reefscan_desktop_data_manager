@@ -37,15 +37,17 @@ class CotsDetectionList():
         self.waypoint_dataframe = None
         self.cots_waypoints = []
         self.has_data = False
+        self.eod_detections_folder = None
+        self.eod=False
 
 # serialize and deserialize for efficiency. Reading the original data files can be quite slow especially for eod files
 # we deliberately do not serialize the waypoint_data_frame because it is only used when from original files
 # also do not cache folder or samba because we need to already know that before de-serializing
 # don't cache if it is still on the camera
-    def serialize(self, eod: bool):
+    def serialize(self):
         if self.samba:
             return
-        cache_file = self.cache_file(eod)
+        cache_file = self.cache_file()
         dict = {"cots_detections_list": serialize_cots_detection_list(self.cots_detections_list),
                 "image_rectangles_by_filename": serialize_proportional_rectangle_lookup(self.image_rectangles_by_filename),
                 "samba": self.samba,
@@ -57,10 +59,10 @@ class CotsDetectionList():
         write_json_file(cache_file, dict)
 
 # return true if successful
-    def de_serialize(self, eod: bool):
+    def de_serialize(self):
         if self.samba:
             return False
-        cache_file = self.cache_file(eod)
+        cache_file = self.cache_file()
         if not os.path.exists(cache_file):
             return False
 
@@ -80,8 +82,8 @@ class CotsDetectionList():
 
 
 # returen the filename for the cache or serialization
-    def cache_file(self, eod):
-        if eod:
+    def cache_file(self):
+        if self.eod:
             suffix = "eod"
         else:
             suffix = "rt"
@@ -91,6 +93,19 @@ class CotsDetectionList():
 
         cache_file = f"{cache_folder}/cots_{suffix}.json"
         return cache_file
+
+    # Function to get the related folder containing the eod json files
+    def get_eod_detections_dir(self, images_folder):
+        eod_json_dir = replace_last(images_folder, "/reefscan/", "/reefscan_eod_cots/")
+        eod_json_dir = f"{eod_json_dir}/final"
+        self.eod_detections_folder = eod_json_dir
+
+    def get_scar_mask_file(self, photo_file):
+        if self.eod_detections_folder is None:
+            return None
+        file_name = os.path.basename(photo_file).replace(".jpg", ".png")
+        return self.eod_detections_folder + "/pixel_prediction_map_" + file_name
+
 
     # Read the real time cots detections from files
     # Returns true if the data is modified otherwise false
@@ -103,9 +118,11 @@ class CotsDetectionList():
 
         self.folder = folder
         self.samba = samba
+        self.eod = False
+        self.eod_detections_folder = None
         # try cache first
         if use_cache:
-            if self.de_serialize(eod=False):
+            if self.de_serialize():
                 return True
 
         self.cots_detections_list = []
@@ -116,7 +133,7 @@ class CotsDetectionList():
         self.read_realtime_image_files()
         self.has_data = True
         if not samba:
-            self.serialize(eod=False)
+            self.serialize()
         return True
 
     def read_eod_files(self, folder: str, samba: bool, use_cache=True):
@@ -126,18 +143,20 @@ class CotsDetectionList():
 
         self.folder = folder
         self.samba = samba
+        self.eod = True
+        self.get_eod_detections_dir(folder)
         # try cache first
         if use_cache:
-            if self.de_serialize(eod=True):
+            if self.de_serialize():
                 return True
 
         self.cots_detections_list = []
         self.image_rectangles_by_filename = {}
 
         self.load_waypoints()
-        self.read_eod_detection_files(folder)
+        self.read_eod_detection_files(folder, self.eod_detections_folder)
         self.has_data = True
-        self.serialize(eod=True)
+        self.serialize()
         return True             
 
 
@@ -233,14 +252,8 @@ class CotsDetectionList():
                 except Exception as e:
                     print(f"Error decoding JSON in {filename}: {e}")
 
-    def get_eod_detections_dir(self, images_folder):
-        eod_json_dir = replace_last(images_folder, "/reefscan/", "/reefscan_eod_cots/")
-        eod_json_dir = f"{eod_json_dir}/final"
-        return eod_json_dir
-
-    def read_eod_detection_files(self, folder: str):
-
-        # Function to normalize bounding box dimensions from 
+    def read_eod_detection_files(self, folder: str, eod_cots_folder: str):
+        # Function to normalize bounding box dimensions from
         # pixel-based absolute to relative
         def normalize_box_dims(image_path, left, top, width, height):
             try:
@@ -292,8 +305,6 @@ class CotsDetectionList():
         # one for each image with cots
         cots_waypoint_dfs = []
 
-        eod_cots_folder = self.get_eod_detections_dir(folder)
-
         # keep track of the sequence_id from the JSON which is not really sequence id but
         # is a count of the number of photos for this sequence so far
         # if if is a duplicate of the last one then it is a phantom detection
@@ -342,7 +353,7 @@ class CotsDetectionList():
                                         sequence_json_data = read_json_file(sequence_file_path)
                                         if sequence_json_data['sequence_id'] == sequence_id:
                                             confirmed = sequence_json_data['confirmed']
-                                        
+
                                     cots_detections_info = CotsDetection(sequence_id=sequence_id,
                                                                         best_class_id=class_id,
                                                                         best_score=score,
@@ -420,18 +431,19 @@ class CotsDetectionList():
     def waypoint_by_filename(self, filename):
         waypoint_df = self.waypoint_dataframe[self.waypoint_dataframe["filename_string"] == filename][["latitude", "longitude"]]
         return waypoint_df
-    
+
     def get_index_by_sequence_id(self, sequence_id):
         idx = None
         for i in range(len(self.cots_detections_list)):
             if self.cots_detections_list[i].sequence_id == sequence_id:
                 idx = i
-        
+
         return idx
 
-    def write_confirmed_field_to_cots_sequence(self, sequence_id, eod=False):
-        if eod:
-            cots_folder = self.get_eod_detections_dir(self.folder)
+
+    def write_confirmed_field_to_cots_sequence(self, sequence_id):
+        if self.eod:
+            cots_folder = self.eod_detections_folder
         else:
             cots_folder = self.folder
         json_sequence_file = self.get_filename_cots_sequence(sequence_id)
@@ -446,37 +458,8 @@ class CotsDetectionList():
         if selected_idx is not None:
             dict['confirmed'] = self.cots_detections_list[selected_idx].confirmed
             write_json_file(file_path, dict)
+            self.serialize()
 
-    def get_filename_cots_sequence(self, sequence_id):
-        suffix = str(sequence_id).zfill(6)
-        return f'cots_sequence_detection_{suffix}.json'
-
-
-    def get_index_by_sequence_id(self, sequence_id):
-        idx = None
-        for i in range(len(self.cots_detections_list)):
-            if self.cots_detections_list[i].sequence_id == sequence_id:
-                idx = i
-        
-        return idx
-
-    def write_confirmed_field_to_cots_sequence(self, sequence_id, eod=False):
-        if eod:
-            cots_folder = self.get_eod_detections_dir(self.folder)
-        else:
-            cots_folder = self.folder
-        json_sequence_file = self.get_filename_cots_sequence(sequence_id)
-        file_path = f"{cots_folder}/{json_sequence_file}"
-        if os.path.exists(file_path):
-            dict = read_json_file(file_path)
-        else:
-            dict = {}
-            dict['sequence_id'] = sequence_id
-
-        selected_idx = self.get_index_by_sequence_id(sequence_id)
-        if selected_idx is not None:
-            dict['confirmed'] = self.cots_detections_list[selected_idx].confirmed
-            write_json_file(file_path, dict)
 
     def get_filename_cots_sequence(self, sequence_id):
         suffix = str(sequence_id).zfill(6)

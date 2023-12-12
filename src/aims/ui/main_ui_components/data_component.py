@@ -14,8 +14,6 @@ from PyQt5.QtGui import QPixmap, QStandardItemModel, QStandardItem
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QWidget, QTableView, QLabel, QListView, \
     QListWidget, QMessageBox, QTabWidget, QCheckBox, QHeaderView
-from inferencer.batch_monitor import BatchMonitor as InferencerBatchMonitor
-from photoenhancer import photoenhance
 from pytz import utc
 from reefscanner.basic_model.exif_utils import get_exif_data
 from reefscanner.basic_model.model_helper import rename_folders
@@ -69,7 +67,7 @@ if not PYINSTALLER_COMPILED:
         from aims.operations.inference_operation import InferenceOperation, inference_result_folder
         from aims.operations.chart_operation import ChartOperation
     except Exception as e:
-        logger.error("Can't load inferencer", e)
+        logger.warn("Can't load inferencer", e)
         PYINSTALLER_COMPILED = True
 
 
