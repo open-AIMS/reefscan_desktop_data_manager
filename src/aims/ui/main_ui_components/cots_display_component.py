@@ -2,7 +2,7 @@ import logging
 import os
 
 from PyQt5.QtCore import QObject, QItemSelection, Qt, QRect, QByteArray
-from PyQt5.QtGui import QStandardItemModel, QStandardItem, QImage, QPixmap, QPainter, QPen, QColor, QFont
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QImage, QPixmap, QPainter, QPen, QColor, QFont, QBitmap, qRgb
 from PyQt5.QtWidgets import QHeaderView, QTableView, QAbstractItemView, QLabel, QCheckBox, QSizePolicy
 
 from aims import utils
@@ -30,6 +30,7 @@ class CotsDisplayComponent(QObject):
         self.cots_widget.button_previous.clicked.connect(self.previous)
         eod_check_box: QCheckBox = self.cots_widget.eod_check_box
         eod_check_box.stateChanged.connect(self.create_cots_detections_table)
+        self.cots_widget.highlight_scars_check_box.stateChanged.connect(self.show_photo)
         confirmed_check_box: QCheckBox = self.cots_widget.confirmed_check_box
         confirmed_check_box.stateChanged.connect(self.confirmed_check_box_state_changed)
         self.cots_widget.refreshButton.clicked.connect(self.create_cots_detections_table)
@@ -145,9 +146,7 @@ class CotsDisplayComponent(QObject):
         photo = self.photos[self.selected_photo]
         graphicsView: QLabel = self.cots_widget.graphicsView
 
-        file_contents: bytes = read_binary_file_support_samba(photo, self.cots_display_params.cots_detection_list().samba)
-        image = QImage()
-        image.loadFromData(file_contents, format='JPG')
+        image = self.qimage_from_filename(photo)
         image_width = image.width()
         image_height = image.height()
         pixmap = QPixmap.fromImage(image)
@@ -158,8 +157,10 @@ class CotsDisplayComponent(QObject):
 
         print("photo")
         print(photo)
-        scar_overlay = self.cots_display_params.cots_detection_list().get_scar_mask_file(photo)
-        print(scar_overlay)
+        scar_overlay_file = self.cots_display_params.cots_detection_list().get_scar_mask_file(photo)
+        print(scar_overlay_file)
+        if self.cots_widget.highlight_scars_check_box.checkState() == Qt.Checked:
+            pixmap = self.highlight_scars(pixmap, image_height, image_width, scar_overlay_file)
 
         self.cots_widget.graphicsView.setPhoto(pixmap)
         self.cots_widget.graphicsView.show()
@@ -169,6 +170,66 @@ class CotsDisplayComponent(QObject):
         self.cots_widget.button_previous.setEnabled(self.selected_photo > 0)
 
         self.cots_widget.label_file_name.setText(os.path.dirname(photo))
+
+    def qimage_from_filename(self, photo):
+        file_contents = self.image_contents_from_filename(photo)
+        image = QImage()
+        image.loadFromData(file_contents, format='JPG')
+        return image
+
+    def image_contents_from_filename(self, photo):
+        file_contents: bytes = read_binary_file_support_samba(photo,
+                                                              self.cots_display_params.cots_detection_list().samba)
+        return file_contents
+
+    def highlight_scars(self, main_pixmap, image_height, image_width, scar_mask_file):
+        if scar_mask_file is not None and os.path.exists(scar_mask_file):
+            contents = self.image_contents_from_filename(scar_mask_file)
+            mask_image = QImage(contents, 168, 96, QImage.Format_Indexed8)
+            mask_image.loadFromData(contents)
+            mask_image = mask_image.convertToFormat(QImage.Format_ARGB32);
+            colors = {}
+            for x in range(mask_image.width()):
+                for y in range(mask_image.height()):
+                    pixelColor = QColor(mask_image.pixel(x, y));
+                    color = pixelColor.red()
+                    if color < 50:
+                        mask_image.setPixel(x, y, QColor(0,0,0,0).rgba())
+                    else:
+                        mask_image.setPixel(x, y, QColor(color,0,0,150).rgba())
+
+                    if color in colors:
+                        c =colors[color]+1
+                    else:
+                        c=1
+                    colors[color] = c
+                    # print (str(mask_image.pixel(x, y)))
+            print(colors)
+            # print (mask_image.format())
+
+            # for i in range(256):
+            #     mask_image.setColor(i, qRgb(i, 0, 0))
+
+                # print (i)
+            # painter = QPainter()
+            # painter.begin(main_pixmap)
+            # painter.drawImage(image_width, image_height, mask_image)
+            # painter.end()
+            # mask = mask_image.createMaskFromColor()
+            mask_image = mask_image.scaled(image_width, image_height)
+            # mask_bitmap = QBitmap.fromImage(mask_image)
+            # main_pixmap.setMask(mask_bitmap)
+            print("Masked!!")
+            # result = QPixmap(image_width, image_height)
+            result = QPixmap(mask_image.width(), mask_image.height())
+            result.fill(Qt.transparent)
+            painter = QPainter(result)
+            painter.drawPixmap(0, 0, main_pixmap)
+            painter.drawImage(0, 0, mask_image)
+            return result
+        else:
+            return main_pixmap
+
 
 # open the photo in the OS
     def open_photo(self):
@@ -235,7 +296,7 @@ class CotsDisplayComponent(QObject):
 
             if self.current_selection_is_confirmed():
                 is_eod = self.cots_widget.eod_check_box.checkState() == Qt.Checked
-                cots_detection_list.write_confirmed_field_to_cots_sequence(self.sequence_id, eod=is_eod)
+                cots_detection_list.write_confirmed_field_to_cots_sequence(self.sequence_id)
 
 
     def current_selection_is_confirmed(self):

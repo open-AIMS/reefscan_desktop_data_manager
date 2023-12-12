@@ -67,7 +67,7 @@ if not PYINSTALLER_COMPILED:
         from aims.operations.inference_operation import InferenceOperation, inference_result_folder
         from aims.operations.chart_operation import ChartOperation
     except Exception as e:
-        logger.error("Can't load inferencer", e)
+        logger.warn("Can't load inferencer", e)
         PYINSTALLER_COMPILED = True
 
 
