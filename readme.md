@@ -33,6 +33,12 @@ These are the values for the three edit boxes
 pip pinstall -r requirements.txt 
 On Windows:  
 `pyinstaller reefscan-transom.spec`
+`pyinstaller reefscan-dir.spec`
+
+pyinstaller -p src -p real_src --noconsole --name reefscan --add-data src\resources\*;resources --icon src\resources\aims_fish.ico --collect-submodules=sspilib --onedir --splash src/resources/ReefScan_inline_.png src\main.py --clean --version-file=version.txt
+
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool" sign /f  C:\greg\certificate-windows-reefscan\certificate.pfx /p reefscan /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 dist\reefscan\reefscan.exe  
+
 or
 `pyinstaller reefscan-simulated.spec`
 Rename the exe file to reefscan-deep.exe for reefscan deep functionality 

@@ -39,4 +39,5 @@ class PingThread(QObject):
         thread.start()
 
     def cancel(self):
+        print("cancelled")
         self.cancelled = True
