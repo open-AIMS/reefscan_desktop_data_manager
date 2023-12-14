@@ -3,7 +3,7 @@ import os
 
 from PyQt5.QtCore import QObject, QItemSelection, Qt, QRect, QByteArray
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QImage, QPixmap, QPainter, QPen, QColor, QFont, QBitmap, qRgb
-from PyQt5.QtWidgets import QHeaderView, QTableView, QAbstractItemView, QLabel, QCheckBox, QSizePolicy
+from PyQt5.QtWidgets import QHeaderView, QTableView, QAbstractItemView, QLabel, QCheckBox, QSizePolicy, QComboBox
 
 from aims import utils
 from aims.model.cots_detection import CotsDetection
@@ -13,6 +13,7 @@ from functools import partial
 
 # This class handles the visualisation of COTS detections as a table
 # it shows photos of COTS for each COTS sequence
+from aims.ui.photo_viewer import PhotoViewer
 from aims.utils import read_binary_file_support_samba
 logger = logging.getLogger("CotsDisplayComponent")
 
@@ -30,7 +31,7 @@ class CotsDisplayComponent(QObject):
         self.cots_widget.button_previous.clicked.connect(self.previous)
         eod_check_box: QCheckBox = self.cots_widget.eod_check_box
         eod_check_box.stateChanged.connect(self.create_cots_detections_table)
-        self.cots_widget.highlight_scars_check_box.stateChanged.connect(self.show_photo)
+        self.cots_widget.highlight_scars_check_box.stateChanged.connect(self.redraw_photo)
         confirmed_check_box: QCheckBox = self.cots_widget.confirmed_check_box
         confirmed_check_box.stateChanged.connect(self.confirmed_check_box_state_changed)
         self.cots_widget.refreshButton.clicked.connect(self.create_cots_detections_table)
@@ -39,6 +40,13 @@ class CotsDisplayComponent(QObject):
 
         self.cots_widget.button_yes.clicked.connect(partial(self.confirm_cots_detection, True))
         self.cots_widget.button_no.clicked.connect(partial(self.confirm_cots_detection, False))
+
+        by_class_combo_box: QComboBox = self.cots_widget.filter_by_class_combo_box
+        by_class_combo_box.addItem(self.tr("Show COTS and Scars"), userData="both")
+        by_class_combo_box.addItem(self.tr("Show COTS"), userData="COTS")
+        by_class_combo_box.addItem(self.tr("Show Scars"), userData="Scars")
+        by_class_combo_box.currentIndexChanged.connect(self.create_cots_detections_table)
+
 
     def confirmed_check_box_state_changed(self, state):
         if state == 2: # 2 = Checked, 0 = Unchecked
@@ -69,6 +77,18 @@ class CotsDisplayComponent(QObject):
         self.create_cots_detections_table()
         self.cots_widget.graphicsView.setVisible(False)
 
+    def include_row(self, row: CotsDetection):
+        class_to_show = self.cots_widget.filter_by_class_combo_box.currentData(role=Qt.UserRole)
+        include = True
+        if class_to_show == "COTS":
+            include = include and row.best_class_id == 0
+
+        if class_to_show == "Scar":
+            include = include and row.best_class_id == 1
+
+        include = include and (row.best_score > self.cots_display_params.minimum_score)
+
+        return include
 
 
     def create_cots_detections_table(self):
@@ -88,7 +108,7 @@ class CotsDisplayComponent(QObject):
             self.item_model.setHorizontalHeaderLabels(["Sequence", "Class", "Score", "Confirmed"])
             row: CotsDetection
             for row in self.cots_display_params.cots_detection_list().cots_detections_list:
-                if row.best_score > self.cots_display_params.minimum_score:
+                if self.include_row(row):
                     display_row = self.only_show_confirmed and row.confirmed or not self.only_show_confirmed
                     if display_row:
                         sequence_id_item = QStandardItem(str(row.sequence_id))
@@ -129,22 +149,26 @@ class CotsDisplayComponent(QObject):
         self.cots_widget.button_next.setVisible(False)
         self.cots_widget.button_previous.setVisible(False)
 
+    # Redraw the photo at the current zoom leve. This is for toggling scars off and on
+    def redraw_photo(self):
+        self.show_photo(retain_zoom=True)
 
     # Show the current photo, highlight the COTS and enable the appropriate buttons
     # This could be from the disk or the camera so we need to allow for that
-    def show_photo(self):
+    def show_photo(self, retain_zoom = False):
         if self.photos is None:
             return
 
         table_view:QTableView = self.cots_widget.tableView
         table_view.sizePolicy().setVerticalPolicy(QSizePolicy.Policy.Preferred)
-        self.cots_widget.graphicsView.setVisible(True)
+        graphics_view:PhotoViewer = self.cots_widget.graphicsView
+        graphics_view.setVisible(True)
         self.cots_widget.button_next.setVisible(True)
         self.cots_widget.button_previous.setVisible(True)
 
 
         photo = self.photos[self.selected_photo]
-        graphicsView: QLabel = self.cots_widget.graphicsView
+        graphicsView: QLabel = graphics_view
 
         image = self.qimage_from_filename(photo)
         image_width = image.width()
@@ -152,8 +176,9 @@ class CotsDisplayComponent(QObject):
         pixmap = QPixmap.fromImage(image)
 
         # Get rectangles for all the COTS in the photo
-        rectangles = self.cots_display_params.cots_detection_list().image_rectangles_by_filename[photo]
-        self.draw_rectangles(pixmap, image_height, image_width, rectangles)
+        rectangles = self.cots_display_params.cots_detection_list().image_rectangles_by_filename.get(photo)
+        if rectangles is not None:
+            self.draw_rectangles(pixmap, image_height, image_width, rectangles)
 
         print("photo")
         print(photo)
@@ -162,8 +187,12 @@ class CotsDisplayComponent(QObject):
         if self.cots_widget.highlight_scars_check_box.checkState() == Qt.Checked:
             pixmap = self.highlight_scars(pixmap, image_height, image_width, scar_overlay_file)
 
-        self.cots_widget.graphicsView.setPhoto(pixmap)
-        self.cots_widget.graphicsView.show()
+        if retain_zoom:
+            graphics_view.setPhotoRetainZoom(pixmap)
+        else:
+            graphics_view.setPhoto(pixmap)
+
+        graphics_view.show()
 
         # enable appropriate buttons
         self.cots_widget.button_next.setEnabled(self.selected_photo < len(self.photos)-1)
@@ -193,34 +222,21 @@ class CotsDisplayComponent(QObject):
                 for y in range(mask_image.height()):
                     pixelColor = QColor(mask_image.pixel(x, y));
                     color = pixelColor.red()
-                    if color < 50:
+                    if color < 10:
                         mask_image.setPixel(x, y, QColor(0,0,0,0).rgba())
                     else:
-                        mask_image.setPixel(x, y, QColor(color,0,0,150).rgba())
+                        whiteness = 50-color
+                        if whiteness <0:
+                            whiteness = 0
+                        mask_image.setPixel(x, y, QColor(255,whiteness, whiteness,70).rgba())
 
                     if color in colors:
                         c =colors[color]+1
                     else:
                         c=1
                     colors[color] = c
-                    # print (str(mask_image.pixel(x, y)))
             print(colors)
-            # print (mask_image.format())
-
-            # for i in range(256):
-            #     mask_image.setColor(i, qRgb(i, 0, 0))
-
-                # print (i)
-            # painter = QPainter()
-            # painter.begin(main_pixmap)
-            # painter.drawImage(image_width, image_height, mask_image)
-            # painter.end()
-            # mask = mask_image.createMaskFromColor()
             mask_image = mask_image.scaled(image_width, image_height)
-            # mask_bitmap = QBitmap.fromImage(mask_image)
-            # main_pixmap.setMask(mask_bitmap)
-            print("Masked!!")
-            # result = QPixmap(image_width, image_height)
             result = QPixmap(mask_image.width(), mask_image.height())
             result.fill(Qt.transparent)
             painter = QPainter(result)

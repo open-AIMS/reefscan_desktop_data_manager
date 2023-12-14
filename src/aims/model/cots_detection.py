@@ -30,6 +30,7 @@ class CotsDetection:
         self.sequence_id = sequence_id
         self.best_score = best_score
         self.avg_score = avg_score
+        self.best_class_id = best_class_id
         if best_class_id == 0:
             self.best_class = "COTS"
         elif best_class_id == 1:
