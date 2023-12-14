@@ -305,6 +305,10 @@ class CotsDetectionList():
         # one for each image with cots
         cots_waypoint_dfs = []
 
+        # scars don't have sequence ids so we make them up
+        # negative so as to not clash with the COTS sequences
+        next_scar_sequence_id = -1
+
         # keep track of the sequence_id from the JSON which is not really sequence id but
         # is a count of the number of photos for this sequence so far
         # if if is a duplicate of the last one then it is a phantom detection
@@ -327,11 +331,21 @@ class CotsDetectionList():
 
                         # Check if the file is an EOD COTS detection file based on keys
                         if 'frame_filename' and 'data' in json_data:
+                            photo_file_name = ntpath.basename(json_data["frame_filename"])
+                            photo_file_name_path = f"{self.folder}/{photo_file_name}"
+                            scar_score = json_data['data']['pixel_prediction']['max'] / 255
+                            if scar_score > 0.5:
+                                cots_detections_info = CotsDetection(sequence_id=next_scar_sequence_id,
+                                                                     best_class_id=1,
+                                                                     best_score=scar_score,
+                                                                     confirmed=False,
+                                                                     images=[]
+                                                                     )
+                                detection_ref.insert(cots_detections_info, photo_file_name_path)
+                                next_scar_sequence_id-= 1
+
                             detections_list = json_data['data']['detections']
                             if len(detections_list) > 0:
-
-                                photo_file_name = ntpath.basename(json_data["frame_filename"])
-                                photo_file_name_path = f"{self.folder}/{photo_file_name}"
 
                                 max_score=0
                                 sequence_ids = "sequences: "

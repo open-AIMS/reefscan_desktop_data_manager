@@ -23,21 +23,45 @@
       </size>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="6">
+      <item row="0" column="7">
        <widget class="QPushButton" name="openPhotoButton">
         <property name="text">
          <string>Open Photo</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="5">
+      <item row="0" column="6">
        <widget class="QPushButton" name="refreshButton">
         <property name="text">
          <string>Refresh</string>
         </property>
        </widget>
       </item>
+      <item row="0" column="2">
+       <widget class="QCheckBox" name="highlight_scars_check_box">
+        <property name="text">
+         <string>Highlight Scars</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="eod_check_box">
+        <property name="text">
+         <string>End of Day</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="4">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Minimum Score</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="5">
        <widget class="QLineEdit" name="minimumScoreTextBox">
         <property name="maximumSize">
          <size>
@@ -58,26 +82,9 @@
        </widget>
       </item>
       <item row="0" column="3">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Minimum Score</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="eod_check_box">
-        <property name="text">
-         <string>End of Day</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QCheckBox" name="highlight_scars_check_box">
-        <property name="text">
-         <string>Highlight Scars</string>
+       <widget class="QComboBox" name="filter_by_class_combo_box">
+        <property name="currentIndex">
+         <number>-1</number>
         </property>
        </widget>
       </item>
