@@ -9,6 +9,7 @@ class CotsDisplayParams:
 
     def init(self):
         self.eod = False
+        self.only_show_confirmed = False
         self.minimum_score = 0.5
         self.realtime_cots_detection_list = CotsDetectionList()
         self.eod_cots_detection_list = CotsDetectionList()

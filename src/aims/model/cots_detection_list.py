@@ -169,6 +169,7 @@ class CotsDetectionList():
         # this will be an array of single row data frames
         # one for each image with cots
         cots_waypoint_dfs = []
+        confirmed = None
         for filename in ops.listdir(self.folder):
             file_path = f"{self.folder}/{filename}"
             # Check if the file is a cots image JSON file
@@ -198,6 +199,11 @@ class CotsDetectionList():
                                 score = detection["score"]
                                 if score > max_score:
                                     max_score = score
+
+                            # cots_list_index = self.get_index_by_sequence_id(sequence_id)
+                            # if cots_list_index:
+                            #     cots_detection: CotsDetection = self.cots_detections_list[cots_list_index]
+                            #     confirmed = cots_detection.confirmed
 
                         self.image_rectangles_by_filename[photo_file_name_path] = rectangles
                         waypoint_df = self.waypoint_by_filename(photo_file_name)
@@ -333,20 +339,21 @@ class CotsDetectionList():
                         if 'frame_filename' and 'data' in json_data:
                             photo_file_name = ntpath.basename(json_data["frame_filename"])
                             photo_file_name_path = f"{self.folder}/{photo_file_name}"
-                            scar_score = json_data['data']['pixel_prediction']['max'] / 255
-                            if scar_score > 0.5:
-                                cots_detections_info = CotsDetection(sequence_id=next_scar_sequence_id,
-                                                                     best_class_id=1,
-                                                                     best_score=scar_score,
-                                                                     confirmed=False,
-                                                                     images=[]
-                                                                     )
-                                detection_ref.insert(cots_detections_info, photo_file_name_path)
-                                next_scar_sequence_id-= 1
+                            if 'pixel_prediction' in json_data:
+                                scar_score = json_data['data']['pixel_prediction']['max'] / 255
+                                if scar_score > 0.5:
+                                    cots_detections_info = CotsDetection(sequence_id=next_scar_sequence_id,
+                                                                        best_class_id=1,
+                                                                        best_score=scar_score,
+                                                                        confirmed=False,
+                                                                        images=[]
+                                                                        )
+                                    detection_ref.insert(cots_detections_info, photo_file_name_path)
+                                    next_scar_sequence_id-= 1
 
                             detections_list = json_data['data']['detections']
                             if len(detections_list) > 0:
-
+                                confirmed = None
                                 max_score=0
                                 sequence_ids = "sequences: "
                                 comma = ""
@@ -360,7 +367,6 @@ class CotsDetectionList():
                                         max_score = score
 
                                     # Check if custom sequence json exists and read 'confirmed' field
-                                    confirmed = None
                                     sequence_file = self.get_filename_cots_sequence(sequence_id)
                                     sequence_file_path = f"{eod_cots_folder}/{sequence_file}"
                                     if os.path.exists(sequence_file_path):
@@ -454,6 +460,9 @@ class CotsDetectionList():
 
         return idx
 
+    def get_confirmed_by_sequence_id(self, sequence_id):
+        idx = self.get_index_by_sequence_id(sequence_id)
+        return self.cots_detections_list[idx].confirmed
 
     def write_confirmed_field_to_cots_sequence(self, sequence_id):
         if self.eod:
