@@ -51,8 +51,10 @@ class CotsDisplayComponent(QObject):
     def confirmed_check_box_state_changed(self, state):
         if state == 2: # 2 = Checked, 0 = Unchecked
             self.only_show_confirmed = True
+            self.cots_display_params.only_show_confirmed = True
         else:
             self.only_show_confirmed = False
+            self.cots_display_params.only_show_confirmed = False
         self.create_cots_detections_table()
 
 
