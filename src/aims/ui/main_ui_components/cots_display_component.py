@@ -37,6 +37,7 @@ class CotsDisplayComponent(QObject):
         self.cots_widget.refreshButton.clicked.connect(self.create_cots_detections_table)
         self.cots_widget.openPhotoButton.clicked.connect(self.open_photo)
         self.cots_display_params = cots_display_params
+        self.current_row = None
 
         self.cots_widget.button_yes.clicked.connect(partial(self.confirm_cots_detection, True))
         self.cots_widget.button_no.clicked.connect(partial(self.confirm_cots_detection, False))
@@ -47,6 +48,13 @@ class CotsDisplayComponent(QObject):
         by_class_combo_box.addItem(self.tr("Show Scars"), userData="Scars")
         by_class_combo_box.currentIndexChanged.connect(self.create_cots_detections_table)
 
+
+        table_view: QTableView = self.cots_widget.tableView
+        table_view.setModel(self.item_model)
+        table_view.setSelectionMode(QAbstractItemView.SingleSelection)
+        table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
+        table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        table_view.selectionModel().currentChanged.connect(self.selection_changed)
 
     def confirmed_check_box_state_changed(self, state):
         if state == 2: # 2 = Checked, 0 = Unchecked
@@ -85,7 +93,7 @@ class CotsDisplayComponent(QObject):
         if class_to_show == "COTS":
             include = include and row.best_class_id == 0
 
-        if class_to_show == "Scar":
+        if class_to_show == "Scars":
             include = include and row.best_class_id == 1
 
         include = include and (row.best_score > self.cots_display_params.minimum_score)
@@ -104,10 +112,10 @@ class CotsDisplayComponent(QObject):
             self.cots_display_params.minimum_score = 0
 
         self.item_model.clear()
+        self.item_model.setHorizontalHeaderLabels(["Sequence", "Class", "Score", "Confirmed"])
 
         if self.cots_display_params.cots_detection_list().has_data:
             self.clear_photo()
-            self.item_model.setHorizontalHeaderLabels(["Sequence", "Class", "Score", "Confirmed"])
             row: CotsDetection
             for row in self.cots_display_params.cots_detection_list().cots_detections_list:
                 if self.include_row(row):
@@ -127,17 +135,12 @@ class CotsDisplayComponent(QObject):
                                                     confirmed_item
                                                     ])
 
-            table_view: QTableView = self.cots_widget.tableView
-            table_view.setModel(self.item_model)
-            table_view.setSelectionMode(QAbstractItemView.SingleSelection)
-            table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
-            table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-            table_view.selectionModel().currentChanged.connect(self.selection_changed)
 
 
     # When the user selects a row in the table, the photos for that sequence are displayed
     def selection_changed(self, current, previous):
         current_data: CotsDetection = self.item_model.data(current, Qt.UserRole)
+        self.current_row = current.row()
         self.sequence_id = current_data.sequence_id
         self.photos = current_data.images
         self.selected_photo = 0
@@ -308,9 +311,11 @@ class CotsDisplayComponent(QObject):
         selected_detection_idx = cots_detection_list.get_index_by_sequence_id(self.sequence_id)
 
         if selected_detection_idx is not None:
-            cots_detection_list.cots_detections_list[selected_detection_idx].confirmed = confirmed
-            self.create_cots_detections_table()
-            self.show_photo()
+            current_detection = cots_detection_list.cots_detections_list[selected_detection_idx]
+            current_detection.confirmed = confirmed
+            confirmed_item = QStandardItem(self.confirmed_field_to_string(current_detection))
+            confirmed_item.setData(current_detection, Qt.UserRole)
+            self.item_model.setItem(self.current_row, 3, confirmed_item)
 
             if self.current_selection_is_confirmed():
                 is_eod = self.cots_widget.eod_check_box.checkState() == Qt.Checked
