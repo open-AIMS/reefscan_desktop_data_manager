@@ -462,6 +462,10 @@ class CotsDetectionList():
 
     def get_confirmed_by_sequence_id(self, sequence_id):
         idx = self.get_index_by_sequence_id(sequence_id)
+# TODO this should not happen. There is a bug in ROS_reefscan_cots_detector
+# sequence_helper line 146
+        if idx == None:
+            return False
         return self.cots_detections_list[idx].confirmed
 
     def write_confirmed_field_to_cots_sequence(self, sequence_id):
