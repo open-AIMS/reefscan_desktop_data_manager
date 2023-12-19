@@ -132,7 +132,7 @@ class CotsDetectionList():
         self.load_waypoints()
         self.read_realtime_sequence_files()
         self.read_realtime_image_files()
-        self.read_realtime_confirmations()
+        self.read_confirmations(self.folder)
         self.has_data = True
         if not samba:
             self.serialize()
@@ -157,14 +157,15 @@ class CotsDetectionList():
 
         self.load_waypoints()
         self.read_eod_detection_files(folder, self.eod_detections_folder)
+        self.read_confirmations(self.eod_detections_folder)
         self.has_data = True
         self.serialize()
         return True             
 
 # realtime confirmations are stores in a csv file. The csv file can have conflicting informations
 # We always believe the most recent rows (ie towards the end of the file)
-    def read_realtime_confirmations(self):
-        csv_file_name= f"{self.folder}/cots_class_confirmations.csv"
+    def read_confirmations(self, folder):
+        csv_file_name= f"{folder}/cots_class_confirmations.csv"
         with open(csv_file_name, newline='') as csvfile:
             csv_reader = csv.DictReader(csvfile)
             for row in csv_reader:
@@ -350,13 +351,13 @@ class CotsDetectionList():
                         if 'frame_filename' and 'data' in json_data:
                             photo_file_name = ntpath.basename(json_data["frame_filename"])
                             photo_file_name_path = f"{self.folder}/{photo_file_name}"
-                            if 'pixel_prediction' in json_data:
+                            if 'pixel_prediction' in json_data['data']:
                                 scar_score = json_data['data']['pixel_prediction']['max'] / 255
                                 if scar_score > 0.5:
                                     cots_detections_info = CotsDetection(sequence_id=next_scar_sequence_id,
                                                                         best_class_id=1,
                                                                         best_score=scar_score,
-                                                                        confirmed=False,
+                                                                        confirmed=None,
                                                                         images=[]
                                                                         )
                                     detection_ref.insert(cots_detections_info, photo_file_name_path)
@@ -484,21 +485,40 @@ class CotsDetectionList():
             cots_folder = self.eod_detections_folder
         else:
             cots_folder = self.folder
-        json_sequence_file = self.get_filename_cots_sequence(sequence_id)
-        file_path = f"{cots_folder}/{json_sequence_file}"
-        if os.path.exists(file_path):
-            dict = read_json_file(file_path)
-        else:
-            dict = {}
-            dict['sequence_id'] = sequence_id
 
         selected_idx = self.get_index_by_sequence_id(sequence_id)
         if selected_idx is not None:
-            dict['confirmed'] = self.cots_detections_list[selected_idx].confirmed
-            write_json_file(file_path, dict)
+            file_name = f"{cots_folder}/cots_class_confirmations.csv"
+            confirmed = self.cots_detections_list[selected_idx].confirmed
+            msg_dict = {"confirmed": confirmed, "detection_sequence": sequence_id, "reefscan_sequence": ""}
+            field_names = sorted(msg_dict.keys())
+            file_exists = os.path.exists(file_name)
+            if file_exists:
+                mode = 'a'
+            else:
+                mode = 'w'
+
+            with open(file_name, mode) as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=field_names, lineterminator="\n")
+                if not file_exists:
+                    writer.writeheader()
+                writer.writerow(msg_dict)
             self.serialize()
+
+        # json_sequence_file = self.get_filename_cots_sequence(sequence_id)
+        # file_path = f"{cots_folder}/{json_sequence_file}"
+        # if os.path.exists(file_path):
+        #     dict = read_json_file(file_path)
+        # else:
+        #     dict = {}
+        #     dict['sequence_id'] = sequence_id
+
+        # if selected_idx is not None:
+        #     dict['confirmed'] = self.cots_detections_list[selected_idx].confirmed
+        #     write_json_file(file_path, dict)
 
 
     def get_filename_cots_sequence(self, sequence_id):
         suffix = str(sequence_id).zfill(6)
         return f'cots_sequence_detection_{suffix}.json'
+
