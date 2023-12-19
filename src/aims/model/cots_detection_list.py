@@ -1,3 +1,4 @@
+import csv
 import json
 import ntpath
 import os
@@ -131,6 +132,7 @@ class CotsDetectionList():
         self.load_waypoints()
         self.read_realtime_sequence_files()
         self.read_realtime_image_files()
+        self.read_realtime_confirmations()
         self.has_data = True
         if not samba:
             self.serialize()
@@ -159,6 +161,18 @@ class CotsDetectionList():
         self.serialize()
         return True             
 
+# realtime confirmations are stores in a csv file. The csv file can have conflicting informations
+# We always believe the most recent rows (ie towards the end of the file)
+    def read_realtime_confirmations(self):
+        csv_file_name= f"{self.folder}/cots_class_confirmations.csv"
+        with open(csv_file_name, newline='') as csvfile:
+            csv_reader = csv.DictReader(csvfile)
+            for row in csv_reader:
+                sequence_id = int(row["detection_sequence"])
+                confirmed = row["confirmed"] == "True"
+                index = self.get_index_by_sequence_id(sequence_id)
+                detection: CotsDetection = self.cots_detections_list[index]
+                detection.confirmed = confirmed
 
     # Read the information from the cots_image_*.json files. Each file corresponds to a photo
     # and has the location of the COTS stored in the file as a rectangle (proprtional to the size of the photo)
@@ -244,14 +258,11 @@ class CotsDetectionList():
                     best_score = best_detection['maximum_score']
                     sequence_id = json_data['sequence_id']
                     images = self.image_list(json_data["detection"])
-                    confirmed = None
-                    if 'confirmed' in json_data:
-                        confirmed = json_data['confirmed']
 
                     cots_detections_info = CotsDetection(sequence_id=sequence_id,
                                                          best_class_id=best_class_id,
                                                          best_score=best_score,
-                                                         confirmed=confirmed,
+                                                         confirmed=None,
                                                          images=images
                                                          )
                     self.cots_detections_list.append(cots_detections_info)
@@ -462,6 +473,10 @@ class CotsDetectionList():
 
     def get_confirmed_by_sequence_id(self, sequence_id):
         idx = self.get_index_by_sequence_id(sequence_id)
+# TODO this should not happen. There is a bug in ROS_reefscan_cots_detector
+# sequence_helper line 146
+        if idx == None:
+            return False
         return self.cots_detections_list[idx].confirmed
 
     def write_confirmed_field_to_cots_sequence(self, sequence_id):
