@@ -14,8 +14,8 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0" colspan="4">
-    <widget class="QWebEngineView" name="mapView">
+   <item row="0" column="0" colspan="5">
+    <widget class="QWebEngineView" name="mapView" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
        <horstretch>0</horstretch>
@@ -28,7 +28,7 @@
        <height>120</height>
       </size>
      </property>
-     <property name="url">
+     <property name="url" stdset="0">
       <url>
        <string>about:blank</string>
       </url>
@@ -42,17 +42,14 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
-    <widget class="QLabel" name="label">
+   <item row="1" column="4">
+    <widget class="QPushButton" name="refreshButton">
      <property name="text">
-      <string>Minimum Score</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      <string>Refresh</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="2">
+   <item row="1" column="3">
     <widget class="QLineEdit" name="minimumScoreTextBox">
      <property name="maximumSize">
       <size>
@@ -65,10 +62,20 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="3">
-    <widget class="QPushButton" name="refreshButton">
+   <item row="1" column="2">
+    <widget class="QLabel" name="label">
      <property name="text">
-      <string>Refresh</string>
+      <string>Minimum Score</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QCheckBox" name="confirmed_check_box">
+     <property name="text">
+      <string>Only show confirmed detections</string>
      </property>
     </widget>
    </item>
