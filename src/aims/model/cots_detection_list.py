@@ -166,14 +166,15 @@ class CotsDetectionList():
 # We always believe the most recent rows (ie towards the end of the file)
     def read_confirmations(self, folder):
         csv_file_name= f"{folder}/cots_class_confirmations.csv"
-        with open(csv_file_name, newline='') as csvfile:
-            csv_reader = csv.DictReader(csvfile)
-            for row in csv_reader:
-                sequence_id = int(row["detection_sequence"])
-                confirmed = row["confirmed"] == "True"
-                index = self.get_index_by_sequence_id(sequence_id)
-                detection: CotsDetection = self.cots_detections_list[index]
-                detection.confirmed = confirmed
+        if os.path.exists(csv_file_name):
+            with open(csv_file_name, newline='') as csvfile:
+                csv_reader = csv.DictReader(csvfile)
+                for row in csv_reader:
+                    sequence_id = int(row["detection_sequence"])
+                    confirmed = row["confirmed"] == "True"
+                    index = self.get_index_by_sequence_id(sequence_id)
+                    detection: CotsDetection = self.cots_detections_list[index]
+                    detection.confirmed = confirmed
 
     # Read the information from the cots_image_*.json files. Each file corresponds to a photo
     # and has the location of the COTS stored in the file as a rectangle (proprtional to the size of the photo)
