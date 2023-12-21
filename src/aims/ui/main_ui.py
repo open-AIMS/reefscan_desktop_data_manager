@@ -7,20 +7,13 @@ except ImportError:
 from PyQt5.QtWidgets import QMainWindow, QWidget, QTextBrowser
 from PyQt5 import QtWidgets, uic, QtCore
 
-from aims import data_loader
-from aims2.operations2.ping_thread import PingThread
 from aims.state import state
 import sys
 import logging
 from PyQt5.QtCore import Qt
 
 from aims.operations.aims_status_dialog import AimsStatusDialog
-from aims.ui.main_ui_components.reefcloud_connect_component import ReefcloudConnectComponent
-from aims.ui.main_ui_components.routes_component import RoutesComponent
-from aims2.operations2.archive_checker import ArchiveChecker
-from aims.ui.main_ui_components.data_component import DataComponent
 from aims.ui.main_ui_components.disk_drives_component import DiskDrivesComponent
-from aims.ui.main_ui_components.upload_component import UploadComponent
 from aims.ui.main_ui_components.utils import clearLayout
 try:
     import win32file
@@ -29,7 +22,8 @@ except ImportError:
     pass
 from tzlocal import get_localzone
 import unicodedata
-from aims.ui import deselectable_tree_view
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+
 
 logger = logging.getLogger("")
 
@@ -77,14 +71,14 @@ class MainUi(QMainWindow):
         self.ui: QWidget = uic.loadUi(self.start_ui)
 
         self.ui.setWindowState(self.ui.windowState() | Qt.WindowMaximized)
+        self.disk_drives_component = None
 
-        self.data_component = DataComponent(hint_function=self.hint,
-                                            disable_all_workflow_buttons=self.disable_all_workflow_buttons,
-                                            enable_workflow_buttons=self.enable_workflow_buttons)
-        self.upload_component = UploadComponent(hint_function=self.hint)
-        self.disk_drives_component = DiskDrivesComponent(hint_function=self.hint)
-        self.reefcloud_connect_component = ReefcloudConnectComponent(hint_function=self.hint)
-        self.routes_component = RoutesComponent(hint_function=self.hint)
+        self.data_component = None
+        self.upload_component = None
+        self.reefcloud_connect_component = None
+        self.routes_component = None
+        self.archive_checker = None
+
 
         self.workflow_widget = None
         self.connect_widget = None
@@ -99,18 +93,16 @@ class MainUi(QMainWindow):
 
         self.load_start_screen()
         self.aims_status_dialog = AimsStatusDialog(self.ui)
-        self.archive_checker = ArchiveChecker()
         self.update_status()
         self.camera_connected = False
         self.drives_connected = False
 
         self.hint(self.tr('Choose "Connect Disks" from the workflow bar'))
-        self.ping_thread_ = PingThread()
-        self.ping_thread_.ready.connect(self.camera_ready)
+        self.ping_thread_ = None
 
     def camera_ready(self):
         self.connect_widget.btnConnect.setEnabled(True)
-        self.connect_widget.readyLabel.setText("Camera is ready")
+        self.connect_widget.readyLabel.setText(self.tr("Camera is ready"))
 
     def hint(self, text):
         self.ui.hint_label.setText(text)
@@ -134,7 +126,8 @@ class MainUi(QMainWindow):
         self.workflow_widget.uploadButton.setEnabled(False)
 
     def highlight_button(self, button):
-        self.ping_thread_.cancel()
+        if self.ping_thread_ is not None:
+            self.ping_thread_.cancel()
         self.enable_workflow_buttons()
 
         remove_button_border(self.workflow_widget.connectDisksButton)
@@ -154,7 +147,7 @@ class MainUi(QMainWindow):
         self.workflow_widget.dataButton.setEnabled(self.drives_connected)
         self.workflow_widget.connectReefcloudButton.setEnabled(self.drives_connected)
         self.workflow_widget.uploadButton.setEnabled(
-            self.drives_connected and self.reefcloud_connect_component.logged_in())
+            self.drives_connected and self.reefcloud_connect_component is not None and self.reefcloud_connect_component.logged_in())
 
     def setup_workflow(self):
         workflow_widget_file = f'{state.meipass}resources/workflow_bar.ui'
@@ -188,6 +181,10 @@ class MainUi(QMainWindow):
             self.data_component.check_save()
 
     def load_upload_screen(self):
+        if self.upload_component is None:
+            from aims.ui.main_ui_components.upload_component import UploadComponent
+            self.upload_component = UploadComponent(hint_function=self.hint)
+
         self.ui_to_data()
         self.current_screen = "upload"
 
@@ -196,6 +193,10 @@ class MainUi(QMainWindow):
         self.highlight_button(self.workflow_widget.uploadButton)
 
     def load_reefcloud_connect_screen(self):
+        if self.reefcloud_connect_component is None:
+            from aims.ui.main_ui_components.reefcloud_connect_component import ReefcloudConnectComponent
+            self.reefcloud_connect_component = ReefcloudConnectComponent(hint_function=self.hint)
+
         self.ui_to_data()
         self.current_screen = "connect_reefcloud"
 
@@ -272,6 +273,12 @@ class MainUi(QMainWindow):
                 self.fixed_drives.append({"letter": d.mountpoint, "label": d.mountpoint.replace(base_drive_location, "")})
 
     def load_data_screen(self):
+        if self.data_component is None:
+            from aims.ui.main_ui_components.data_component import DataComponent
+            self.data_component = DataComponent(hint_function=self.hint,
+                                                 disable_all_workflow_buttons=self.disable_all_workflow_buttons,
+                                                 enable_workflow_buttons=self.enable_workflow_buttons)
+
         self.ui_to_data()
         self.current_screen = "data"
         self.highlight_button(self.workflow_widget.dataButton)
@@ -301,11 +308,21 @@ class MainUi(QMainWindow):
         self.highlight_button(self.workflow_widget.connectButton)
         self.hint(self.tr("Press the red connect button below"))
         self.connect_widget.btnConnect.setEnabled(False)
-        self.connect_widget.readyLabel.setText("Waiting for camera...")
+        self.connect_widget.readyLabel.setText(self.tr("Waiting for camera..."))
+
+        if self.ping_thread_ is None:
+            from aims2.operations2.ping_thread import PingThread
+            self.ping_thread_ = PingThread()
+            self.ping_thread_.ready.connect(self.camera_ready)
+
         self.ping_thread_.start()
 
 
     def load_routes_screen(self):
+        if self.routes_component is None:
+            from aims.ui.main_ui_components.routes_component import RoutesComponent
+            self.routes_component = RoutesComponent(hint_function=self.hint)
+
         self.current_screen = "routes"
         self.routes_component.widget = self.load_main_frame(f'{state.meipass}resources/routes.ui')
         self.highlight_button(self.workflow_widget.routesButton)
@@ -313,7 +330,11 @@ class MainUi(QMainWindow):
 
 
     def load_connect_disks_screen(self):
+        if self.disk_drives_component == None:
+            self.disk_drives_component = DiskDrivesComponent(hint_function=self.hint)
+
         self.current_screen = "connect_disks"
+
         self.disk_drives_component.widget = self.load_main_frame(f'{state.meipass}resources/disk_drives.ui')
         self.highlight_button(self.workflow_widget.connectDisksButton)
         self.disk_drives_component.load_screen(self.fixed_drives, self.aims_status_dialog)
@@ -332,6 +353,7 @@ class MainUi(QMainWindow):
         return widget
 
     def connect(self):
+        from aims import data_loader
         try:
             state.set_data_folders()
         except:
@@ -350,6 +372,10 @@ class MainUi(QMainWindow):
 
     def update_status(self):
         if state.model.camera_data_loaded:
+            if self.archive_checker is None:
+                from aims2.operations2.archive_checker import ArchiveChecker
+                self.archive_checker = ArchiveChecker()
+
             self.archive_checker.check()
             bytes_available = self.archive_checker.archive_stats.available_size()
             gb_available = round(bytes_available / 1000000000)
@@ -385,6 +411,3 @@ class MainUi(QMainWindow):
         if state.config.dev:
             self.ui.setWindowTitle(self.ui.windowTitle() + " - DEV")
         self.ui.show()
-
-
-

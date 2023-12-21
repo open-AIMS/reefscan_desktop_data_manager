@@ -119,9 +119,9 @@ class DataComponent(QObject):
 
     def tab_changed(self, index):
         logger.info(index)
-        if index == self.get_index_by_tab_text('Map'):
+        if index == self.get_index_by_tab_text(self.tr('Map')):
              self.map_component.show(self.survey())
-        if index == self.get_index_by_tab_text('COTS Photos'):
+        if index == self.get_index_by_tab_text(self.tr('COTS Photos')):
             self.cots_display_component.show()
 
     def copy(self):
@@ -244,8 +244,8 @@ class DataComponent(QObject):
         self.inference_widget.btnInferenceFolder.clicked.connect(self.inference)
 
         if PYINSTALLER_COMPILED:
-            self.remove_tab_by_tab_text('Inference')
-            self.remove_tab_by_tab_text('Chart')
+            self.remove_tab_by_tab_text(self.tr('Inference'))
+            self.remove_tab_by_tab_text(self.tr('Chart'))
 
         self.eod_cots_widget.detectCotsButton.clicked.connect(self.detect_cots)
         self.eod_cots_widget.cancelButton.clicked.connect(self.cancel_detect)
@@ -787,7 +787,7 @@ class DataComponent(QObject):
             if not PYINSTALLER_COMPILED:
                 coverage_results_file = f"{inference_result_folder(self.survey().folder)}/coverage.csv"
                 if os.path.exists(coverage_results_file):
-                    self.show_tab_by_tab_text('Chart')
+                    self.show_tab_by_tab_text(self.tr('Chart'))
 
                     self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
                                                                  self.data_widget.chart_tab)
@@ -803,7 +803,7 @@ class DataComponent(QObject):
                     fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
                     pie_browser.setHtml(fig)
                 else:
-                    self.hide_tab_by_tab_text('Chart')
+                    self.hide_tab_by_tab_text(self.tr('Chart'))
 
     def inference_open_folder(self):
         utils.open_file(inference_result_folder(self.survey().folder))
