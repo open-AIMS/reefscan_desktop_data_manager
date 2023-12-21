@@ -1,6 +1,8 @@
 SOURCES += src/aims/ui/main_ui_components/data_component.py
 SOURCES += src/aims/ui/main_ui_components/disk_drives_component.py
 SOURCES += src/aims/ui/main_ui_components/upload_component.py
+SOURCES += src/aims/ui/main_ui_components/reefcloud_connect_component.py
+SOURCES += src/aims/ui/main_ui_components/routes_component.py
 SOURCES += src/aims/ui/main_ui.py
 SOURCES += src/aims/gui_model/tree_model.py
 SOURCES += src/aims/messages.py
@@ -18,5 +20,7 @@ FORMS += src/resources/sequence_info.ui
 FORMS += src/resources/marks.ui
 FORMS += src/resources/main.ui
 FORMS += src/resources/start.ui
-FORMS += src/resources/cloud-log-in.ui
+FORMS += src/resources/reefcloud-connect.ui
+FORMS += src/resources/reefcloud-upload.ui
+FORMS += src/resources/routes.ui
 TRANSLATIONS += src/resources/eng-vi.ts
