@@ -460,9 +460,13 @@ class CotsDetectionList():
 
         return idx
 
+    def get_detection_by_sequence_id(self, sequence_id):
+        idx = self.get_index_by_sequence_id(sequence_id)
+        return self.cots_detections_list[idx] if idx else None
+
     def get_confirmed_by_sequence_id(self, sequence_id):
         idx = self.get_index_by_sequence_id(sequence_id)
-        return self.cots_detections_list[idx].confirmed
+        return self.cots_detections_list[idx].confirmed if idx else None
 
     def write_confirmed_field_to_cots_sequence(self, sequence_id):
         if self.eod:

@@ -270,7 +270,7 @@ class CotsDisplayComponent(QObject):
         rectangle: ProportionalRectangle
         for proportional_rectangle in proportional_rectangles:
             if proportional_rectangle.sequence_id == self.sequence_id:
-                if self.current_selection_is_confirmed():
+                if self.get_confirmed_current_selection():
                     pen.setColor(Qt.green)
                 else:
                     pen.setColor(Qt.red)
