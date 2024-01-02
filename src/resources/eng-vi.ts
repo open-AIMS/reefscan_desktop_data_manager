@@ -6,17 +6,17 @@
     <message>
         <location filename="../aims/operations/aims_status_dialog.py" line="22"/>
         <source>Syncing data.</source>
-        <translation>Đang đồng bộ hóa dữ liệu.</translation>
+        <translation>Đồng bộ dữ liệu</translation>
     </message>
     <message>
         <location filename="../aims/operations/aims_status_dialog.py" line="22"/>
         <source>Cancel</source>
-        <translation>Hủy bỏ</translation>
+        <translation>Huỷ</translation>
     </message>
     <message>
         <location filename="../aims/operations/aims_status_dialog.py" line="23"/>
         <source>Wait...</source>
-        <translation>Chờ đợi...</translation>
+        <translation>Chờ...</translation>
     </message>
 </context>
 <context>
@@ -24,32 +24,32 @@
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="390"/>
         <source>Delete?</source>
-        <translation>Xóa bỏ?</translation>
+        <translation>Xóa?</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="389"/>
         <source>Are you sure you want to delete the downloaded surveys from the camera?</source>
-        <translation>Bạn có chắc chắn muốn xóa các khảo sát đã tải xuống khỏi máy ảnh không?</translation>
+        <translation>Bạn có chắc chắn muốn xoá các dữ liệu khảo sát đã tải về từ máy ảnh không?</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="473"/>
         <source>Download finished</source>
-        <translation>Tải xong</translation>
+        <translation>Hoàn thành tải xuống</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="474"/>
         <source>Finished in </source>
-        <translation>Hoàn thành </translation>
+        <translation>Hoàn thành</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="474"/>
         <source> minutes</source>
-        <translation> phút</translation>
+        <translation>phút</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="515"/>
         <source>falling</source>
-        <translation>xuống</translation>
+        <translation>giảm xuống</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="516"/>
@@ -64,12 +64,12 @@
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="518"/>
         <source>rising</source>
-        <translation>dâng</translation>
+        <translation>dâng lên</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="521"/>
         <source>calm</source>
-        <translation>lặng</translation>
+        <translation>tĩnh lặng</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="522"/>
@@ -84,42 +84,42 @@
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="524"/>
         <source>rough</source>
-        <translation>động</translation>
+        <translation>Sóng lớn</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="652"/>
         <source>There are no marks for this sequence</source>
-        <translation>Không có điểm nào cho chuỗi này</translation>
+        <translation>Không có đánh dấu điểm nào trong tiến trình này</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1289"/>
         <source>New Sequences</source>
-        <translation>trình tự mới</translation>
+        <translation>Tiến trình mới</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="919"/>
         <source>Downloaded Sequences</source>
-        <translation>Trình tự đã tải xuống</translation>
+        <translation>Tiến trình đã được tải xuống</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1063"/>
         <source>Save?</source>
-        <translation>Cứu?</translation>
+        <translation>Lưu ?</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1062"/>
         <source>Do you want to save your changes?</source>
-        <translation>Bạn có muốn lưu các thay đổi của bạn?</translation>
+        <translation>Bạn có muốn lưu các thay đổi ?</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1270"/>
         <source>Edit the metadata or Click the download button</source>
-        <translation>Chỉnh sửa siêu dữ liệu hoặc Nhấp vào nút tải xuống</translation>
+        <translation>Chỉnh sửa metadata hoặc nhấp vào nút tải xuống bên dưới</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1273"/>
         <source>Edit the metadata</source>
-        <translation>Chỉnh sửa siêu dữ liệu</translation>
+        <translation>Chỉnh sửa metadata</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1276"/>
@@ -129,42 +129,42 @@
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1280"/>
         <source>Click on a survey name to edit metadata or check the surveys that you want to download</source>
-        <translation>Nhấp vào tên khảo sát để chỉnh sửa siêu dữ liệu hoặc kiểm tra các khảo sát mà bạn muốn tải xuống</translation>
+        <translation>Nhấp vào tên cuộc khảo sát để chỉnh sửa metadata hoặc kiểm tra cuộc khảo sát bạn muốn tải về</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1283"/>
         <source>Click on a survey name to edit metadata</source>
-        <translation>Nhấp vào tên khảo sát để chỉnh sửa siêu dữ liệu</translation>
+        <translation>Nhấp vào tên cuộc khảo sát để chỉnh sửa metadata</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1295"/>
         <source>Bytes used: </source>
-        <translation>Số byte được sử dụng: </translation>
+        <translation>Số byte sử dụng</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1298"/>
         <source>total Bytes used: </source>
-        <translation>tổng số byte được sử dụng: </translation>
+        <translation>Tổng số byte sử dụng</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1308"/>
         <source>Not enough disk space available on the primary disk.</source>
-        <translation>Không đủ dung lượng đĩa có sẵn trên đĩa chính.</translation>
+        <translation>Không đủ dung lượng trống trên ổ đĩa chính.</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1309"/>
         <source>Not enough disk space available on the backup disk.</source>
-        <translation>Không đủ dung lượng trống trên đĩa sao lưu.</translation>
+        <translation>Không đủ dung lượng trống trên ổ đĩa sao lưu.</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1310"/>
         <source>Selected sequences require</source>
-        <translation>Trình tự được chọn yêu cầu</translation>
+        <translation>Lựa chọn các tiến trình theo nhu cầu sử dụng</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1311"/>
         <source>Space available on</source>
-        <translation>Không gian có sẵn trên</translation>
+        <translation>Dung lượng trống trên</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1312"/>
@@ -174,17 +174,17 @@
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="350"/>
         <source>Site created with default properties</source>
-        <translation>Trang web được tạo với các thuộc tính mặc định</translation>
+        <translation>Trang đã được tạo với thuộc tính mặc định</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1066"/>
         <source>Yes</source>
-        <translation>Đúng</translation>
+        <translation>Đồng ý</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="1067"/>
         <source>No</source>
-        <translation>KHÔNG</translation>
+        <translation>Không đồng ý</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="122"/>
@@ -194,17 +194,17 @@
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="124"/>
         <source>COTS Photos</source>
-        <translation>COTS Ảnh</translation>
+        <translation type="unfinished">COTS Ảnh</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="247"/>
         <source>Inference</source>
-        <translation>Sự suy luận</translation>
+        <translation type="unfinished">Sự suy luận</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/data_component.py" line="806"/>
         <source>Chart</source>
-        <translation>Đồ thị</translation>
+        <translation type="unfinished">Đồ thị</translation>
     </message>
 </context>
 <context>
@@ -212,17 +212,17 @@
     <message>
         <location filename="../aims/operations/disk_drive_sync.py" line="28"/>
         <source>file</source>
-        <translation>tài liệu</translation>
+        <translation>Tập tin</translation>
     </message>
     <message>
         <location filename="../aims/operations/disk_drive_sync.py" line="30"/>
         <source>is missing completely</source>
-        <translation>mất tích hoàn toàn</translation>
+        <translation>bị mất hoàn toàn</translation>
     </message>
     <message>
         <location filename="../aims/operations/disk_drive_sync.py" line="31"/>
         <source>is missing</source>
-        <translation>mất tích</translation>
+        <translation>bị mất</translation>
     </message>
     <message>
         <location filename="../aims/operations/disk_drive_sync.py" line="32"/>
@@ -242,7 +242,7 @@
     <message>
         <location filename="../aims/operations/disk_drive_sync.py" line="35"/>
         <source>There are a total of</source>
-        <translation>Có tổng cộng</translation>
+        <translation>Đây là tổng số của</translation>
     </message>
     <message>
         <location filename="../aims/operations/disk_drive_sync.py" line="36"/>
@@ -270,17 +270,17 @@
     <message>
         <location filename="../aims/ui/main_ui_components/disk_drives_component.py" line="69"/>
         <source>Press the connect button</source>
-        <translation>Nhấn nút kết nối</translation>
+        <translation>Nhấn vào nút kết nối &quot;Connect&quot;</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/disk_drives_component.py" line="120"/>
         <source>Contents of the primary and seconday drives do not match.</source>
-        <translation>Nội dung của ổ đĩa chính và ổ đĩa phụ không khớp nhau.</translation>
+        <translation>Nội dung của ổ đĩa chính và phụ không khớp nhau</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/disk_drives_component.py" line="122"/>
         <source>Do you want to copy all the missing and modified files from the primary to the secondary drive?</source>
-        <translation>Bạn có muốn sao chép tất cả các tệp bị thiếu và sửa đổi từ ổ đĩa chính sang ổ đĩa phụ không?</translation>
+        <translation>Bạn có muốn sao chép tất cả các tập tin bị thiếu và đã sửa đổi từ ổ chính sang ổ phụ không?</translation>
     </message>
 </context>
 <context>
@@ -288,12 +288,12 @@
     <message>
         <location filename="main.ui" line="14"/>
         <source>Reefscan Data Manager</source>
-        <translation>Reefscan Trình quản lý dữ liệu</translation>
+        <translation>Trình quản lý dữ liệu Reefscan</translation>
     </message>
     <message>
         <location filename="data.ui" line="341"/>
         <source>Camera not connected</source>
-        <translation>Máy ảnh không được kết nối</translation>
+        <translation>Máy ảnh chưa được kết nối</translation>
     </message>
     <message>
         <location filename="data.ui" line="175"/>
@@ -303,12 +303,12 @@
     <message>
         <location filename="data.ui" line="292"/>
         <source>Show Downloaded Sequences</source>
-        <translation>Hiển thị trình tự đã tải xuống</translation>
+        <translation>Hiển thị các tiến trĩnh đã tải xuống</translation>
     </message>
     <message>
         <location filename="data.ui" line="277"/>
         <source>Delete downloaded sequences</source>
-        <translation>Xóa các chuỗi đã tải xuống</translation>
+        <translation>Xoá các tiến trĩnh đã tải xuống</translation>
     </message>
     <message>
         <location filename="data.ui" line="248"/>
@@ -318,7 +318,7 @@
     <message>
         <location filename="data.ui" line="109"/>
         <source>Local Disks</source>
-        <translation>Đĩa cục bộ</translation>
+        <translation>Ổ đĩa cục bộ</translation>
     </message>
     <message>
         <location filename="data.ui" line="151"/>
@@ -328,12 +328,12 @@
     <message>
         <location filename="status_bar.ui" line="159"/>
         <source>Refresh</source>
-        <translation>Làm cho khỏe lại</translation>
+        <translation>Làm mới</translation>
     </message>
     <message>
         <location filename="data.ui" line="421"/>
         <source>Sequence Information</source>
-        <translation>Thông tin trình tự</translation>
+        <translation>Thông tin tiến trình</translation>
     </message>
     <message>
         <location filename="data.ui" line="427"/>
@@ -348,7 +348,7 @@
     <message>
         <location filename="data.ui" line="439"/>
         <source>Thumbnails</source>
-        <translation>Hình thu nhỏ</translation>
+        <translation>Hình ảnh thu nhỏ</translation>
     </message>
     <message>
         <location filename="data.ui" line="482"/>
@@ -363,7 +363,7 @@
     <message>
         <location filename="reefcloud-upload.ui" line="14"/>
         <source>Form</source>
-        <translation></translation>
+        <translation>Biểu mẫu</translation>
     </message>
     <message>
         <location filename="disk_drives.ui" line="32"/>
@@ -383,27 +383,27 @@
     <message>
         <location filename="disk_drives.ui" line="104"/>
         <source>Also backup to this disk drive</source>
-        <translation type="unfinished">Đồng thời sao lưu vào ổ đĩa này</translation>
+        <translation>Đồng thời tạo bản sao lưu đến ổ đĩa này</translation>
     </message>
     <message>
         <location filename="disk_drives.ui" line="119"/>
         <source>Contents of the primary and seconday drives do not match (See below)</source>
-        <translation>Nội dung của ổ đĩa chính và ổ đĩa phụ không khớp (Xem bên dưới)</translation>
+        <translation>Nội dung của ổ đĩa chính và phụ không khớp nhau (Xem bên dưới)</translation>
     </message>
     <message>
         <location filename="disk_drives.ui" line="134"/>
         <source>Do you want to copy all the missing and modified files from the primary to the secondary drive?</source>
-        <translation>Bạn có muốn sao chép tất cả các tệp bị thiếu và sửa đổi từ ổ đĩa chính sang ổ đĩa phụ không?</translation>
+        <translation>Bạn có muốn sao chép tất cả các tập tin bị thiếu và sửa đổi từ ổ chính sang ổ phụ không?</translation>
     </message>
     <message>
         <location filename="disk_drives.ui" line="141"/>
         <source>Yes Copy</source>
-        <translation>Có Sao chép</translation>
+        <translation>Đồng ý sao chép</translation>
     </message>
     <message>
         <location filename="status_bar.ui" line="82"/>
         <source>Status Bar:</source>
-        <translation>Trạng thái:</translation>
+        <translation>Thanh trạng thái:</translation>
     </message>
     <message>
         <location filename="status_bar.ui" line="101"/>
@@ -413,12 +413,12 @@
     <message>
         <location filename="status_bar.ui" line="140"/>
         <source>Not Connected</source>
-        <translation>Không kết nối</translation>
+        <translation>Không có kết nối</translation>
     </message>
     <message>
         <location filename="sequence_metadata.ui" line="77"/>
         <source>Observer</source>
-        <translation>người quan sát</translation>
+        <translation>Người quan sát</translation>
     </message>
     <message>
         <location filename="sequence_metadata.ui" line="144"/>
@@ -433,7 +433,7 @@
     <message>
         <location filename="sequence_metadata.ui" line="98"/>
         <source>Operator</source>
-        <translation>Nhà điều hành</translation>
+        <translation>Người vận hành</translation>
     </message>
     <message>
         <location filename="reefcloud-connect.ui" line="25"/>
@@ -443,12 +443,12 @@
     <message>
         <location filename="sequence_metadata.ui" line="159"/>
         <source>Save</source>
-        <translation>Cứu</translation>
+        <translation>Lưu</translation>
     </message>
     <message>
         <location filename="sequence_metadata.ui" line="91"/>
         <source>Sea State</source>
-        <translation>nước biển</translation>
+        <translation>Tình trạng biển</translation>
     </message>
     <message>
         <location filename="sequence_info.ui" line="166"/>
@@ -478,7 +478,7 @@
     <message>
         <location filename="sequence_metadata.ui" line="228"/>
         <source>Visibility</source>
-        <translation>Hiển thị</translation>
+        <translation>Độ trong</translation>
     </message>
     <message>
         <location filename="sequence_metadata.ui" line="279"/>
@@ -503,7 +503,7 @@
     <message>
         <location filename="sequence_info.ui" line="82"/>
         <source>Missing GPS</source>
-        <translation>Thiếu GPS</translation>
+        <translation>Thiếu dữ liệu GPS</translation>
     </message>
     <message>
         <location filename="sequence_info.ui" line="305"/>
@@ -523,17 +523,17 @@
     <message>
         <location filename="sequence_info.ui" line="148"/>
         <source>Number Images</source>
-        <translation>số hình ảnh</translation>
+        <translation>Số lượng ảnh</translation>
     </message>
     <message>
         <location filename="sequence_info.ui" line="178"/>
         <source>Missing ping depth</source>
-        <translation>Thiếu độ sâu ping</translation>
+        <translation>Thiếu dữ liệu tín hiệu cảm biến độ sâu</translation>
     </message>
     <message>
         <location filename="sequence_info.ui" line="190"/>
         <source>Missing pressure depth</source>
-        <translation>Thiếu độ sâu áp suất</translation>
+        <translation>Thiếu dữ liệu áp suất cảm biến đo sâu</translation>
     </message>
     <message>
         <location filename="marks.ui" line="30"/>
@@ -543,7 +543,7 @@
     <message>
         <location filename="marks.ui" line="37"/>
         <source>Open Photo in folder</source>
-        <translation>Mở Ảnh trong thư mục</translation>
+        <translation>Mở ảnh trong thư mục</translation>
     </message>
     <message>
         <location filename="marks.ui" line="50"/>
@@ -553,7 +553,7 @@
     <message>
         <location filename="marks.ui" line="63"/>
         <source>photo</source>
-        <translation>hình chụp</translation>
+        <translation>Ảnh</translation>
     </message>
     <message>
         <location filename="main.ui" line="89"/>
@@ -573,17 +573,17 @@
     <message>
         <location filename="reefcloud-upload.ui" line="56"/>
         <source>Upload Selected Surveys</source>
-        <translation>Tải lên Khảo sát đã chọn</translation>
+        <translation>Tải lên các dữ liệu khảo sát đã lựa chọn</translation>
     </message>
     <message>
         <location filename="data.ui" line="82"/>
         <source>Make KML for one</source>
-        <translation>Tạo KML cho một</translation>
+        <translation>Tạo file KML cho một</translation>
     </message>
     <message>
         <location filename="data.ui" line="94"/>
         <source>Make KML for all</source>
-        <translation>Tạo KML cho tất cả</translation>
+        <translation>Tạo file KML cho tất cả</translation>
     </message>
     <message>
         <location filename="connect.ui" line="41"/>
@@ -607,7 +607,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="sequence_metadata.ui" line="380"/>
         <source>Add new site</source>
-        <translation>Thêm trang web mới</translation>
+        <translation>Thêm địa điểm</translation>
     </message>
     <message>
         <location filename="start.ui" line="20"/>
@@ -634,17 +634,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="data.ui" line="202"/>
         <source>Find COTS</source>
-        <translation>tìm thấy COTS</translation>
+        <translation type="unfinished">tìm thấy COTS</translation>
     </message>
     <message>
         <location filename="data.ui" line="215"/>
         <source>Enhance Photos</source>
-        <translation>Cải thiện ảnh</translation>
+        <translation type="unfinished">Cải thiện ảnh</translation>
     </message>
     <message>
         <location filename="data.ui" line="265"/>
         <source>Calculate Benthic Cover</source>
-        <translation>Tính toán lớp phủ đáy</translation>
+        <translation type="unfinished">Tính toán lớp phủ đáy</translation>
     </message>
     <message>
         <location filename="data.ui" line="399"/>
@@ -654,42 +654,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="data.ui" line="503"/>
         <source>Enhance</source>
-        <translation>Nâng cao</translation>
+        <translation type="unfinished">Nâng cao</translation>
     </message>
     <message>
         <location filename="data.ui" line="509"/>
         <source>Inference</source>
-        <translation>Sự suy luận</translation>
+        <translation type="unfinished">Sự suy luận</translation>
     </message>
     <message>
         <location filename="data.ui" line="515"/>
         <source>End-Of-Day-COTS</source>
-        <translation>Cuối ngày COTS</translation>
+        <translation type="unfinished">Cuối ngày COTS</translation>
     </message>
     <message>
         <location filename="data.ui" line="521"/>
         <source>COTS Photos</source>
-        <translation>COTS Ảnh</translation>
+        <translation type="unfinished">COTS Ảnh</translation>
     </message>
     <message>
         <location filename="data.ui" line="527"/>
         <source>Chart</source>
-        <translation>Đồ thị</translation>
+        <translation type="unfinished">Đồ thị</translation>
     </message>
     <message>
         <location filename="connect.ui" line="95"/>
         <source>Waiting for camera...</source>
-        <translation>Đang chờ máy ảnh...</translation>
+        <translation type="unfinished">Đang chờ máy ảnh...</translation>
     </message>
     <message>
         <location filename="sequence_metadata.ui" line="373"/>
         <source>These Reefcloud fields must be populated before uploading to Reefcloud</source>
-        <translation>Các trường Reefcloud này phải được điền trước khi tải lên Reefcloud</translation>
+        <translation type="unfinished">Các trường Reefcloud này phải được điền trước khi tải lên Reefcloud</translation>
     </message>
     <message>
         <location filename="sequence_info.ui" line="293"/>
         <source>Distance to Subject</source>
-        <translation>Khoảng cách đến chủ đề</translation>
+        <translation type="unfinished">Khoảng cách đến chủ đề</translation>
     </message>
     <message>
         <location filename="reefcloud-connect.ui" line="61"/>
@@ -699,12 +699,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="reefcloud-upload.ui" line="68"/>
         <source>Maximum Distance to Subject (metres)</source>
-        <translation>Khoảng cách tối đa đến chủ đề (mét)</translation>
+        <translation type="unfinished">Khoảng cách tối đa đến chủ đề (mét)</translation>
     </message>
     <message>
         <location filename="reefcloud-upload.ui" line="75"/>
         <source>Photos will not be uploaded to ReefCloud if the distance from the camera to the bottom is greater than this.</source>
-        <translation>Ảnh sẽ không được tải lên ReefCloud nếu khoảng cách từ camera đến đáy lớn hơn mức này.</translation>
+        <translation type="unfinished">Ảnh sẽ không được tải lên ReefCloud nếu khoảng cách từ camera đến đáy lớn hơn mức này.</translation>
     </message>
 </context>
 <context>
@@ -712,7 +712,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../aims/ui/main_ui.py" line="100"/>
         <source>Choose &quot;Connect Disks&quot; from the workflow bar</source>
-        <translation>Chọn &apos;Kết nối đĩa&apos; từ thanh công việc</translation>
+        <translation>Chọn &quot;Kết nối ổ đĩa&quot; từ thanh quy trình làm việc</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="309"/>
@@ -722,47 +722,47 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../aims/ui/main_ui.py" line="217"/>
         <source>To download and process images off the ReefScan System use the work flow in the left hand &apos;Workflow&apos; bar.</source>
-        <translation>Để tải xuống và xử lý hình ảnh từ Hệ thống ReefScan, hãy sử dụng quy trình công việc trong thanh &apos;Quy trình làm việc&apos; bên tay trái.</translation>
+        <translation>Để tải xuống và xử lý hình ảnh từ Hệ thống ReefScan, hãy sử dụng quy trình công việc ở thanh &apos;Quy trình công việc&apos; bên trái.</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="218"/>
         <source>Click on &apos;Connect Disks&apos; to first connect to your local disks.</source>
-        <translation>Nhấp vào &apos;Kết nối đĩa&apos; để kết nối đầu tiên với đĩa cục bộ của bạn.</translation>
+        <translation>Nhấp vào nút &quot;Kết nối ổ đĩa&quot; để kết nối với ổ đĩa cục bộ trước tiên</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="219"/>
         <source>Click on &apos;Connect Camera&apos; to connect to your reefscan camera.</source>
-        <translation>Nhấp vào &apos;Kết nối máy ảnh&apos; để kết nối với máy ảnh quét rạn san hô của bạn.</translation>
+        <translation>Nhấp vào nút &quot;Kết nối máy ảnh&quot; để kết nối với máy ảnh reefscan</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="220"/>
         <source>Click on &apos;Data&apos; to download photos from the camera, browse your photos or edit metadata.</source>
-        <translation>Nhấp vào &apos;Dữ liệu&apos; để tải ảnh xuống từ máy ảnh, duyệt ảnh của bạn hoặc chỉnh sửa siêu dữ liệu.</translation>
+        <translation>Nhấp vào nút &quot;Dữ liệu&quot; để tải xuống các ảnh từ máy ảnh, duyệt ảnh hoặc chỉnh sửa metadata</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="221"/>
         <source>Click on Reefcloud to upload your photos to reefcloud.</source>
-        <translation>Nhấp vào Reefcloud để tải ảnh của bạn lên Reefcloud.</translation>
+        <translation>Nhấp chọn Reefcloud để tải ảnh của bạn lên reefcloud</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="364"/>
         <source>Connected Successfully</source>
-        <translation>kết nối thành công</translation>
+        <translation>Kết nối thành công</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="394"/>
         <source>Gb Free</source>
-        <translation>gb miễn phí</translation>
+        <translation>Gb Free</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="383"/>
         <source>sequences</source>
-        <translation>trình tự</translation>
+        <translation>Tiến trình</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="386"/>
         <source>camera not connected</source>
-        <translation>máy ảnh không được kết nối</translation>
+        <translation>Máy ảnh bị mất kết nối</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="409"/>
@@ -777,17 +777,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../aims/ui/main_ui.py" line="294"/>
         <source>Plug an Ethernet cable from your Laptop or computer to the ReefScan device.</source>
-        <translation>Cắm cáp Ethernet từ Máy tính xách tay hoặc máy tính của bạn vào thiết bị ReefScan.</translation>
+        <translation>Cắm cáp Ethernet (Cáp mạng) từ Máy tính xách tay hoặc máy tính của bạn vào thiết bị ReefScan.</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="295"/>
         <source>Turn the ReefScan unit on via the power switch</source>
-        <translation>Bật thiết bị ReefScan qua công tắc nguồn</translation>
+        <translation>Bật nguồn thiết bị ReefScan</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="296"/>
         <source>Wait until the ReefScan unit has started (about 5 minutes)</source>
-        <translation>Đợi cho đến khi thiết bị ReefScan khởi động (khoảng 5 phút)</translation>
+        <translation>Chờ thiết bị Reefscan khởi động (khoảng 5 phút)</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="297"/>
@@ -797,12 +797,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../aims/ui/main_ui.py" line="105"/>
         <source>Camera is ready</source>
-        <translation>Máy ảnh đã sẵn sàng</translation>
+        <translation type="unfinished">Máy ảnh đã sẵn sàng</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="311"/>
         <source>Waiting for camera...</source>
-        <translation>Đang chờ máy ảnh...</translation>
+        <translation type="unfinished">Đang chờ máy ảnh...</translation>
     </message>
 </context>
 <context>
@@ -810,42 +810,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../aims/messages.py" line="12"/>
         <source>Reading data from camera</source>
-        <translation>Đọc dữ liệu từ camera</translation>
+        <translation>Đọc dữ liệu từ máy ảnh</translation>
     </message>
     <message>
         <location filename="../aims/messages.py" line="15"/>
         <source>Error can&apos;t find camera. Make sure the computer is connected to the camera via an ethernet cable. You may need to restart the camera.</source>
-        <translation>Lỗi. Không thể tìm thấy máy ảnh. Đảm bảo máy tính được kết nối với máy ảnh qua cáp ethernet. Bạn có thể cần phải khởi động lại máy ảnh.</translation>
+        <translation>Lỗi không tìm thấy camera. Đảm bảo máy tính được kết nối với máy ảnh qua cáp ethernet. Bạn có thể cần phải khởi động lại máy ảnh.</translation>
     </message>
     <message>
         <location filename="../aims/messages.py" line="18"/>
         <source>Reading data from local file system</source>
-        <translation>Đọc dữ liệu từ hệ thống tệp cục bộ</translation>
+        <translation>Đọc dữ liệu từ tập tin trên hệ thống cục bộ</translation>
     </message>
     <message>
         <location filename="../aims/messages.py" line="21"/>
         <source>Error can&apos;t find local files</source>
-        <translation>Lỗi. Không thể tìm thấy tệp cục bộ</translation>
+        <translation>Lỗi không thể tìm thấy tập tin cục bộ</translation>
     </message>
     <message>
         <location filename="../aims/messages.py" line="24"/>
         <source>Uploading survey</source>
-        <translation>Tải lên khảo sát</translation>
+        <translation>Đang tải lên dữ liệu khảo sát</translation>
     </message>
     <message>
         <location filename="../aims/messages.py" line="27"/>
         <source>copying</source>
-        <translation>sao chép</translation>
+        <translation>Đang sao chép</translation>
     </message>
     <message>
         <location filename="../aims/messages.py" line="30"/>
         <source>skipping</source>
-        <translation>bỏ qua</translation>
+        <translation>Bỏ qua</translation>
     </message>
     <message>
         <location filename="../aims/messages.py" line="33"/>
         <source>Survey</source>
-        <translation>Sự khảo sát</translation>
+        <translation>Khảo sát</translation>
     </message>
     <message>
         <location filename="../aims/messages.py" line="36"/>
@@ -878,27 +878,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../aims/ui/main_ui_components/reefcloud_connect_component.py" line="56"/>
         <source>Not logged in.</source>
-        <translation>Chưa đăng nhập.</translation>
+        <translation type="unfinished">Chưa đăng nhập.</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/reefcloud_connect_component.py" line="60"/>
         <source>Downloading projects</source>
-        <translation>Đang tải xuống dự án</translation>
+        <translation type="unfinished">Đang tải xuống dự án</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/reefcloud_connect_component.py" line="65"/>
         <source>Downloading sites</source>
-        <translation>Đang tải xuống các trang web</translation>
+        <translation type="unfinished">Đang tải xuống các trang web</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/reefcloud_connect_component.py" line="81"/>
         <source>Log in to Reefcloud using the browser window which just popped up; or press the cancel button.</source>
-        <translation>Đăng nhập vào Reefcloud bằng cửa sổ trình duyệt vừa xuất hiện; hoặc nhấn nút hủy.</translation>
+        <translation type="unfinished">Đăng nhập vào Reefcloud bằng cửa sổ trình duyệt vừa xuất hiện; hoặc nhấn nút hủy.</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/reefcloud_connect_component.py" line="88"/>
         <source>Waiting for log in</source>
-        <translation>Đang chờ đăng nhập</translation>
+        <translation type="unfinished">Đang chờ đăng nhập</translation>
     </message>
 </context>
 <context>
@@ -906,7 +906,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../reefcloud/sub_sample.py" line="120"/>
         <source>Subsampling folder</source>
-        <translation>thư mục lấy mẫu con</translation>
+        <translation>Thư mục con</translation>
     </message>
 </context>
 <context>
@@ -919,22 +919,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../aims/sync/sync_from_hardware.py" line="52"/>
         <source>Hardware surveys not found at</source>
-        <translation>Không tìm thấy khảo sát phần cứng tại</translation>
+        <translation>Không tìm thấy phần cứng trong quá trình rà soát tại</translation>
     </message>
     <message>
         <location filename="../aims/sync/sync_from_hardware.py" line="61"/>
         <source>Downloaded Sequences</source>
-        <translation>Trình tự đã tải xuống</translation>
+        <translation>Các tiến trình đã được tải xuống</translation>
     </message>
     <message>
         <location filename="../aims/sync/sync_from_hardware.py" line="89"/>
         <source>Your data has been synchronised to the local storage. </source>
-        <translation>Dữ liệu của bạn đã được đồng bộ hóa với bộ nhớ cục bộ. </translation>
+        <translation>Dữ liệu của bạn đã được đồng bộ hóa với bộ nhớ cục bộ.</translation>
     </message>
     <message>
         <location filename="../aims/sync/sync_from_hardware.py" line="90"/>
         <source>All photos have been copied to the local and backup folders.</source>
-        <translation>Tất cả ảnh đã được sao chép vào thư mục cục bộ và sao lưu.</translation>
+        <translation>Tất cả ảnh đã được sao chép vào thư mục cục bộ và thư mục sao lưu .</translation>
     </message>
 </context>
 <context>
@@ -942,12 +942,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../aims/gui_model/tree_model.py" line="21"/>
         <source>New Sequences</source>
-        <translation>trình tự mới</translation>
+        <translation>Tiến trình mới</translation>
     </message>
     <message>
         <location filename="../aims/gui_model/tree_model.py" line="29"/>
         <source>Downloaded Sequences</source>
-        <translation>Trình tự đã tải xuống</translation>
+        <translation>Các tiến trình đã được tải xuống</translation>
     </message>
     <message>
         <location filename="../aims/gui_model/tree_model.py" line="33"/>
@@ -965,7 +965,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../aims/ui/main_ui_components/upload_component.py" line="62"/>
         <source>Upload finished</source>
-        <translation>Tải lên hoàn tất</translation>
+        <translation>Hoàn thành tải lên</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/upload_component.py" line="63"/>
@@ -980,12 +980,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../aims/ui/main_ui_components/upload_component.py" line="79"/>
         <source>Press the &apos;Upload Selected Surveys&apos;</source>
-        <translation>Nhấn nút &apos;Tải lên các khảo sát đã chọn&apos;</translation>
+        <translation>Nhấn &apos;Tải lên các khảo sát đã chọn&apos;</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/upload_component.py" line="77"/>
         <source>Check the surveys that you want to upload to reefcloud</source>
-        <translation>Kiểm tra các khảo sát mà bạn muốn tải lên Reefcloud</translation>
+        <translation type="unfinished">Kiểm tra các khảo sát mà bạn muốn tải lên Reefcloud</translation>
     </message>
 </context>
 <context>
