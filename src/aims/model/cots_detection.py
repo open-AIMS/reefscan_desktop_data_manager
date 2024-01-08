@@ -7,7 +7,7 @@ from PyQt5.QtCore import QObject
 # serialize and de-serialize to dicts
 def de_serialize_cots_detection(dict):
     return CotsDetection(sequence_id = dict["sequence_id"],
-                         best_class_id = dict["best_class"],
+                         best_class_id = dict["best_class_id"],
                          best_score = dict["best_score"],
                          images = dict["images"],
                          avg_score= dict["avg_score"],
@@ -45,10 +45,9 @@ class CotsDetection:
         return {
             "sequence_id": self.sequence_id,
             "best_score": self.best_score,
-            "best_class": self.best_class,
+            "best_class_id": self.best_class_id,
             "images": self.images,
             "avg_score": self.avg_score,
             "confirmed": self.confirmed,
-            "images": self.images
 
         }
