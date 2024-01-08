@@ -129,7 +129,7 @@ class MapComponent(QObject):
         if class_to_show == "COTS":
             include = include and detection.best_class_id == 0
 
-        if class_to_show == "Scar":
+        if class_to_show == "Scars":
             include = include and detection.best_class_id == 1
 
         include = include and (detection.best_score > self.cots_display_params.minimum_score)
