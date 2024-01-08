@@ -4,6 +4,7 @@ import os
 from PyQt5.QtCore import QObject, QItemSelection, Qt, QRect, QByteArray
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QImage, QPixmap, QPainter, QPen, QColor, QFont, QBitmap, qRgb
 from PyQt5.QtWidgets import QHeaderView, QTableView, QAbstractItemView, QLabel, QCheckBox, QSizePolicy, QComboBox
+from photoenhancer.photoenhance import processImage, EnhancerParameters
 
 from aims import utils
 from aims.model.cots_detection import CotsDetection
@@ -37,9 +38,15 @@ class CotsDisplayComponent(QObject):
         self.cots_widget.refreshButton.clicked.connect(self.create_cots_detections_table)
         self.cots_widget.openPhotoButton.clicked.connect(self.open_photo)
         self.cots_display_params = cots_display_params
+        self.current_row = None
 
         self.cots_widget.button_yes.clicked.connect(partial(self.confirm_cots_detection, True))
         self.cots_widget.button_no.clicked.connect(partial(self.confirm_cots_detection, False))
+        self.cots_widget.enhance_check_box.stateChanged.connect(self.enhance_check_box_state_changed)
+        self.enhance_parameters = EnhancerParameters()
+        self.enhance_parameters.dehazing = False
+        self.enhance_parameters.denoising = False
+        self.enhanced = False
 
         by_class_combo_box: QComboBox = self.cots_widget.filter_by_class_combo_box
         by_class_combo_box.addItem(self.tr("Show COTS and Scars"), userData="both")
@@ -47,6 +54,13 @@ class CotsDisplayComponent(QObject):
         by_class_combo_box.addItem(self.tr("Show Scars"), userData="Scars")
         by_class_combo_box.currentIndexChanged.connect(self.create_cots_detections_table)
 
+
+        table_view: QTableView = self.cots_widget.tableView
+        table_view.setModel(self.item_model)
+        table_view.setSelectionMode(QAbstractItemView.SingleSelection)
+        table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
+        table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        table_view.selectionModel().currentChanged.connect(self.selection_changed)
 
     def confirmed_check_box_state_changed(self, state):
         if state == 2: # 2 = Checked, 0 = Unchecked
@@ -85,7 +99,7 @@ class CotsDisplayComponent(QObject):
         if class_to_show == "COTS":
             include = include and row.best_class_id == 0
 
-        if class_to_show == "Scar":
+        if class_to_show == "Scars":
             include = include and row.best_class_id == 1
 
         include = include and (row.best_score > self.cots_display_params.minimum_score)
@@ -104,10 +118,10 @@ class CotsDisplayComponent(QObject):
             self.cots_display_params.minimum_score = 0
 
         self.item_model.clear()
+        self.item_model.setHorizontalHeaderLabels(["Sequence", "Class", "Score", "Confirmed"])
 
         if self.cots_display_params.cots_detection_list().has_data:
             self.clear_photo()
-            self.item_model.setHorizontalHeaderLabels(["Sequence", "Class", "Score", "Confirmed"])
             row: CotsDetection
             for row in self.cots_display_params.cots_detection_list().cots_detections_list:
                 if self.include_row(row):
@@ -127,23 +141,24 @@ class CotsDisplayComponent(QObject):
                                                     confirmed_item
                                                     ])
 
-            table_view: QTableView = self.cots_widget.tableView
-            table_view.setModel(self.item_model)
-            table_view.setSelectionMode(QAbstractItemView.SingleSelection)
-            table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
-            table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-            table_view.selectionModel().currentChanged.connect(self.selection_changed)
 
 
     # When the user selects a row in the table, the photos for that sequence are displayed
     def selection_changed(self, current, previous):
+        self.set_enhanced_false()
+
         current_data: CotsDetection = self.item_model.data(current, Qt.UserRole)
+        self.current_row = current.row()
         self.sequence_id = current_data.sequence_id
         self.photos = current_data.images
         self.selected_photo = 0
         self.show_photo()
 
-# TODO not working need to google this when I have internet
+    def set_enhanced_false(self):
+        self.enhanced = False
+        self.cots_widget.enhance_check_box.setCheckState(Qt.Unchecked)
+
+    # TODO not working need to google this when I have internet
     def clear_photo(self):
         table_view:QTableView = self.cots_widget.tableView
         table_view.sizePolicy().setVerticalPolicy(QSizePolicy.Policy.Expanding)
@@ -170,9 +185,14 @@ class CotsDisplayComponent(QObject):
 
 
         photo = self.photos[self.selected_photo]
+        if self.enhanced:
+            photo_to_show = self.enhanced_photo(photo)
+        else:
+            photo_to_show = photo
+
         graphicsView: QLabel = graphics_view
 
-        image = self.qimage_from_filename(photo)
+        image = self.qimage_from_filename(photo_to_show)
         image_width = image.width()
         image_height = image.height()
         pixmap = QPixmap.fromImage(image)
@@ -199,8 +219,6 @@ class CotsDisplayComponent(QObject):
         # enable appropriate buttons
         self.cots_widget.button_next.setEnabled(self.selected_photo < len(self.photos)-1)
         self.cots_widget.button_previous.setEnabled(self.selected_photo > 0)
-
-        self.cots_widget.label_file_name.setText(os.path.dirname(photo))
 
     def qimage_from_filename(self, photo):
         file_contents = self.image_contents_from_filename(photo)
@@ -297,10 +315,12 @@ class CotsDisplayComponent(QObject):
 
     def next(self):
         self.selected_photo += 1
+        self.set_enhanced_false()
         self.show_photo()
 
     def previous(self):
         self.selected_photo -= 1
+        self.set_enhanced_false()
         self.show_photo()
 
     def confirm_cots_detection(self, confirmed):
@@ -308,9 +328,11 @@ class CotsDisplayComponent(QObject):
         selected_detection_idx = cots_detection_list.get_index_by_sequence_id(self.sequence_id)
 
         if selected_detection_idx is not None:
-            cots_detection_list.cots_detections_list[selected_detection_idx].confirmed = confirmed
-            self.create_cots_detections_table()
-            self.show_photo()
+            current_detection = cots_detection_list.cots_detections_list[selected_detection_idx]
+            current_detection.confirmed = confirmed
+            confirmed_item = QStandardItem(self.confirmed_field_to_string(current_detection))
+            confirmed_item.setData(current_detection, Qt.UserRole)
+            self.item_model.setItem(self.current_row, 3, confirmed_item)
 
             if self.current_selection_is_confirmed():
                 is_eod = self.cots_widget.eod_check_box.checkState() == Qt.Checked
@@ -326,5 +348,19 @@ class CotsDisplayComponent(QObject):
         selected_detection_idx = cots_detection_list.get_index_by_sequence_id(self.sequence_id)
         return cots_detection_list.cots_detections_list[selected_detection_idx].confirmed
 
+    def enhance_check_box_state_changed(self, state):
+        if state == 2: # 2 = Checked, 0 = Unchecked
+            self.enhanced = True
+        else:
+            self.enhanced = False
+        self.show_photo(retain_zoom=True)
+
+    def enhanced_photo(self, photo):
+        enhanced_photo =  utils.replace_last(photo, "/reefscan/", "/reefscan_enhanced/")
+        enhanced_photo = enhanced_photo.replace(".jpg", "__enh.jpg")
+        if not os.path.exists(enhanced_photo):
+            processImage(photo, enhanced_photo, self.enhance_parameters)
+
+        return enhanced_photo
 
 
