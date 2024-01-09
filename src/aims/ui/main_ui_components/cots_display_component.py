@@ -336,7 +336,7 @@ class CotsDisplayComponent(QObject):
 
             if self.current_selection_is_confirmed():
                 is_eod = self.cots_widget.eod_check_box.checkState() == Qt.Checked
-                cots_detection_list.write_confirmed_field_to_cots_sequence(self.sequence_id)
+                cots_detection_list.write_confirmed_field_to_cots_sequence()
 
 
     def current_selection_is_confirmed(self):

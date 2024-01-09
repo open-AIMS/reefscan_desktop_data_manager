@@ -165,7 +165,14 @@ class CotsDetectionList():
 # realtime confirmations are stores in a csv file. The csv file can have conflicting informations
 # We always believe the most recent rows (ie towards the end of the file)
     def read_confirmations(self, folder):
-        csv_file_name= f"{folder}/cots_class_confirmations.csv"
+        orig_csv_file_name= f"{folder}/cots_class_confirmations.csv"
+        current_csv_file_name= f"{folder}/cots_class_confirmations_current.csv"
+        if os.path.exists(current_csv_file_name):
+            csv_file_name = current_csv_file_name
+        else:
+            csv_file_name = orig_csv_file_name
+
+
         if os.path.exists(csv_file_name):
             with open(csv_file_name, newline='') as csvfile:
                 csv_reader = csv.DictReader(csvfile)
@@ -481,42 +488,21 @@ class CotsDetectionList():
             return False
         return self.cots_detections_list[idx].confirmed
 
-    def write_confirmed_field_to_cots_sequence(self, sequence_id):
+    def write_confirmed_field_to_cots_sequence(self):
         if self.eod:
             cots_folder = self.eod_detections_folder
         else:
             cots_folder = self.folder
 
-        selected_idx = self.get_index_by_sequence_id(sequence_id)
-        if selected_idx is not None:
-            file_name = f"{cots_folder}/cots_class_confirmations.csv"
-            confirmed = self.cots_detections_list[selected_idx].confirmed
-            msg_dict = {"confirmed": confirmed, "detection_sequence": sequence_id, "reefscan_sequence": ""}
-            field_names = sorted(msg_dict.keys())
-            file_exists = os.path.exists(file_name)
-            if file_exists:
-                mode = 'a'
-            else:
-                mode = 'w'
-
-            with open(file_name, mode) as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=field_names, lineterminator="\n")
-                if not file_exists:
-                    writer.writeheader()
+        file_name = f"{cots_folder}/cots_class_confirmations_current.csv"
+        with open(file_name, "w") as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=["confirmed", "detection_sequence"], lineterminator="\n")
+            writer.writeheader()
+            for detection in self.cots_detections_list:
+                msg_dict = {"confirmed": detection.confirmed, "detection_sequence": detection.sequence_id}
                 writer.writerow(msg_dict)
-            self.serialize()
+        self.serialize()
 
-        # json_sequence_file = self.get_filename_cots_sequence(sequence_id)
-        # file_path = f"{cots_folder}/{json_sequence_file}"
-        # if os.path.exists(file_path):
-        #     dict = read_json_file(file_path)
-        # else:
-        #     dict = {}
-        #     dict['sequence_id'] = sequence_id
-
-        # if selected_idx is not None:
-        #     dict['confirmed'] = self.cots_detections_list[selected_idx].confirmed
-        #     write_json_file(file_path, dict)
 
 
     def get_filename_cots_sequence(self, sequence_id):
