@@ -14,7 +14,7 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0" colspan="5">
+   <item row="0" column="0" colspan="6">
     <widget class="QWebEngineView" name="mapView" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
@@ -42,14 +42,14 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="4">
+   <item row="1" column="5">
     <widget class="QPushButton" name="refreshButton">
      <property name="text">
       <string>Refresh</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="3">
+   <item row="1" column="4">
     <widget class="QLineEdit" name="minimumScoreTextBox">
      <property name="maximumSize">
       <size>
@@ -62,7 +62,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="2">
+   <item row="1" column="3">
     <widget class="QLabel" name="label">
      <property name="text">
       <string>Minimum Score</string>
@@ -78,6 +78,9 @@
       <string>Only show confirmed detections</string>
      </property>
     </widget>
+   </item>
+   <item row="1" column="2">
+    <widget class="QComboBox" name="filter_by_class_combo_box"/>
    </item>
   </layout>
  </widget>
