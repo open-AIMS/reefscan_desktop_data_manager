@@ -361,6 +361,8 @@ class CotsDetectionList():
                             photo_file_name_path = f"{self.folder}/{photo_file_name}"
                             if 'pixel_prediction' in json_data['data']:
                                 scar_score = json_data['data']['pixel_prediction']['max'] / 255
+                                max_score=scar_score
+                                sequence_ids = f"sequences: {next_scar_sequence_id}"
                                 if scar_score > 0.5:
                                     cots_detections_info = CotsDetection(sequence_id=next_scar_sequence_id,
                                                                         best_class_id=1,
@@ -402,10 +404,6 @@ class CotsDetectionList():
                                                                         )
                                     detection_ref.insert(cots_detections_info, photo_file_name_path)
 
-                                cots_waypoint_df = self.waypoint_by_filename(photo_file_name)
-                                cots_waypoint_df["sequence_ids"] = sequence_ids
-                                cots_waypoint_df["score"] = max_score
-                                cots_waypoint_dfs.append(cots_waypoint_df)
                                 rectangles = []
                                 for result in detections_list:
                                     px_left = result["x"]
@@ -423,6 +421,13 @@ class CotsDetectionList():
                                     rectangles.append(rectangle)
                                 self.image_rectangles_by_filename[photo_file_name_path] = rectangles
                                 # cots_waypoint_dfs.append(self.waypoint_by_filename(photo_file_name))
+
+                            if (len(detections_list) > 0) or ('pixel_prediction' in json_data['data']):
+                                cots_waypoint_df = self.waypoint_by_filename(photo_file_name)
+                                cots_waypoint_df["sequence_ids"] = sequence_ids
+                                cots_waypoint_df["score"] = max_score
+                                cots_waypoint_dfs.append(cots_waypoint_df)
+
 
                     except json.JSONDecodeError as e:
                         print(f"Error decoding JSON in {filename}: {e}")

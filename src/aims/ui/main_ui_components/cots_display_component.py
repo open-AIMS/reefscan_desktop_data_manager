@@ -27,7 +27,6 @@ class CotsDisplayComponent(QObject):
         self.photos=None
         self.selected_photo = 0
         self.sequence_id = None
-        self.only_show_confirmed: bool = False
         self.cots_widget.button_next.clicked.connect(self.next)
         self.cots_widget.button_previous.clicked.connect(self.previous)
         eod_check_box: QCheckBox = self.cots_widget.eod_check_box
@@ -63,12 +62,8 @@ class CotsDisplayComponent(QObject):
         table_view.selectionModel().currentChanged.connect(self.selection_changed)
 
     def confirmed_check_box_state_changed(self, state):
-        if state == 2: # 2 = Checked, 0 = Unchecked
-            self.only_show_confirmed = True
-            self.cots_display_params.only_show_confirmed = True
-        else:
-            self.only_show_confirmed = False
-            self.cots_display_params.only_show_confirmed = False
+        self.cots_display_params.only_show_confirmed = self.cots_widget.confirmed_check_box.checkState() == Qt.Checked
+
         self.create_cots_detections_table()
 
 
@@ -88,6 +83,11 @@ class CotsDisplayComponent(QObject):
             self.cots_widget.eod_check_box.setCheckState(Qt.Checked)
         else:
             self.cots_widget.eod_check_box.setCheckState(Qt.Unchecked)
+
+        if self.cots_display_params.only_show_confirmed:
+            self.cots_widget.confirmed_check_box.setCheckState(Qt.Checked)
+        else:
+            self.cots_widget.confirmed_check_box.setCheckState(Qt.Unchecked)
 
         self.cots_widget.minimumScoreTextBox.setText(str(self.cots_display_params.minimum_score))
         self.create_cots_detections_table()
@@ -125,7 +125,7 @@ class CotsDisplayComponent(QObject):
             row: CotsDetection
             for row in self.cots_display_params.cots_detection_list().cots_detections_list:
                 if self.include_row(row):
-                    display_row = self.only_show_confirmed and row.confirmed or not self.only_show_confirmed
+                    display_row = self.cots_display_params.only_show_confirmed and row.confirmed or not self.cots_display_params.only_show_confirmed
                     if display_row:
                         sequence_id_item = QStandardItem(str(row.sequence_id))
                         class_item = QStandardItem(str(row.best_class))

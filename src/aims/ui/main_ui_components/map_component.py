@@ -16,6 +16,12 @@ from aims.ui.map_html import map_html_str
 logger = logging.getLogger("MapComponent")
 
 
+def parse_sequences_string_to_sequence_ids(seq_str):
+    seq_str_values = seq_str.replace("sequences: ", "")
+    seq_id_list = [int(id.strip()) for id in seq_str_values.split(",") if id.strip().replace("-", "").isdigit()]
+    return seq_id_list
+
+
 class MapComponent(QObject):
     def __init__(self, map_widget, cots_display_params):
         super().__init__()
@@ -34,10 +40,6 @@ class MapComponent(QObject):
         by_class_combo_box.addItem(self.tr("Show Scars"), userData="Scars")
         by_class_combo_box.currentIndexChanged.connect(self.draw_map)
 
-    def parse_sequences_string_to_sequence_ids(self, seq_str):
-        seq_str_values = seq_str.replace("sequences: ","")
-        seq_id_list = [int(id.strip()) for id in seq_str_values.split(",") if id.strip().isdigit() ]
-        return seq_id_list
 
     def show(self, survey: Survey):
         if self.cots_display_params.eod:
@@ -75,7 +77,7 @@ class MapComponent(QObject):
                     score_ = waypoint[3]
                     only_show_confirmed = self.map_widget.confirmed_check_box.checkState() == Qt.Checked
 
-                    sequence_ids = self.parse_sequences_string_to_sequence_ids(waypoint[2])
+                    sequence_ids = parse_sequences_string_to_sequence_ids(waypoint[2])
                     sequence_ids = self.filter_id_array_by_class(sequence_ids, detection_list)
 
                     if only_show_confirmed:
