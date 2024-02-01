@@ -66,6 +66,8 @@ def write_json_file(filename, dict):
         file.write(jsonStr)
 
 def is_empty_folder(path):
+    if not os.path.exists(path):
+        return True
     try:
         with os.scandir(path) as it:
             if any(it):
