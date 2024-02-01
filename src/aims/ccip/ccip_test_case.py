@@ -23,7 +23,7 @@ class CcipTestCase(unittest.TestCase):
         self.assertEqual(len(tows.tows), 36)
 
     def test_read_polygons_file(self):
-        polygons = Polygons("data/CCIP_PolygonDetails.csv")
+        polygons = Polygons("../test/data/CCIP_PolygonDetails.csv")
         print(str(polygons.polygons[0].start_time))
         self.assertEqual(str(polygons.polygons[0].start_time), "2024-01-16 23:26:56")
         print(len(polygons.polygons))
@@ -106,6 +106,7 @@ class CcipTestCase(unittest.TestCase):
         basic_model.slow_network = False
         basic_model.read_from_files(progress_queue, camera_connected=False)
         all_dicts = []
+        cull_splitter = CullSplitter("C:/greg/bpm/cull_data", "../test/data/CCIP_PolygonDetails.csv")
         cull_splitter = CullSplitter("C:/greg/bpm/cull_data", "data/CCIP_PolygonDetails.csv")
         for s in basic_model.surveys_data.values():
             survey: Survey = s
