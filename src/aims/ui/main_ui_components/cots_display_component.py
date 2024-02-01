@@ -2,8 +2,10 @@ import logging
 import os
 
 from PyQt5.QtCore import QObject, QItemSelection, Qt, QRect, QByteArray
-from PyQt5.QtGui import QStandardItemModel, QStandardItem, QImage, QPixmap, QPainter, QPen, QColor, QFont, QBitmap, qRgb
-from PyQt5.QtWidgets import QHeaderView, QTableView, QAbstractItemView, QLabel, QCheckBox, QSizePolicy, QComboBox
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QImage, QPixmap, QPainter, QPen, QColor, QFont, QBitmap, \
+    qRgb, QKeySequence
+from PyQt5.QtWidgets import QHeaderView, QTableView, QAbstractItemView, QLabel, QCheckBox, QSizePolicy, QComboBox, \
+    QShortcut
 from photoenhancer.photoenhance import processImage, EnhancerParameters
 
 from aims import utils
@@ -60,6 +62,32 @@ class CotsDisplayComponent(QObject):
         table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table_view.selectionModel().currentChanged.connect(self.selection_changed)
+
+        self.shortcut1 = QShortcut(QKeySequence("F1"), self.cots_widget)
+        self.shortcut1.activated.connect(partial(self.confirm_cots_detection, True))
+        self.shortcut2 = QShortcut(QKeySequence("F2"), self.cots_widget)
+        self.shortcut2.activated.connect(partial(self.confirm_cots_detection, False))
+        self.shortcut3 = QShortcut(QKeySequence("F3"), self.cots_widget)
+        self.shortcut3.activated.connect(self.toggle_highlight_scars)
+        self.shortcut4= QShortcut(QKeySequence("F4"), self.cots_widget)
+        self.shortcut4.activated.connect(self.toggle_enhance)
+
+    def toggle_highlight_scars(self):
+        print ("toggle highlight")
+        check_box:QCheckBox = self.cots_widget.highlight_scars_check_box
+        self.toggle_check_box(check_box)
+
+    def toggle_enhance(self):
+        print ("toggle enhance")
+        check_box:QCheckBox = self.cots_widget.enhance_check_box
+        self.toggle_check_box(check_box)
+
+    def toggle_check_box(self, check_box:QCheckBox):
+        if check_box.checkState() == Qt.Checked:
+            check_box.setCheckState(Qt.Unchecked)
+        else:
+            check_box.setCheckState(Qt.Checked)
+        self.redraw_photo()
 
     def confirmed_check_box_state_changed(self, state):
         self.cots_display_params.only_show_confirmed = self.cots_widget.confirmed_check_box.checkState() == Qt.Checked
@@ -359,6 +387,8 @@ class CotsDisplayComponent(QObject):
         enhanced_photo =  utils.replace_last(photo, "/reefscan/", "/reefscan_enhanced/")
         enhanced_photo = enhanced_photo.replace(".jpg", "__enh.jpg")
         if not os.path.exists(enhanced_photo):
+            directory = os.path.dirname(enhanced_photo)
+            os.makedirs(directory, exist_ok=True)
             processImage(photo, enhanced_photo, self.enhance_parameters)
 
         return enhanced_photo

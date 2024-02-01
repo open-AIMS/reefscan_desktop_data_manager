@@ -11,9 +11,14 @@ import pandas as pd
 class ChartOperation(AbstractOperation):
     
     def create_pie_chart_benthic_groups(self, coverage_results_file=''):
-        df = pd.read_csv(coverage_results_file)
-        df = df[df['group'] != 'total']
+        df = self.read_csv(coverage_results_file)
         fig = px.pie(values=df['pred_percentage'], names=df['group'], title='Percent Cover of Benthic Groups')
         
         
         return fig.to_html(include_plotlyjs='cdn')
+
+    def read_csv(self, coverage_results_file):
+        df = pd.read_csv(coverage_results_file)
+        df = df[df['group'] != 'total']
+        return df
+
