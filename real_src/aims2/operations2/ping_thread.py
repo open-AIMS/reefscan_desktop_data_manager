@@ -22,7 +22,10 @@ class PingThread(QObject):
         print("task")
         r = None
         while r is None and not self.cancelled:
-            r = ping(state.config.camera_ip, timeout=1)
+            try:
+                r = ping(state.config.camera_ip, timeout=1)
+            except:
+                r = None
             print(r)
 
         self.running = False

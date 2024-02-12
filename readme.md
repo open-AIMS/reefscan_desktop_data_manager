@@ -32,8 +32,7 @@ These are the values for the three edit boxes
 # Create executable  
 pip pinstall -r requirements.txt 
 On Windows:  
-`pyinstaller reefscan-transom.spec`
-`pyinstaller reefscan-dir.spec`
+`pyinstaller reefscan.spec`
 
 pyinstaller -p src -p real_src --noconsole --name reefscan --add-data src\resources\*;resources --icon src\resources\aims_fish.ico --collect-submodules=sspilib --onedir --splash src/resources/ReefScan_inline_.png src\main.py --clean --version-file=version.txt
 

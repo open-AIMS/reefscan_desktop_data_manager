@@ -5,8 +5,8 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import QSize, QObject
 from PyQt5.QtWidgets import QMessageBox, QMainWindow
 
+from aims.operations.disk_drive_sync import compare
 from aims.state import state
-from aims.operations.disk_drive_sync import disk_drive_utils
 logger = logging.getLogger("")
 
 def get_primary_folder(disk):
@@ -84,7 +84,11 @@ class DiskDrivesComponent(QObject):
         else:
             primary_folder = get_primary_folder(self.widget.driveComboBox.currentData())
             secondary_folder = get_secondary_folder(self.widget.secondDriveComboBox.currentData())
-            disk_drive_utils.compare(primary_folder, secondary_folder, True, self.aims_status_dialog)
+            compare(primary_folder, secondary_folder, True, self.aims_status_dialog)
+            self.widget.messageText.setText("")
+            self.widget.error_label1.setVisible(False)
+            self.widget.error_label2.setVisible(False)
+            self.widget.copyButton.setVisible(False)
 
     def connect(self):
         state.config.backup = self.widget.cbBackup.isChecked()
@@ -115,20 +119,41 @@ class DiskDrivesComponent(QObject):
 
 
     def compare_disks(self, primary_folder, secondary_folder):
-        total_differences, messages, message_str = disk_drive_utils.compare(primary_folder, secondary_folder, False, self.aims_status_dialog)
+        total_differences, fixable_messages, unfixable_messages, message_str = compare(primary_folder, secondary_folder, False, self.aims_status_dialog)
         if total_differences > 0:
-            message = self.tr("Contents of the primary and seconday drives do not match.")\
-                      + "\n" \
-                      + self.tr("Do you want to copy all the missing and modified files from the primary to the secondary drive?") \
-                      + "\n"
-            message = message + message_str
+            message = self.tr("Contents of the primary and seconday drives do not match.")
+            message = message + "\n" + message_str
+
+            if len(unfixable_messages) > 0:
+                message = message \
+                + "\n\n" \
+                + self.tr("The following issues cannot be automatically fixed. Please check the disk drives manually.")
+                for m in unfixable_messages:
+                    message = message + "\n" + m
+                if (len(fixable_messages) > 0):
+                    message = message + "\n\n" + \
+                         self.tr(
+                            "The following issues can be fixed automatically after the other issues are rectified.")
+                self.widget.error_label2.setText("This cannot be fixed automatically")
+                self.widget.copyButton.setVisible(False)
+
+            else:
+                self.widget.copyButton.setVisible(True)
+                message = message \
+                    + "\n" \
+                    + self.tr("Do you want to copy all the missing and modified files from the primary to the secondary drive?") \
+                    + "\n"
+                self.widget.error_label2.setText("Do you want to copy all of the missing and modified files from the primary to the secondary drive?")
+
+
+            for m in fixable_messages:
+                message = message + "\n" + m
 
             self.widget.messageText.setText(message)
             self.widget.error_label1.setVisible(True)
             self.widget.error_label2.setVisible(True)
-            self.widget.copyButton.setVisible(True)
 
-            logger.info(messages)
+            logger.info(fixable_messages)
         return total_differences == 0
 
 

@@ -1,12 +1,21 @@
-import datetime
-import json
+from time import process_time
 import logging
+
+from reefscanner.basic_model.model_utils import print_time, replace_last
+
+logger = logging.getLogger("DataComponent")
+
+
+start=process_time()
+
+import datetime
 import os
 import shutil
 import subprocess
 import traceback
 import typing
-from time import process_time
+
+print_time("Imports done one", start, logger)
 
 from PyQt5 import uic, QtWidgets, QtTest
 from PyQt5.QtCore import QItemSelection, QSize, Qt, QObject
@@ -21,32 +30,28 @@ from reefscanner.basic_model.reader_writer import save_survey
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 from reefscanner.basic_model.survey import Survey
 
-from aims import data_loader, utils
-from aims.model.cots_detection import CotsDetection
-from aims.model.cots_detection_list import CotsDetectionList
-from aims.model.cots_display_params import CotsDisplayParams
-from aims.operations.load_data import reefcloud_subsample
+print_time("Imports done two", start, logger)
+
+from aims import data_loader
+print_time("Imports done two.1", start, logger)
+from aims import utils
+print_time("Imports done two.2", start, logger)
 from aims.state import state
-from aims.gui_model.lazy_list_model import LazyListModel
-from aims.gui_model.marks_model import MarksModel
+print_time("Imports done two.3", start, logger)
 from aims.gui_model.tree_model import TreeModelMaker, checked_survey_ids
-from aims.operations.kml_maker import make_kml
-from aims.ui.main_ui_components.cots_display_component import CotsDisplayComponent
-from aims.ui.main_ui_components.map_component import MapComponent
-from aims.ui.map_html import map_html_str
-from aims2.operations2.cots_detector import CotsDetector
+print_time("Imports done two.5", start, logger)
 from aims2.operations2.sync_from_hardware_operation import SyncFromHardwareOperation
 from aims.stats.survey_stats import SurveyStats
+print_time("Imports done two.7", start, logger)
 from aims.ui.main_ui_components.utils import clearLayout
-import aims.ui.photo_viewer
 
 from aims2.operations2.camera_utils import delete_archives, get_kilo_bytes_used
+print_time("Imports done two.9", start, logger)
 from aims2.reefcloud2.reefcloud_utils import create_reefcloud_site
 
-from aims.operations.enhance_photo_operation import EnhancePhotoOperation
-
 import sys
-logger = logging.getLogger("DataComponent")
+
+print_time("Imports done three", start, logger)
 
 
 """
@@ -66,6 +71,8 @@ if not PYINSTALLER_COMPILED:
     try:
         from aims.operations.inference_operation import InferenceOperation, inference_result_folder
         from aims.operations.chart_operation import ChartOperation
+        from aims.ui.main_ui_components.cots_display_component import CotsDisplayComponent
+
     except Exception as e:
         logger.warn("Can't load inferencer", e)
         PYINSTALLER_COMPILED = True
@@ -80,9 +87,12 @@ def utc_to_local(utc_str, timezone):
     except:
         return utc_str
 
+print_time("Imports done", start, logger)
+
 
 class DataComponent(QObject):
     def __init__(self, hint_function, disable_all_workflow_buttons, enable_workflow_buttons):
+        start = process_time()
         super().__init__()
         self.data_widget = None
         self.metadata_widget = None
@@ -111,16 +121,21 @@ class DataComponent(QObject):
         self.clipboard: typing.Optional[Survey] = None
         self.current_tab = 2
         self.tree_collapsed = False
-        self.cots_detector: CotsDetector = None
+        self.cots_detector = None
         self.selected_index = None
         self.camera_tree_selected = False
         self.cots_display_component: CotsDisplayComponent = None
-        self.map_component: MapComponent = None
+        self.map_component = None
+
+        print_time("Init done", start, logger)
 
     def tab_changed(self, index):
         logger.info(index)
         if index == self.get_index_by_tab_text(self.tr('Map')):
-             self.map_component.show(self.survey())
+            from aims.ui.main_ui_components.map_component import MapComponent
+            self.map_component = MapComponent(self.data_widget.map_tab, self.cots_display_params)
+            surveys = self.get_all_descendants_as_surveys(self.selected_index)
+            self.map_component.show(surveys)
         if index == self.get_index_by_tab_text(self.tr('COTS Photos')):
             self.cots_display_component.show()
 
@@ -195,14 +210,10 @@ class DataComponent(QObject):
                                                         self.data_widget.metadata_tab)
         self.marks_widget = self.load_sequence_frame(f'{state.meipass}resources/marks.ui',
                                                      self.data_widget.marks_tab)
-        self.map_widget = self.load_sequence_frame(f'{state.meipass}resources/map.ui',
-                                                     self.data_widget.map_tab)
 
         self.lookups()
         self.data_widget.renameFoldersButton.clicked.connect(self.rename_folders)
         self.data_widget.refreshButton.clicked.connect(self.refresh)
-        self.data_widget.kmlForAllButton.clicked.connect(self.kml_for_all)
-        self.data_widget.kmlForOneButton.clicked.connect(self.kml_for_one)
 
         self.marks_widget.btnOpenMarkFolder.clicked.connect(self.open_mark_folder)
         self.marks_widget.btnOpenMark.clicked.connect(self.open_mark)
@@ -226,6 +237,7 @@ class DataComponent(QObject):
         if self.setup_camera_tree():
             self.data_widget.camera_not_connected_label.setVisible(False)
             self.data_widget.camera_panel.setVisible(True)
+            self.data_widget.extra_operations_widget.setVisible(not PYINSTALLER_COMPILED)
         else:
             self.data_widget.camera_not_connected_label.setVisible(True)
             self.data_widget.camera_panel.setVisible(False)
@@ -246,15 +258,20 @@ class DataComponent(QObject):
         if PYINSTALLER_COMPILED:
             self.remove_tab_by_tab_text(self.tr('Inference'))
             self.remove_tab_by_tab_text(self.tr('Chart'))
+            self.remove_tab_by_tab_text(self.tr('End-Of-Day-COTS'))
+            self.remove_tab_by_tab_text(self.tr('COTS Photos'))
+            self.cots_display_params = None
+        else:
+            self.eod_cots_widget.detectCotsButton.clicked.connect(self.detect_cots)
+            self.eod_cots_widget.cancelButton.clicked.connect(self.cancel_detect)
+            from aims2.operations2.cots_detector import CotsDetector
+            self.cots_detector = CotsDetector(output=self.eod_cots_widget.detectorOutput,
+                                              parent=self
+                                              )
+            from aims.model.cots_display_params import CotsDisplayParams
+            self.cots_display_params = CotsDisplayParams()
+            self.cots_display_component = CotsDisplayComponent(self.cots_display_widget, self.cots_display_params)
 
-        self.eod_cots_widget.detectCotsButton.clicked.connect(self.detect_cots)
-        self.eod_cots_widget.cancelButton.clicked.connect(self.cancel_detect)
-        self.cots_detector = CotsDetector(output=self.eod_cots_widget.detectorOutput,
-                                          parent=self
-                                          )
-        self.cots_display_params = CotsDisplayParams()
-        self.cots_display_component = CotsDisplayComponent(self.cots_display_widget, self.cots_display_params)
-        self.map_component = MapComponent(self.map_widget, self.cots_display_params)
         self.data_widget.tabWidget.currentChanged.connect(self.tab_changed)
 
     def get_index_by_tab_text(self, name_of_tab):
@@ -279,7 +296,8 @@ class DataComponent(QObject):
         if self.survey() is None:
             return
 
-        self.cots_display_params.read_data(self.survey().folder, samba)
+        if self.cots_display_params is not None:
+            self.cots_display_params.read_data(self.survey().folder, samba)
 
     def detect_cots(self):
         survey_infos = self.get_all_descendants(self.selected_index)
@@ -343,7 +361,6 @@ class DataComponent(QObject):
         self.update_sites_combo()
         self.metadata_widget.cb_reefcloud_site.setCurrentText(site)
 
-        state.config.reefcloud_sites[project].append({"name": site, "id": site_id})
         self.site_lookup[site_id] = site
         self.metadata_widget.cb_reefcloud_site.addItem(site, site_id)
         message_box = QtWidgets.QMessageBox()
@@ -469,6 +486,16 @@ class DataComponent(QObject):
         enhance_text = f"Enhance Finished in {enhance_minutes} minutes"
         logger.info(enhance_text)
 
+        for survey_info in surveys:
+            survey = state.model.surveys_data[survey_info["survey_id"]]
+            if self.cots_display_component is not None:
+                self.cots_display_params.cots_detection_list().read_realtime_files(survey.folder, samba=False, use_cache=False)
+
+        if self.cots_display_params is not None:
+            self.cots_display_params.init()
+
+        self.initial_disables()
+
         errorbox = QtWidgets.QMessageBox()
         errorbox.setText(self.tr("Download finished"))
         errorbox.setDetailedText(self.tr("Finished in ") + str(download_minutes) + self.tr(" minutes") + "\n"
@@ -478,14 +505,6 @@ class DataComponent(QObject):
         self.aims_status_dialog.progress_dialog.close()
         QtTest.QTest.qWait(1000)
         errorbox.exec_()
-
-        for survey_info in surveys:
-            survey = state.model.surveys_data[survey_info["survey_id"]]
-            self.cots_display_params.cots_detection_list().read_realtime_files(survey.folder, samba=False, use_cache=False)
-
-        self.cots_display_params.init()
-
-        self.initial_disables()
 
     def setup_camera_tree(self):
         if state.model.camera_data_loaded:
@@ -553,8 +572,10 @@ class DataComponent(QObject):
         self.metadata_widget.cb_vis.addItem(">30")
 
         self.metadata_widget.cb_reefcloud_project.addItem("")
+        self.project_lookups=[]
         for project in state.config.reefcloud_projects:
             self.metadata_widget.cb_reefcloud_project.addItem(project)
+            self.project_lookups.append(project)
 
         self.metadata_widget.cb_reefcloud_site.addItem("", userData="")
 
@@ -565,8 +586,8 @@ class DataComponent(QObject):
 
     def update_sites_combo(self):
         # figure out what project was selected.
-        project = self.metadata_widget.cb_reefcloud_project.currentText()
-        if project == "":
+        project:str = self.metadata_widget.cb_reefcloud_project.currentText()
+        if project == "" or project.endswith("Permission Denied"):
             # No project was selected, site not meaningful.
             # Valid sites are set on per project basis.
             self.metadata_widget.cb_reefcloud_site.clear()
@@ -603,25 +624,6 @@ class DataComponent(QObject):
 
             logger.info("rename done")
 
-    def kml_for_all(self):
-        if not state.read_only:
-            realtime_cots_detection_list = CotsDetectionList()
-            for survey in state.model.surveys_data.values():
-                try:
-                    realtime_cots_detection_list.read_realtime_files(survey.folder, samba=False)
-                    make_kml(survey, realtime_cots_detection_list.cots_waypoints, self.cots_display_params.minimum_score)
-                except Exception as e:
-                    logger.error(f"Error making kml for {survey.best_name()}", e)
-
-
-    def kml_for_one(self):
-        if self.survey() is None:
-            raise Exception("Choose a survey first")
-
-        if not state.read_only:
-            cots_waypoints = self.cots_display_params.realtime_cots_detection_list.cots_waypoints
-            make_kml(survey=self.survey(), cots_waypoints=cots_waypoints, minimum_cots_score=self.cots_display_params.minimum_score)
-
     def refresh(self):
         self.check_save()
         old_survey_id = self.survey_id
@@ -639,6 +641,8 @@ class DataComponent(QObject):
         return widget
 
     def load_marks(self):
+        from aims.gui_model.marks_model import MarksModel
+
         self.marks_table: QTableView = self.marks_widget.tableView
         self.mark_filename = None
         self.marks_model = MarksModel(self.survey().folder)
@@ -680,7 +684,7 @@ class DataComponent(QObject):
                 utils.open_file(self.mark_filename, "open")
 
     def enhanced_folder(self, survey):
-        return utils.replace_last(survey, "/reefscan/", "/reefscan_enhanced/")
+        return replace_last(survey, "/reefscan/", "/reefscan_enhanced/")
 
     def enhance_open_folder(self):
         utils.open_file(self.enhanced_folder(self.survey().folder))
@@ -689,6 +693,7 @@ class DataComponent(QObject):
     # if a folder is selected do it for all descendant surveys of that folder
     def enhance_photos(self):
         # if a specific survey is selected then we replace existing (which currently just means redo the sub-sampling)
+        logger.info(f"start enhance {process_time()}")
         replace = self.survey() is not None
 
         survey_infos = self.get_all_descendants(self.selected_index)
@@ -699,6 +704,7 @@ class DataComponent(QObject):
                                         disable_dehazing=disable_dehazing, replace=replace)
 
     def enhance_photos_for_surveys(self, survey_infos, disable_denoising=True, disable_dehazing=True, replace=False):
+        logger.info(f"start enhance_photos_for_surveys {process_time()}")
         self.disable_everything()
         self.enhance_widget.btnEnhanceFolder.setEnabled(False)
         try:
@@ -712,14 +718,18 @@ class DataComponent(QObject):
         finally:
             self.enable_everything()
             self.enhance_widget.btnEnhanceFolder.setEnabled(True)
+            self.enhance_widget.btnEnhanceOpenFolder.setVisible(True)
 
     # enhance all of the photos for one survey
     # returns true if successful false otherwise
     def enhance_photos_for_survey(self, survey, disable_denoising=True,
                                   disable_dehazing=True, replace=False) -> bool:
+        logger.info(f"start enhance_photos_for_survey {process_time()}")
 
-        subsampled_image_folder = utils.replace_last(survey.folder, "/reefscan/", "/reefscan_reefcloud/")
+        subsampled_image_folder = replace_last(survey.folder, "/reefscan/", "/reefscan_reefcloud/")
         if replace or utils.is_empty_folder(subsampled_image_folder):
+            from aims.operations.load_data import reefcloud_subsample
+
             success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
                                                                 self.aims_status_dialog)
             if not success:
@@ -743,6 +753,8 @@ class DataComponent(QObject):
             self.enhance_widget.textBrowser.append("Dehazing step is skipped for faster performance.")
 
         QApplication.processEvents()
+
+        from aims.operations.enhance_photo_operation import EnhancePhotoOperation
 
         enhance_operation = EnhancePhotoOperation(target=subsampled_image_folder,
                                                   load=float(cpu_load_string),
@@ -833,10 +845,11 @@ class DataComponent(QObject):
     # of the operation
 
     def inference_survey(self, survey: Survey, replace = False) -> bool:
-        subsampled_image_folder = utils.replace_last(survey.folder, "/reefscan/", "/reefscan_reefcloud/")
+        subsampled_image_folder = replace_last(survey.folder, "/reefscan/", "/reefscan_reefcloud/")
         output_folder = inference_result_folder(survey.folder)
 
         if replace or utils.is_empty_folder(subsampled_image_folder):
+            from aims.operations.load_data import reefcloud_subsample
             success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
                                                             self.aims_status_dialog)
             if not success:
@@ -957,6 +970,7 @@ class DataComponent(QObject):
         self.disable_all_tabs(None)
         self.data_widget.tabWidget.setEnabled(True)
         self.data_widget.tabWidget.setTabEnabled(1, True)
+        self.data_widget.tabWidget.setTabEnabled(3, True)
         self.data_widget.tabWidget.setTabEnabled(6, True)
         self.data_widget.tabWidget.setTabEnabled(7, True)
         self.data_widget.tabWidget.setTabEnabled(8, True)
@@ -1034,8 +1048,8 @@ class DataComponent(QObject):
     def setup_processing_button_names(self):
         folder_name = self.selected_index.data()
         if self.survey_id is None:
-            self.enhance_widget.btnEnhanceOpenFolder.setEnabled(False)
-            self.inference_widget.btnInferenceOpenFolder.setEnabled(False)
+            self.enhance_widget.btnEnhanceOpenFolder.setVisible(False)
+            self.inference_widget.btnInferenceOpenFolder.setVisible(False)
             if folder_name == "Local Drive":
                 self.enhance_widget.btnEnhanceFolder.setText(f"Enhance all photos")
                 self.inference_widget.btnInferenceFolder.setText(f"Inference all photos")
@@ -1045,8 +1059,8 @@ class DataComponent(QObject):
                 self.inference_widget.btnInferenceFolder.setText(f"Inference all photos for {folder_name}")
                 self.eod_cots_widget.detectCotsButton.setText(f"Detect COTS in all photos for {folder_name}")
         else:
-            self.enhance_widget.btnEnhanceOpenFolder.setEnabled(True)
-            self.inference_widget.btnInferenceOpenFolder.setEnabled(True)
+            self.enhance_widget.btnEnhanceOpenFolder.setVisible(os.path.exists(self.enhanced_folder(self.survey().folder)))
+            self.inference_widget.btnInferenceOpenFolder.setVisible(True)
             self.enhance_widget.btnEnhanceFolder.setText(f"Enhance Photos for sequence {folder_name}")
             self.inference_widget.btnInferenceFolder.setText(f"Inference photos for {folder_name}")
             self.eod_cots_widget.detectCotsButton.setText(f"Detect COTS in photos for {folder_name}")
@@ -1072,6 +1086,14 @@ class DataComponent(QObject):
                 self.ui_to_data()
             else:
                 self.data_to_ui()
+
+    def get_all_descendants_as_surveys(self, selected_index):
+        survey_infos = self.get_all_descendants(selected_index)
+        surveys = []
+        for survey_info in survey_infos:
+            survey = state.model.surveys_data[survey_info["survey_id"]]
+            surveys.append(survey)
+        return surveys
 
     def get_all_descendants(self, selected_index):
         if selected_index.data(Qt.UserRole) is not None:
@@ -1112,8 +1134,10 @@ class DataComponent(QObject):
                self.xstr(self.survey().comments) != self.metadata_widget.ed_comments.toPlainText() or \
                self.xstr(self.survey().tide) != self.metadata_widget.cb_tide.currentData() or \
                self.xstr(self.survey().friendly_name) != self.metadata_widget.ed_name.text() or \
-               self.xstr(self.survey().reefcloud_project) != self.metadata_widget.cb_reefcloud_project.currentText() or \
-               self.survey().reefcloud_site != self.metadata_widget.cb_reefcloud_site.currentData()
+               ( not self.metadata_widget.cb_reefcloud_project.currentText().endswith("Permission Denied") and
+                 (self.xstr(self.survey().reefcloud_project) != self.metadata_widget.cb_reefcloud_project.currentText() or
+                  self.survey().reefcloud_site != self.metadata_widget.cb_reefcloud_site.currentData())
+                 )
 
     def ui_to_data(self):
         if self.thumbnail_model is not None:
@@ -1131,8 +1155,9 @@ class DataComponent(QObject):
             self.survey().comments = self.metadata_widget.ed_comments.toPlainText()
             self.survey().tide = self.metadata_widget.cb_tide.currentData()
             self.survey().friendly_name = self.metadata_widget.ed_name.text()
-            self.survey().reefcloud_project = self.metadata_widget.cb_reefcloud_project.currentText()
-            self.survey().reefcloud_site = self.metadata_widget.cb_reefcloud_site.currentData()
+            if not self.metadata_widget.cb_reefcloud_project.currentText().endswith("Permission Denied"):
+                self.survey().reefcloud_project = self.metadata_widget.cb_reefcloud_project.currentText()
+                self.survey().reefcloud_site = self.metadata_widget.cb_reefcloud_site.currentData()
 
             if not state.read_only:
                 backup_folder = state.backup_folder
@@ -1153,7 +1178,13 @@ class DataComponent(QObject):
             self.metadata_widget.cb_vis.setCurrentText(self.xstr(self.survey().visibility))
             self.metadata_widget.cb_tide.setCurrentText(self.xstr(self.survey().tide))
 
-            self.metadata_widget.cb_reefcloud_project.setCurrentText(self.survey().reefcloud_project)
+            if (self.metadata_widget.cb_reefcloud_project.findText(self.survey().reefcloud_project) == -1):
+                project_name = f"{self.survey().reefcloud_project} - Permission Denied"
+                if  (self.metadata_widget.cb_reefcloud_project.findText(project_name) == -1):
+                    self.metadata_widget.cb_reefcloud_project.addItem(project_name)
+                self.metadata_widget.cb_reefcloud_project.setCurrentText(project_name)
+            else:
+                self.metadata_widget.cb_reefcloud_project.setCurrentText(self.survey().reefcloud_project)
             self.cb_reefcloud_project_changed(None)
 
             site_id = self.survey().reefcloud_site
@@ -1215,6 +1246,8 @@ class DataComponent(QObject):
         self.info_widget.distance_label.setText(f"{survey_stats.min_ping} to {survey_stats.max_ping} metres")
 
     def load_thumbnails(self):
+        from aims.gui_model.lazy_list_model import LazyListModel
+
         if self.thumbnail_model is not None:
             self.thumbnail_model.interrupt()
         list_thumbnails: QListView = self.data_widget.lv_thumbnails

@@ -1,6 +1,7 @@
 import logging
 import sys
 import traceback
+from time import process_time
 
 from reefscanner.basic_model.basic_model import BasicModel
 
@@ -23,6 +24,8 @@ class ReefcloudSubSampleOperation(AbstractOperation):
         self.selected_photo_infos = None
 
     def _run(self):
+        logger.info(f"start subsample _run {process_time()}")
+
         self.finished=False
         self.success = False
         logger.info("start subsample")

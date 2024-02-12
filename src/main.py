@@ -2,7 +2,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("")
 logger_smb = logging.getLogger('smbprotocol')
-logger_smb.setLevel(level=logging.WARNING)
+logger_smb.setLevel(level=logging.WARN)
 
 import multiprocessing
 import traceback

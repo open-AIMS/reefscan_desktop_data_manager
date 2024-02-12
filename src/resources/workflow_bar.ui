@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>282</width>
-    <height>533</height>
+    <width>139</width>
+    <height>541</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -20,6 +20,18 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item row="0" column="0">
     <widget class="QLabel" name="workflowLabel">
      <property name="sizePolicy">
@@ -72,6 +84,12 @@ border: 2px solid black;</string>
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>100</width>
+       <height>0</height>
+      </size>
      </property>
      <property name="styleSheet">
       <string notr="true"/>
@@ -141,7 +159,8 @@ border: 2px solid black;</string>
 </string>
         </property>
         <property name="text">
-         <string>Upload to Reefcloud</string>
+         <string>Upload to
+ Reefcloud</string>
         </property>
        </widget>
       </item>
@@ -166,7 +185,8 @@ border: 2px solid black;</string>
 </string>
         </property>
         <property name="text">
-         <string>Connect Camera</string>
+         <string>Connect 
+Camera</string>
         </property>
         <property name="autoDefault">
          <bool>false</bool>
@@ -176,27 +196,6 @@ border: 2px solid black;</string>
         </property>
         <property name="flat">
          <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QPushButton" name="connectDisksButton">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>14</pointsize>
-         </font>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">background-color: cyan;</string>
-        </property>
-        <property name="text">
-         <string>Connect Disks</string>
         </property>
        </widget>
       </item>
@@ -218,7 +217,8 @@ border: 2px solid black;</string>
 </string>
         </property>
         <property name="text">
-         <string>Connect Reefcloud</string>
+         <string>Connect 
+Reefcloud</string>
         </property>
        </widget>
       </item>
@@ -241,6 +241,28 @@ border: 2px solid black;</string>
         </property>
         <property name="text">
          <string>Routes</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="connectDisksButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>14</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: cyan;</string>
+        </property>
+        <property name="text">
+         <string>Connect 
+ Disks</string>
         </property>
        </widget>
       </item>

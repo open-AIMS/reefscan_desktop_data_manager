@@ -1,10 +1,12 @@
+from time import process_time, sleep
+
 from PyQt5.QtWidgets import QProgressDialog
 from PyQt5.QtCore import Qt, QObject
 import logging
 from threading import RLock, Timer
 from multiprocessing.pool import ThreadPool
 
-logger = logging.getLogger("")
+logger = logging.getLogger("AimsStatusDialog")
 
 
 class AimsStatusDialog(QObject):
@@ -31,7 +33,7 @@ class AimsStatusDialog(QObject):
     def set_progress_value(self, params):
         (i, label) = params
         try:
-            logger.debug(f"value {i}")
+            # logger.info(f"value {i} {label} {process_time()}")
             with self.redrawLock:
                 self.progress_dialog.setValue(i)
                 self.progress_dialog.setLabelText(label)
@@ -41,7 +43,7 @@ class AimsStatusDialog(QObject):
             logger.info(str(e))
 
     def set_progress_max(self, i):
-        logger.info(f"max {i}")
+        # logger.info(f"max {i}")
         with self.redrawLock:
             self.progress_dialog.setMaximum(i)
 
@@ -52,6 +54,7 @@ class AimsStatusDialog(QObject):
         operation.set_max.connect(self.set_progress_max)
         operation.set_value.connect(self.set_progress_value)
         operation.exception.connect(self.throw_exception)
+        sleep(0.1)
 
     def close(self):
         # Close seems to trigger the cancel signal and sometimes we need to know

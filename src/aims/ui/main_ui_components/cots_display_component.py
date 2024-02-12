@@ -7,6 +7,7 @@ from PyQt5.QtGui import QStandardItemModel, QStandardItem, QImage, QPixmap, QPai
 from PyQt5.QtWidgets import QHeaderView, QTableView, QAbstractItemView, QLabel, QCheckBox, QSizePolicy, QComboBox, \
     QShortcut
 from photoenhancer.photoenhance import processImage, EnhancerParameters
+from reefscanner.basic_model.model_utils import replace_last
 
 from aims import utils
 from aims.model.cots_detection import CotsDetection
@@ -384,7 +385,7 @@ class CotsDisplayComponent(QObject):
         self.show_photo(retain_zoom=True)
 
     def enhanced_photo(self, photo):
-        enhanced_photo =  utils.replace_last(photo, "/reefscan/", "/reefscan_enhanced/")
+        enhanced_photo =  replace_last(photo, "/reefscan/", "/reefscan_enhanced/")
         enhanced_photo = enhanced_photo.replace(".jpg", "__enh.jpg")
         if not os.path.exists(enhanced_photo):
             directory = os.path.dirname(enhanced_photo)

@@ -19,7 +19,7 @@ def check_reefcloud_metadata(surveys: list):
 
         project_ = survey.reefcloud_project
         if not state.config.valid_reefcloud_project(project_):
-            raise Exception(f"Invalid reefcloud project {project_} for {best_name}. Go to the data tab to correct this.")
+            raise Exception(f"You do not have access to the project {project_}. Either request permission from the owner or choose a different project for {best_name}")
 
         if survey.reefcloud_site is None:
             raise Exception(f"Missing reefcloud site for {best_name}. Go to the data tab to correct this.")
@@ -104,12 +104,12 @@ def get_project_country(project_name):
     r = requests.get(url, headers=headers)
     if r.status_code >= 400:
         logger.info(r.text)
-        raise Exception(f"Project {project_name} can't get details.")
+        raise Exception(f"Project {project_name} can't get details. {r.status_code} {r.text}")
     try:
         projects = json.loads(r.text)
         this_project = None
         for project in projects:
-            if project["name"] == project_name:
+            if project["cognitoGroup"] == project_name:
                 this_project = project
 
         country = this_project["properties"]["country"][0]
@@ -122,7 +122,7 @@ def get_project_country(project_name):
 
 
 def create_reefcloud_site(project_name, site_name, latitude, longitude, depth):
-    logger.info(project_name, site_name)
+    logger.info(f"{project_name}, {site_name}")
     country = get_project_country(project_name)
     oauth2_session = state.reefcloud_session
     oauth2_session.check_refresh()
