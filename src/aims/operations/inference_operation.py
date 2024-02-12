@@ -3,6 +3,8 @@ import threading
 
 import os
 
+from reefscanner.basic_model.model_utils import replace_last
+
 from aims.operations.abstract_operation import AbstractOperation
 
 import inferencer.models 
@@ -12,8 +14,6 @@ from inferencer.reefscan_inference import inference
 from inferencer.batch_monitor import BatchMonitor
 
 import csv
-
-from aims.utils import replace_last
 
 logger = logging.getLogger("")
 

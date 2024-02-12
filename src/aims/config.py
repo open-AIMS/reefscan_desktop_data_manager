@@ -22,6 +22,9 @@ class Config(object):
         self.camera_ip = "192.168.3.2"
         self.hardware_data_folder = r"\\192.168.3.2\images"
 
+        # self.camera_ip = "10.42.0.1"
+        # self.hardware_data_folder = r"\\10.42.0.1\images"
+
         # Configuration for AWS
         # Projects have write access
 

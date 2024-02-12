@@ -1,13 +1,19 @@
 import logging
 import sys
 import traceback
+import unicodedata
 
+import smbclient
 from reefscanner.basic_model.basic_model import BasicModel
 
 from aims.messages import messages
 from aims.operations.abstract_operation import AbstractOperation
+from aims.state import state
 
 logger = logging.getLogger("")
+
+def remove_control_characters(s):
+    return "".join(ch for ch in s if unicodedata.category(ch)[0] != "C")
 
 
 class LoadCameraDataOperation(AbstractOperation):
@@ -18,6 +24,7 @@ class LoadCameraDataOperation(AbstractOperation):
         self.finished=False
         self.success=False
         self.message = ""
+        self.space_available = None
 
     def _run(self):
         self.finished=False
@@ -28,6 +35,11 @@ class LoadCameraDataOperation(AbstractOperation):
                                         message=messages.load_camera_data_message(),
                                         error_message=messages.load_camera_data_error_message()
                                         )
+            self.progress_queue.reset()
+            self.progress_queue.set_progress_label("Setting up ...")
+            state.reefscan_id = remove_control_characters(state.read_reefscan_id())
+            self.space_available = smbclient._os.stat_volume(state.model.camera_data_folder)
+
             self.success = True
         except Exception as e:
             logger.error("ERROR ERROR")

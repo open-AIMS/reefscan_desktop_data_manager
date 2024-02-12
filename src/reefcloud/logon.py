@@ -126,7 +126,10 @@ class LoginWorker(Thread):
     def cancel(self):
         logger.info ("worker cancelled")
         self.cancelled = True
-        requests.get("http://localhost:4200")
+        try:
+            requests.get("http://localhost:4200")
+        except:
+            pass
 
     def run(self):
         logger.info("LoginWorker run() start")

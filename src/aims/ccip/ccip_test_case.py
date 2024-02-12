@@ -2,6 +2,7 @@ import csv
 import unittest
 
 from reefscanner.basic_model.basic_model import BasicModel
+from reefscanner.basic_model.model_utils import replace_last
 from reefscanner.basic_model.progress_no_queue import ProgressNoQueue
 from reefscanner.basic_model.survey import Survey
 
@@ -78,7 +79,7 @@ class CcipTestCase(unittest.TestCase):
             survey: Survey = s
             input_folder = survey.folder
             print(input_folder)
-            output_folder = utils.replace_last(input_folder, "reefscan", "reefscan_ccip_split")
+            output_folder = replace_last(input_folder, "reefscan", "reefscan_ccip_split")
             tow_splitter.input_folder = input_folder
             tow_splitter.output_folder = output_folder
             tow_splitter.split()
@@ -112,7 +113,7 @@ class CcipTestCase(unittest.TestCase):
             survey: Survey = s
             input_folder = survey.folder
             print(input_folder)
-            output_folder = utils.replace_last(input_folder, "reefscan", "reefscan_ccip_split_culls")
+            output_folder = replace_last(input_folder, "reefscan", "reefscan_ccip_split_culls")
             cull_splitter.input_folder = input_folder
             cull_splitter.output_folder = output_folder
             cull_splitter.split()

@@ -7,6 +7,7 @@ import pandas as pd
 from PIL import Image
 from PIL import UnidentifiedImageError
 from reefscanner.basic_model.json_utils import read_json_file
+from reefscanner.basic_model.model_utils import replace_last
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
 from aims.model.cots_detection import CotsDetection, serialize_cots_detection_list, de_serialize_cots_detection_list
@@ -14,7 +15,7 @@ from aims.model.proportional_rectangle import ProportionalRectangle, serialize_p
     de_serialize_proportional_rectangle_lookup
 
 # This stores all the information for COTS detections for a reefscan sequence
-from aims.utils import read_json_file_support_samba, replace_last, read_json_file, write_json_file
+from aims.utils import read_json_file_support_samba, read_json_file, write_json_file
 
 import logging
 logger = logging.getLogger("")

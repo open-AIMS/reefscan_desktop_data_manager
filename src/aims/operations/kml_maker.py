@@ -2,27 +2,26 @@ import logging
 import os
 
 import simplekml
+from reefscanner.basic_model.model_utils import replace_last
 from reefscanner.basic_model.photo_csv_maker import track
 from reefscanner.basic_model.survey import Survey
-from shapely import Polygon, MultiPoint
-import alphashape
 
 from aims import utils
 
 logger = logging.getLogger("")
-def make_kml(survey: Survey, cots_waypoints, minimum_cots_score):
+def make_kml(survey: Survey, cots_waypoints, minimum_cots_score, output_folder):
+    import alphashape
     input_folder = survey.folder
-    output_folder = utils.replace_last(survey.folder, "/reefscan/", "/reefscan_kml/")
     points = track(input_folder, False)
-    os.makedirs(os.path.dirname(output_folder), exist_ok=True)
-    kml_file_name = f"{output_folder}.kml"
+    # os.makedirs(output_folder, exist_ok=True)
+    kml_file_name = f"{output_folder}/{survey.best_name()}.kml"
     kml = simplekml.Kml()
     for point in points:
         kml.newpoint(coords=[(point[1], point[0])])
     kml.save(kml_file_name)
 
     if len(cots_waypoints) > 0:
-        kml_file_name = f"{output_folder}-cots.kml"
+        kml_file_name = f"{output_folder}/{survey.best_name()}-cots.kml"
         kml = simplekml.Kml()
         for point in cots_waypoints:
             score_ = point[3]
@@ -34,7 +33,7 @@ def make_kml(survey: Survey, cots_waypoints, minimum_cots_score):
     for point in points:
         points_for_poly.append((point[1], point[0]))
 
-    kml_file_name = f"{output_folder}-poly.kml"
+    kml_file_name = f"{output_folder}/{survey.best_name()}-bounding-box.kml"
     kml = simplekml.Kml()
 
     # polygon: Polygon = MultiPoint(points_for_poly).convex_hull
