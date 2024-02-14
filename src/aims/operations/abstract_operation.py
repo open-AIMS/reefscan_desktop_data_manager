@@ -66,6 +66,7 @@ class AbstractOperation(QObject):
             self.finished = False
             self.set_progress_max(10)
             self.set_progress_value(1)
+            self.set_progress_label("Initialising ...")
             consumer_thread = threading.Thread(target=self.consumer, daemon=True)
             consumer_thread.start()
             logger.info(f"consumer started{process_time()}")

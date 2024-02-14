@@ -32,7 +32,6 @@ class SyncFromHardware(Synchroniser):
         self.cancelled = False
 
     def sync(self, survey_infos):
-
         if not self.camera_os.isdir(self.hardware_folder):
             message = self.tr("Hardware not found at")
             raise Exception(f"{message} {self.hardware_folder}")

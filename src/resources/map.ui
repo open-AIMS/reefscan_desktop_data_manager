@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>911</width>
+    <width>568</width>
     <height>656</height>
    </rect>
   </property>
@@ -17,7 +17,7 @@
    <item row="0" column="0" colspan="6">
     <widget class="QWebEngineView" name="mapView">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
        <horstretch>0</horstretch>
        <verstretch>1</verstretch>
       </sizepolicy>
