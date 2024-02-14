@@ -92,9 +92,9 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
     logger.info(app.font().pointSize())
-    font = app.font()
-    font.setPointSize(12)
-    app.setFont(font)
+    # font = app.font()
+    # font.setPointSize(12)
+    # app.setFont(font)
     logger.info(app.font().pointSize())
 
     app_icon = QtGui.QIcon()

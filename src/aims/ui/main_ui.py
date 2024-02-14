@@ -173,6 +173,7 @@ class MainUi(QMainWindow):
         self.workflow_widget.workflowLabel.setVisible(not self.workflow_collapsed)
         if self.workflow_collapsed:
             self.workflow_widget.collapseButton.setText(">>")
+            self.workflow_widget.sizeHint = 0
         else:
             self.workflow_widget.collapseButton.setText("<<")
 

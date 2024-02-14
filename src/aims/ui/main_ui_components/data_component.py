@@ -1,7 +1,10 @@
+import time
 from time import process_time
 import logging
 
 from reefscanner.basic_model.model_utils import print_time, replace_last
+
+from aims.operations.add_reefcloud_site_operation import create_reefcloud_site_with_progress
 
 logger = logging.getLogger("DataComponent")
 
@@ -45,7 +48,7 @@ from aims.stats.survey_stats import SurveyStats
 print_time("Imports done two.7", start, logger)
 from aims.ui.main_ui_components.utils import clearLayout
 
-from aims2.operations2.camera_utils import delete_archives, get_kilo_bytes_used
+from aims2.operations2.camera_utils import delete_archives
 print_time("Imports done two.9", start, logger)
 from aims2.reefcloud2.reefcloud_utils import create_reefcloud_site
 
@@ -103,7 +106,6 @@ class DataComponent(QObject):
         self.survey_id = None
         self.survey_list = None
         self.thumbnail_model = None
-        self.camera_selected = False
 
         self.marks_table: None
         self.mark_filename = None
@@ -126,18 +128,22 @@ class DataComponent(QObject):
         self.camera_tree_selected = False
         self.cots_display_component: CotsDisplayComponent = None
         self.map_component = None
+        self.archive_data_loaded = False
+        self.programatic_tab_changing = False
 
         print_time("Init done", start, logger)
 
     def tab_changed(self, index):
-        logger.info(index)
-        if index == self.get_index_by_tab_text(self.tr('Map')):
-            from aims.ui.main_ui_components.map_component import MapComponent
-            self.map_component = MapComponent(self.data_widget.map_tab, self.cots_display_params)
-            surveys = self.get_all_descendants_as_surveys(self.selected_index)
-            self.map_component.show(surveys)
-        if index == self.get_index_by_tab_text(self.tr('COTS Photos')):
-            self.cots_display_component.show()
+
+        if not self.programatic_tab_changing:
+            logger.info(index)
+            if index == self.get_index_by_tab_text(self.tr('Map')):
+                from aims.ui.main_ui_components.map_component import MapComponent
+                self.map_component = MapComponent(self.data_widget.map_tab, self.cots_display_params)
+                surveys = self.get_all_descendants_as_surveys(self.selected_index)
+                self.map_component.show(surveys)
+            if index == self.get_index_by_tab_text(self.tr('COTS Photos')):
+                self.cots_display_component.show()
 
     def copy(self):
         self.ui_to_data()
@@ -184,6 +190,7 @@ class DataComponent(QObject):
 
     def load_data_screen(self, fixed_drives, aims_status_dialog, time_zone):
 
+        self.archive_data_loaded = False
         self.time_zone = time_zone
 
         self.aims_status_dialog = aims_status_dialog
@@ -274,6 +281,7 @@ class DataComponent(QObject):
 
         self.data_widget.tabWidget.currentChanged.connect(self.tab_changed)
 
+
     def get_index_by_tab_text(self, name_of_tab):
         for i in range(self.data_widget.tabWidget.count()):
             if self.data_widget.tabWidget.tabText(i) == name_of_tab:
@@ -343,6 +351,7 @@ class DataComponent(QObject):
         all_sites = [self.metadata_widget.cb_reefcloud_site.itemText(i) for i in
                      range(self.metadata_widget.cb_reefcloud_site.count())]
         logger.info(all_sites)
+
         if site in all_sites:
             raise Exception(f"{site} already exists. Choose it from the drop down.")
 
@@ -355,9 +364,8 @@ class DataComponent(QObject):
         if state.reefcloud_session is None:
             raise Exception("Log on to reefcloud first. (See the reefcloud tab)")
 
-        site_id = create_reefcloud_site(project, site, self.survey().start_lat, self.survey().start_lon,
-                                        self.survey().start_depth)
-        state.config.load_reefcloud_sites()
+        site_id = create_reefcloud_site_with_progress(project, site, self.survey(), self.aims_status_dialog)
+
         self.update_sites_combo()
         self.metadata_widget.cb_reefcloud_site.setCurrentText(site)
 
@@ -427,8 +435,6 @@ class DataComponent(QObject):
         start = process_time()
         surveys = checked_survey_ids(self.camera_model)
 
-        self.check_space(surveys)
-
         if len(surveys) == 0:
             raise Exception("Please select at least one survey")
 
@@ -437,15 +443,14 @@ class DataComponent(QObject):
         operation.update_interval = 1
         self.aims_status_dialog.set_operation_connections(operation)
         # # operation.after_run.connect(self.after_sync)
-        logger.info("done connections")
+
         result = self.aims_status_dialog.threadPool.apply_async(operation.run)
-        logger.info("thread started")
         while not result.ready():
             QApplication.processEvents()
-        logger.info("thread finished")
         self.aims_status_dialog.close()
 
         data_loader.load_camera_data_model(aims_status_dialog=self.aims_status_dialog)
+        self.archive_data_loaded = False
 
         state.model.archived_data_loaded = False
         self.setup_camera_tree()
@@ -486,13 +491,10 @@ class DataComponent(QObject):
         enhance_text = f"Enhance Finished in {enhance_minutes} minutes"
         logger.info(enhance_text)
 
-        for survey_info in surveys:
-            survey = state.model.surveys_data[survey_info["survey_id"]]
-            if self.cots_display_component is not None:
+        if self.cots_display_component is not None:
+            for survey_info in surveys:
+                survey = state.model.surveys_data[survey_info["survey_id"]]
                 self.cots_display_params.cots_detection_list().read_realtime_files(survey.folder, samba=False, use_cache=False)
-
-        if self.cots_display_params is not None:
-            self.cots_display_params.init()
 
         self.initial_disables()
 
@@ -503,13 +505,15 @@ class DataComponent(QObject):
                                  )
         errorbox.setWindowTitle("ReefScan")
         self.aims_status_dialog.progress_dialog.close()
-        QtTest.QTest.qWait(1000)
         errorbox.exec_()
 
     def setup_camera_tree(self):
         if state.model.camera_data_loaded:
             show_downloaded = self.data_widget.showDownloadedCheckBox.isChecked()
-            data_loader.load_archive_data_model(aims_status_dialog=self.aims_status_dialog)
+            if not self.archive_data_loaded:
+                data_loader.load_archive_data_model(aims_status_dialog=self.aims_status_dialog)
+                self.archive_data_loaded = True
+
             camera_tree = self.data_widget.cameraTree
             self.camera_model = TreeModelMaker().make_tree_model(timezone=self.time_zone, include_local=False,
                                                                  include_archives=show_downloaded, checkable=True)
@@ -894,6 +898,7 @@ class DataComponent(QObject):
             return True
 
     def camera_tree_selection_changed(self, item_selection: QItemSelection):
+        self.metadata_widget.newSiteButton.setVisible(False)
         self.camera_tree_selected = True
 
         logger.info("camera tree changed")
@@ -928,19 +933,17 @@ class DataComponent(QObject):
             self.survey_id = selected_index_data["survey_id"]
             if selected_index_data["branch"] == self.tr("New Sequences"):
                 self.survey_list = state.model.camera_surveys
-                self.camera_selected = True
             elif selected_index_data["branch"] == self.tr("Downloaded Sequences"):
                 self.survey_list = state.model.archived_surveys
-                self.camera_selected = True
             else:
                 self.survey_list = state.model.surveys_data
-                self.camera_selected = False
 
     # Based on the current state this method will enable the appropriate tabs
     def enable_tabs(self):
+        self.programatic_tab_changing = True
         if self.data_widget.tabWidget.currentIndex() != 0:
             self.current_tab = self.read_current_tab()
-        if self.camera_selected:
+        if self.camera_tree_selected:
             if self.survey_id is None:
                 self.disable_all_tabs(0)
             else:
@@ -950,16 +953,21 @@ class DataComponent(QObject):
                 self.enable_processing_tabs_only()
             else:
                 self.enable_all_tabs()
+
+        self.programatic_tab_changing = False
         if self.data_widget.tabWidget.isTabEnabled(self.current_tab):
             self.data_widget.tabWidget.setCurrentIndex(self.current_tab)
 
 # show the metadata_tab, the map tab and the COTS photos tab
     def enable_metadata_tab_only(self):
+        self.programatic_tab_changing = True
+
         self.disable_all_tabs(None)
         self.data_widget.tabWidget.setEnabled(True)
         self.data_widget.tabWidget.setTabEnabled(2, True)
-        self.data_widget.tabWidget.setTabEnabled(3, True)
         self.data_widget.tabWidget.setTabEnabled(9, True)
+        self.programatic_tab_changing = False
+
         if self.data_widget.tabWidget.currentIndex() not in [2, 3, 9]:
             self.data_widget.tabWidget.setCurrentIndex(2)
 
@@ -967,6 +975,7 @@ class DataComponent(QObject):
         return self.data_widget.tabWidget.currentIndex()
 
     def enable_processing_tabs_only(self):
+        self.programatic_tab_changing = True
         self.disable_all_tabs(None)
         self.data_widget.tabWidget.setEnabled(True)
         self.data_widget.tabWidget.setTabEnabled(1, True)
@@ -974,28 +983,35 @@ class DataComponent(QObject):
         self.data_widget.tabWidget.setTabEnabled(6, True)
         self.data_widget.tabWidget.setTabEnabled(7, True)
         self.data_widget.tabWidget.setTabEnabled(8, True)
+        self.programatic_tab_changing = False
         if self.data_widget.tabWidget.currentIndex() not in [1, 6, 7, 8]:
             self.data_widget.tabWidget.setCurrentIndex(1)
 
     def disable_all_tabs(self, index):
+        self.programatic_tab_changing = True
         tab_widget: QTabWidget = self.data_widget.tabWidget
         tabs_count = tab_widget.count()
         for i in range(tabs_count + 1):
             self.data_widget.tabWidget.setTabEnabled(i, False)
 
+        self.programatic_tab_changing = False
         if index is not None:
             self.data_widget.tabWidget.setTabEnabled(index, True)
             tab_widget.setCurrentIndex(index)
 
     def enable_all_tabs(self):
+        self.programatic_tab_changing = True
+
         tab_widget: QTabWidget = self.data_widget.tabWidget
         tabs_count = tab_widget.count()
         tab_widget.setEnabled(True)
         for i in range(tabs_count + 1):
             self.data_widget.tabWidget.setTabEnabled(i, True)
+        self.programatic_tab_changing = False
 
     def explore_tree_selection_changed(self, item_selection: QItemSelection):
         self.camera_tree_selected = False
+        self.metadata_widget.newSiteButton.setVisible(True)
         if self.data_widget.tabWidget.isEnabled():
             self.current_tab = self.read_current_tab()
 
@@ -1161,7 +1177,7 @@ class DataComponent(QObject):
 
             if not state.read_only:
                 backup_folder = state.backup_folder
-                if self.camera_selected:
+                if self.camera_tree_selected:
                     backup_folder = None
                 save_survey(self.survey(), state.primary_folder, backup_folder, False)
 
@@ -1315,54 +1331,3 @@ class DataComponent(QObject):
             else:
                 self.hint_function(self.tr("Click on a survey name to edit metadata"))
 
-    def check_space(self, surveys):
-        try:
-            total_kilo_bytes_used = 0
-            for survey in surveys:
-                if survey['branch'] == self.tr("New Sequences"):
-                    command = f'du -s /media/jetson/*/images/{survey["survey_id"]}'
-                else:
-                    command = f'du -s /media/jetson/*/images/archive/{survey["survey_id"]}'
-
-                kilo_bytes_used = get_kilo_bytes_used(state.config.camera_ip, command)
-                logger.info(self.tr("Bytes used: ") + f"{kilo_bytes_used}")
-                total_kilo_bytes_used += kilo_bytes_used
-
-            logger.info(self.tr("total Bytes used: ") + f"{total_kilo_bytes_used}")
-
-            logger.info(state.primary_drive)
-            logger.info(state.backup_drive)
-
-            du = shutil.disk_usage(state.primary_drive)
-        except Exception as e:
-            logger.error(self, "Error calulating disk usage or space. ", exc_info=True)
-            return
-
-        not_enough_disk = self.tr("Not enough disk space available on the primary disk.")
-        not_enough_disk_back = self.tr("Not enough disk space available on the backup disk.")
-        required = self.tr("Selected sequences require")
-        avaliable = self.tr("Space available on")
-        _is_ = self.tr("is")
-
-        if total_kilo_bytes_used > du.free * 1000:
-            gb_used = total_kilo_bytes_used / 1000000
-            free_gb = du.free / 1000000000
-
-            message = f"""
-                {not_enough_disk}\n
-                {required} {gb_used:.2f Gb}
-                {avaliable} {state.primary_drive} {_is_} {free_gb:.2f} Gb
-                """
-            raise Exception(message)
-
-        if state.backup_drive is not None:
-            if total_kilo_bytes_used > du.free * 1000:
-                du = shutil.disk_usage(state.backup_drive)
-                gb_used = total_kilo_bytes_used / 1000000
-                free_gb = du.free / 1000000000
-                message = f"""
-                    {not_enough_disk_back}\n
-                    {required} {gb_used:.2f Gb}
-                    {avaliable} {state.primary_drive} {_is_} {free_gb:.2f} Gb
-                    """
-                raise Exception(message)

@@ -85,10 +85,10 @@ class MapComponent(QObject):
             folder = survey.folder
             try:
                 _track = track(folder, False)
+                tracks.extend(_track)
             except:
                 _track = None
 
-            tracks.extend(_track)
 
         html_str = map_html_str(tracks, cots_waypoints)
             # logger.info(html_str)

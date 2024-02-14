@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>879</width>
+    <width>582</width>
     <height>657</height>
    </rect>
   </property>
@@ -61,6 +61,73 @@ QGroupBox::title{
          <bool>false</bool>
         </property>
         <layout class="QGridLayout" name="gridLayout_14">
+         <item row="5" column="0" colspan="2">
+          <widget class="QWidget" name="extra_operations_widget" native="true">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+             <widget class="QCheckBox" name="inference_check_box">
+              <property name="text">
+               <string>Calculate Benthic Cover</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="enhance_check_box">
+              <property name="maximumSize">
+               <size>
+                <width>450</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Enhance Photos</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="find_cots_check_box">
+              <property name="text">
+               <string>Find COTS</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="3" column="0" colspan="2">
+          <widget class="QTreeView" name="cameraTree">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="headerHidden">
+            <bool>true</bool>
+           </property>
+           <attribute name="headerDefaultSectionSize">
+            <number>900</number>
+           </attribute>
+           <attribute name="headerMinimumSectionSize">
+            <number>450</number>
+           </attribute>
+           <attribute name="headerStretchLastSection">
+            <bool>false</bool>
+           </attribute>
+          </widget>
+         </item>
          <item row="4" column="0" colspan="2">
           <widget class="QPushButton" name="downloadButton">
            <property name="sizePolicy">
@@ -119,7 +186,7 @@ QGroupBox::title{
            </property>
           </widget>
          </item>
-         <item row="0" column="1">
+         <item row="1" column="0">
           <widget class="QPushButton" name="deleteDownloadedButton">
            <property name="font">
             <font>
@@ -132,73 +199,6 @@ QGroupBox::title{
            <property name="text">
             <string>Delete downloaded sequences</string>
            </property>
-          </widget>
-         </item>
-         <item row="5" column="0" colspan="2">
-          <widget class="QWidget" name="extra_operations_widget" native="true">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>0</height>
-            </size>
-           </property>
-           <layout class="QHBoxLayout" name="horizontalLayout_2">
-            <item>
-             <widget class="QCheckBox" name="find_cots_check_box">
-              <property name="text">
-               <string>Find COTS</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="inference_check_box">
-              <property name="text">
-               <string>Calculate Benthic Cover</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="enhance_check_box">
-              <property name="maximumSize">
-               <size>
-                <width>450</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>Enhance Photos</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item row="3" column="0" colspan="2">
-          <widget class="QTreeView" name="cameraTree">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="headerHidden">
-            <bool>true</bool>
-           </property>
-           <attribute name="headerDefaultSectionSize">
-            <number>900</number>
-           </attribute>
-           <attribute name="headerMinimumSectionSize">
-            <number>450</number>
-           </attribute>
-           <attribute name="headerStretchLastSection">
-            <bool>false</bool>
-           </attribute>
           </widget>
          </item>
         </layout>
@@ -248,7 +248,7 @@ QGroupBox::title{
          <item row="0" column="0" colspan="2">
           <widget class="QTreeView" name="surveysTree">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
              <verstretch>2</verstretch>
             </sizepolicy>
@@ -316,7 +316,7 @@ QGroupBox::title{
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>10</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="empty_tab">
       <attribute name="title">
