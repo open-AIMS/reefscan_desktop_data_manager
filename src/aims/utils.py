@@ -52,6 +52,7 @@ def read_binary_file_support_samba(file, samba: bool) -> bytes:
 def read_binary_file(file) -> bytes:
     filebytes = array.array('b')
     with open(file, 'rb') as fileR:
+
         filebytes.frombytes(fileR.read())
 
     return bytes(filebytes)
