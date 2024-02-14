@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>769</width>
+    <width>561</width>
     <height>552</height>
    </rect>
   </property>
@@ -23,7 +23,7 @@
    <item row="17" column="0" colspan="3">
     <widget class="QPushButton" name="btnEnhanceFolder">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -31,8 +31,16 @@
      <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>56</height>
+       <height>0</height>
       </size>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: cyan;</string>
      </property>
      <property name="text">
       <string>Enhance Folder</string>
@@ -85,10 +93,18 @@
    <item row="21" column="0" colspan="3">
     <widget class="QPushButton" name="btnEnhanceOpenFolder">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: cyan;</string>
      </property>
      <property name="text">
       <string> Open Folder</string>

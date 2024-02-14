@@ -2,6 +2,7 @@ import array
 import json
 import os, sys, subprocess
 import tempfile
+from time import process_time
 
 from reefscanner.basic_model.json_utils import read_json_file
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
@@ -13,11 +14,6 @@ def open_file(filename):
     else:
         opener = "open" if sys.platform == "darwin" else "xdg-open"
         subprocess.call([opener, filename])
-
-
-# search s for the last occurence of old and replace with with new
-def replace_last(s: str, old: str, new: str):
-    return new.join(s.rsplit(old, 1))
 
 
 # read a json file from local disk or from a samba drive
@@ -66,6 +62,8 @@ def write_json_file(filename, dict):
         file.write(jsonStr)
 
 def is_empty_folder(path):
+    if not os.path.exists(path):
+        return True
     try:
         with os.scandir(path) as it:
             if any(it):
@@ -74,3 +72,4 @@ def is_empty_folder(path):
         return True
 
     return True
+
