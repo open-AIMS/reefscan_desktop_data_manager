@@ -52,6 +52,9 @@
           <pointsize>12</pointsize>
          </font>
         </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: cyan;</string>
+        </property>
         <property name="text">
          <string>Upload Selected Surveys</string>
         </property>

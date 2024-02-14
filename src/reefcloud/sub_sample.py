@@ -51,12 +51,15 @@ class SubSampler(QObject):
 
 
     def sub_sample_dir(self, image_dir, sample_dir, progress_queue: ProgressQueue):
+        logger.info(f"sub_sample dir {time.process_time()}")
+        progress_queue.reset()
+        progress_queue.set_progress_label(f"initializing {image_dir}")
 
         if os.path.exists (sample_dir):
             shutil.rmtree(sample_dir)
 
-        time.sleep(0.1)
         os.makedirs(sample_dir, exist_ok=True)
+        progress_queue.set_progress_value()
 
         if self.has_waypoints(image_dir):
             return self.sub_sample_dir_spatial(image_dir, sample_dir, progress_queue)
@@ -64,6 +67,7 @@ class SubSampler(QObject):
             return self.sub_sample_dir_simple(image_dir, sample_dir, progress_queue)
 
     def sub_sample_dir_spatial(self, image_dir, sample_dir, progress_queue: ProgressQueue):
+        logger.info(f"sub_sample spatial {time.process_time()}")
 
         progress_queue.reset()
         _subsampling_folder = self.tr('Subsampling folder')

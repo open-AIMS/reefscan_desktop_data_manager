@@ -1,11 +1,13 @@
 import logging
 import threading
+import time
+from time import process_time
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject
 from reefscanner.basic_model.progress_queue import ProgressQueue
 
-logger = logging.getLogger("")
+logger = logging.getLogger("AbstractOperation")
 
 class AbstractOperation(QObject):
     set_max = QtCore.pyqtSignal(int)
@@ -18,18 +20,17 @@ class AbstractOperation(QObject):
         super().__init__()
         self.progress_queue = ProgressQueue()
         self.finished = True
-        self.progress_value = 0
-        self.progress_max = 0
+        self.progress_value = 1
+        self.progress_max = 10
         self.progress_label = ""
         self.update_interval = 100
-        self.sync = None
+        self.cancelled = False
         logger.info("done set up sync")
 
     def cancel(self):
         print("abstract operation says cancel")
         logger.info("abstract operation says cancel")
-        if self.sync is not None:
-            self.sync.cancel()
+        self.cancelled = True
 
     def consumer(self):
         logger.info(f"consumer started {self.progress_value}")
@@ -37,10 +38,10 @@ class AbstractOperation(QObject):
             # time.sleep(0.001)
             try:
                 (operation, value) = self.progress_queue.q.get(block=True, timeout=0.1)
-                logger.debug(f"{operation} {value}")
+                # logger.debug(f"{operation} {value}")
                 if operation == "reset":
-                    self.progress_value = 0
-                    self.set_progress_value(0)
+                    self.set_progress_max(10)
+                    self.set_progress_value(1)
 
                 if operation == "value":
                     self.progress_value += 1
@@ -50,6 +51,7 @@ class AbstractOperation(QObject):
                     self.progress_max = value
                     self.set_progress_max(value)
                 elif operation == "label":
+                    # logger.info(f"label {value} {process_time()}")
                     self.set_progress_label(value)
                 self.progress_queue.q.task_done()
             except Exception as e:
@@ -59,12 +61,15 @@ class AbstractOperation(QObject):
     def run(self):
         try:
             logger.info("start")
+            self.cancelled = False
             self.progress_value = 0
             self.finished = False
             self.set_progress_max(10)
             self.set_progress_value(1)
+            self.set_progress_label("Initialising ...")
             consumer_thread = threading.Thread(target=self.consumer, daemon=True)
             consumer_thread.start()
+            logger.info(f"consumer started{process_time()}")
             result = self._run()
             self.set_progress_value(self.progress_max+1)
             self.finished = True
@@ -86,6 +91,7 @@ class AbstractOperation(QObject):
         # logger.info(f"label {progress_label}")
         # logger.info(f"value {self.progress_value}")
         if self.progress_value < 10:
+            # logger.info(f"emit label {progress_label} {process_time()}")
             self.set_value.emit((self.progress_value, self.progress_label))
 
     def set_progress_value(self, i):

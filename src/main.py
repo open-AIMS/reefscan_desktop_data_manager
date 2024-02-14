@@ -2,7 +2,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("")
 logger_smb = logging.getLogger('smbprotocol')
-logger_smb.setLevel(level=logging.WARNING)
+logger_smb.setLevel(level=logging.WARN)
 
 import multiprocessing
 import traceback
@@ -92,9 +92,9 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
     logger.info(app.font().pointSize())
-    font = app.font()
-    font.setPointSize(12)
-    app.setFont(font)
+    # font = app.font()
+    # font.setPointSize(12)
+    # app.setFont(font)
     logger.info(app.font().pointSize())
 
     app_icon = QtGui.QIcon()

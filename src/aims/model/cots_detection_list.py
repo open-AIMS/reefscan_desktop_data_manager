@@ -7,6 +7,7 @@ import pandas as pd
 from PIL import Image
 from PIL import UnidentifiedImageError
 from reefscanner.basic_model.json_utils import read_json_file
+from reefscanner.basic_model.model_utils import replace_last
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
 from aims.model.cots_detection import CotsDetection, serialize_cots_detection_list, de_serialize_cots_detection_list
@@ -14,7 +15,7 @@ from aims.model.proportional_rectangle import ProportionalRectangle, serialize_p
     de_serialize_proportional_rectangle_lookup
 
 # This stores all the information for COTS detections for a reefscan sequence
-from aims.utils import read_json_file_support_samba, replace_last, read_json_file, write_json_file
+from aims.utils import read_json_file_support_samba, read_json_file, write_json_file
 
 import logging
 logger = logging.getLogger("")
@@ -178,10 +179,16 @@ class CotsDetectionList():
                 csv_reader = csv.DictReader(csvfile)
                 for row in csv_reader:
                     sequence_id = int(row["detection_sequence"])
-                    confirmed = row["confirmed"] == "True"
+                    confirmed = None
+                    if row["confirmed"] == "True":
+                        confirmed = True
+                    if row["confirmed"] == "False":
+                        confirmed = False
+
                     index = self.get_index_by_sequence_id(sequence_id)
-                    detection: CotsDetection = self.cots_detections_list[index]
-                    detection.confirmed = confirmed
+                    if index is not None:
+                        detection: CotsDetection = self.cots_detections_list[index]
+                        detection.confirmed = confirmed
 
     # Read the information from the cots_image_*.json files. Each file corresponds to a photo
     # and has the location of the COTS stored in the file as a rectangle (proprtional to the size of the photo)
@@ -360,9 +367,11 @@ class CotsDetectionList():
                             photo_file_name = ntpath.basename(json_data["frame_filename"])
                             photo_file_name_path = f"{self.folder}/{photo_file_name}"
                             if 'pixel_prediction' in json_data['data']:
+                                # scar_score = json_data['data']['pixel_prediction']['mean']
                                 scar_score = json_data['data']['pixel_prediction']['max'] / 255
                                 max_score=scar_score
                                 sequence_ids = f"sequences: {next_scar_sequence_id}"
+                                # if scar_score > 0.01:
                                 if scar_score > 0.5:
                                     cots_detections_info = CotsDetection(sequence_id=next_scar_sequence_id,
                                                                         best_class_id=1,
@@ -483,6 +492,8 @@ class CotsDetectionList():
             if self.cots_detections_list[i].sequence_id == sequence_id:
                 idx = i
 
+        # if idx is None:
+        #     raise Exception (f"index not found for sequence {sequence_id}")
         return idx
 
     def get_detection_by_sequence_id(self, sequence_id):

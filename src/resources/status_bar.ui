@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1105</width>
-    <height>92</height>
+    <height>100</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -15,6 +15,12 @@
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>16777215</width>
+    <height>100</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>Form</string>
@@ -46,6 +52,12 @@
      <property name="minimumSize">
       <size>
        <width>0</width>
+       <height>80</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
        <height>80</height>
       </size>
      </property>

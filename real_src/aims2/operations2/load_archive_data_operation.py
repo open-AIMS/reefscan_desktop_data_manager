@@ -25,7 +25,7 @@ class LoadArchiveDataOperation(AbstractOperation):
         logger.info("start load data")
         try:
             self.model.load_camera_archive_data(self.progress_queue,
-                                                message=messages.load_camera_data_message(),
+                                                message=messages.load_camera_archive_data_message(),
                                                 error_message=messages.load_camera_data_error_message())
             self.success = True
         except Exception as e:

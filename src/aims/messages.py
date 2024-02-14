@@ -11,6 +11,9 @@ class Messages(QObject):
     def load_camera_data_message(self):
         return self.tr("Reading data from camera")
 
+    def load_camera_archive_data_message(self):
+        return self.tr("Reading archive data from camera")
+
     def load_camera_data_error_message(self):
         return self.tr("Error can't find camera. Make sure the computer is connected to the camera via an ethernet cable. You may need to restart the camera.")
 
