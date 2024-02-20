@@ -1,3 +1,5 @@
+psutil
+Rust
 joblib
 pillow
 piexif

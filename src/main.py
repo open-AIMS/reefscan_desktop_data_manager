@@ -21,16 +21,6 @@ from aims.ui.main_ui import MainUi
 from aims2 import simulated
 
 
-config_folder = state.config.config_folder
-
-if not os.path.isdir(config_folder):
-    os.makedirs(config_folder)
-path = f"{config_folder}/reefscan.log"
-formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
-handler = RotatingFileHandler(path, maxBytes=1000000,
-                              backupCount=5)
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 
 def gui_except_hook(exc_class, exc_value, tb):
