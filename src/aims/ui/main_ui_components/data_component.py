@@ -577,7 +577,7 @@ class DataComponent(QObject):
 
         self.metadata_widget.cb_reefcloud_project.addItem("")
         self.project_lookups=[]
-        for project in state.config.reefcloud_projects:
+        for project in state.reefcloud_projects:
             self.metadata_widget.cb_reefcloud_project.addItem(project)
             self.project_lookups.append(project)
 
@@ -605,7 +605,7 @@ class DataComponent(QObject):
             self.metadata_widget.cb_reefcloud_site.clear()
             self.metadata_widget.cb_reefcloud_site.addItem("", userData="")
             # Add sites for that project to the sites combo box
-            sites = state.config.reefcloud_sites[project]
+            sites = state.reefcloud_sites[project]
             for site in sites:
                 self.metadata_widget.cb_reefcloud_site.addItem(site["name"], userData=site["id"])
                 self.site_lookup[site["id"]] = site["name"]
@@ -1207,7 +1207,8 @@ class DataComponent(QObject):
             try:
                 site_name = self.site_lookup[site_id]
             except:
-                site_name = ""
+                site_name = "site not found"
+
             self.metadata_widget.cb_reefcloud_site.setCurrentText(site_name)
 
             self.metadata_widget.ed_comments.setPlainText(self.survey().comments)

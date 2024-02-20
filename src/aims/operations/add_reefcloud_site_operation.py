@@ -30,7 +30,7 @@ class AddReefcloudSiteOperation(AbstractOperation):
         self.set_progress_label("Creating Site")
         self.site_id = create_reefcloud_site(self.project_name, self.site_name, self.survey.start_lat, self.survey.start_lon,
                                         self.survey.start_depth)
-        state.config.load_reefcloud_sites()
+        state.load_reefcloud_sites()
 
 
 

@@ -18,14 +18,14 @@ def check_reefcloud_metadata(surveys: list):
             raise Exception(f"Missing reefcloud project for {best_name}. Go to the data tab to correct this.")
 
         project_ = survey.reefcloud_project
-        if not state.config.valid_reefcloud_project(project_):
+        if not state.valid_reefcloud_project(project_):
             raise Exception(f"You do not have access to the project {project_}. Either request permission from the owner or choose a different project for {best_name}")
 
         if survey.reefcloud_site is None:
             raise Exception(f"Missing reefcloud site for {best_name}. Go to the data tab to correct this.")
 
         site_ = survey.reefcloud_site
-        if not state.config.valid_reefcloud_site(site_, project_):
+        if not state.valid_reefcloud_site(site_, project_):
             raise Exception(f"Invalid reefcloud site {site_} for {best_name}. Go to the data tab to correct this.")
 
 
@@ -169,11 +169,11 @@ def update_reefcloud_sites(oauth2_session):
     oauth2_session.check_refresh()
     sites = {}
     site_count = 0
-    for project in state.config.reefcloud_projects:
+    for project in state.reefcloud_projects:
         sites[project] = download_reefcloud_sites_for_project(oauth2_session, project)
         site_count += len(sites[project])
 
-    filename = state.config.config_folder + "/" + state.config.reefcloud_sites_filename
+    filename = state.config_folder + "/" + state.reefcloud_sites_filename
     with open(filename, "w") as write_file:
         json.dump(sites, write_file)
     return f"{site_count} sites downloaded"
@@ -194,7 +194,7 @@ def download_reefcloud_projects(oauth2_session):
         project_count = 0
         for k, v in projects_json.items():
             project_count += len(v)
-        filename = state.config.config_folder + "/" + state.config.reefcloud_projects_filename
+        filename = state.config_folder + "/" + state.reefcloud_projects_filename
         with open(filename, 'w') as f:
             f.write(r.text)
             f.close()

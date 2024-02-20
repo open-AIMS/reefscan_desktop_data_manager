@@ -102,6 +102,9 @@ class DiskDrivesComponent(QObject):
 
         if state.config.backup:
             state.backup_drive = self.widget.secondDriveComboBox.currentData()
+            if state.backup_drive is None or state.backup_drive == "":
+                raise Exception("Please choose a backup drive")
+
             state.backup_folder = get_secondary_folder(state.backup_drive)
             if not os.path.exists(state.backup_folder):
                 os.makedirs(state.backup_folder)
@@ -113,7 +116,6 @@ class DiskDrivesComponent(QObject):
             state.config.backup_folder = None
 
         state.set_data_folders()
-        state.config.save_config_file()
 
         return True
 

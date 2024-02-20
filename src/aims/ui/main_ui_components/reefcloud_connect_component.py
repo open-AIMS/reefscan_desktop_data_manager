@@ -58,12 +58,12 @@ class ReefcloudConnectComponent(QObject):
         QApplication.processEvents()
 
         projects_response = update_reefcloud_projects(state.reefcloud_session)
-        state.config.load_reefcloud_projects()
+        state.load_reefcloud_projects()
         self.login_widget.username_label.setText(self.tr("Downloading sites"))
         QApplication.processEvents()
 
         sites_response = update_reefcloud_sites(state.reefcloud_session)
-        state.config.load_reefcloud_sites()
+        state.load_reefcloud_sites()
 
         # msg_box = QtWidgets.QMessageBox()
         # msg_box.setText(self.tr("Download finished"))

@@ -80,7 +80,7 @@ class SubSampler(QObject):
         selected_photo_infos = []
         target_distance = None
 
-        maximum_subject_distance = int(state.config.reef_cloud_max_depth)
+        maximum_subject_distance = int(state.reef_cloud_max_depth)
         progress_queue.set_progress_max(len(listdir)-1)
         for file_name in listdir:
             if self.canceled:
