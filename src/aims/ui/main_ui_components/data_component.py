@@ -173,6 +173,9 @@ class DataComponent(QObject):
             if self.survey().wind == "" or self.survey().wind is None:
                 self.survey().wind = self.clipboard.wind
 
+            if self.survey().wind_direction == "" or self.survey().wind_direction is None:
+                self.survey().wind_direction = self.clipboard.wind_direction
+
             if self.survey().cloud == "" or self.survey().cloud is None:
                 self.survey().cloud = self.clipboard.cloud
 
@@ -386,6 +389,7 @@ class DataComponent(QObject):
         self.metadata_widget.ed_vessel.textChanged.connect(self.enable_save_cancel)
         self.metadata_widget.cb_sea.currentTextChanged.connect(self.enable_save_cancel)
         self.metadata_widget.cb_wind.currentTextChanged.connect(self.enable_save_cancel)
+        self.metadata_widget.cb_wind_direction.currentTextChanged.connect(self.enable_save_cancel)
         self.metadata_widget.cb_cloud.currentTextChanged.connect(self.enable_save_cancel)
         self.metadata_widget.cb_vis.currentTextChanged.connect(self.enable_save_cancel)
         self.metadata_widget.ed_comments.textChanged.connect(self.enable_save_cancel)
@@ -554,6 +558,16 @@ class DataComponent(QObject):
         self.metadata_widget.cb_wind.addItem("20-25")
         self.metadata_widget.cb_wind.addItem("25-30")
         self.metadata_widget.cb_wind.addItem(">30")
+
+        self.metadata_widget.cb_wind_direction.addItem("")
+        self.metadata_widget.cb_wind_direction.addItem("N")
+        self.metadata_widget.cb_wind_direction.addItem("NE")
+        self.metadata_widget.cb_wind_direction.addItem("E")
+        self.metadata_widget.cb_wind_direction.addItem("SE")
+        self.metadata_widget.cb_wind_direction.addItem("S")
+        self.metadata_widget.cb_wind_direction.addItem("SW")
+        self.metadata_widget.cb_wind_direction.addItem("W")
+        self.metadata_widget.cb_wind_direction.addItem("NW")
 
         self.metadata_widget.cb_cloud.addItem("")
         self.metadata_widget.cb_cloud.addItem("0")
@@ -1145,6 +1159,7 @@ class DataComponent(QObject):
                self.xstr(self.survey().vessel) != self.metadata_widget.ed_vessel.text() or \
                self.xstr(self.survey().sea) != self.metadata_widget.cb_sea.currentData() or \
                self.xstr(self.survey().wind) != self.metadata_widget.cb_wind.currentText() or \
+               self.xstr(self.survey().wind_direction) != self.metadata_widget.cb_wind_direction.currentText() or \
                self.xstr(self.survey().cloud) != self.metadata_widget.cb_cloud.currentText() or \
                self.xstr(self.survey().visibility) != self.metadata_widget.cb_vis.currentText() or \
                self.xstr(self.survey().comments) != self.metadata_widget.ed_comments.toPlainText() or \
@@ -1166,6 +1181,7 @@ class DataComponent(QObject):
             self.survey().vessel = self.metadata_widget.ed_vessel.text()
             self.survey().sea = self.metadata_widget.cb_sea.currentData()
             self.survey().wind = self.metadata_widget.cb_wind.currentText()
+            self.survey().wind_direction = self.metadata_widget.cb_wind_direction.currentText()
             self.survey().cloud = self.metadata_widget.cb_cloud.currentText()
             self.survey().visibility = self.metadata_widget.cb_vis.currentText()
             self.survey().comments = self.metadata_widget.ed_comments.toPlainText()
@@ -1190,6 +1206,7 @@ class DataComponent(QObject):
             self.metadata_widget.ed_vessel.setText(self.xstr(self.survey().vessel))
             self.metadata_widget.cb_sea.setCurrentText(self.xstr(self.survey().sea))
             self.metadata_widget.cb_wind.setCurrentText(self.xstr(self.survey().wind))
+            self.metadata_widget.cb_wind_direction.setCurrentText(self.xstr(self.survey().wind_direction))
             self.metadata_widget.cb_cloud.setCurrentText(self.xstr(self.survey().cloud))
             self.metadata_widget.cb_vis.setCurrentText(self.xstr(self.survey().visibility))
             self.metadata_widget.cb_tide.setCurrentText(self.xstr(self.survey().tide))
