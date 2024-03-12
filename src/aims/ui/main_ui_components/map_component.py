@@ -177,4 +177,4 @@ class MapComponent(QObject):
             output_folder = QFileDialog.getExistingDirectory(self.map_widget, 'Folder to save KML file to?')
             if (output_folder is not None and output_folder != ""):
                 for survey in self.surveys:
-                    make_kml(survey=survey, cots_waypoints=cots_waypoints, minimum_cots_score=minimum_score, output_folder=output_folder)
+                    make_kml(survey=survey, cots_waypoints=cots_waypoints, minimum_cots_score=minimum_score, output_folder=output_folder, depth=True)

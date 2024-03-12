@@ -59,7 +59,7 @@ class UploadComponent(QObject):
 
         logger.info(f"Upload Finished in {minutes} minutes")
         errorbox = QtWidgets.QMessageBox()
-        errorbox.setText(self.tr("Upload finished"))
+        errorbox.setText(self.tr("Upload finished. Your data should be available in ReefCloud within half an hour."))
         errorbox.setDetailedText(self.tr("Finished in") + f" {minutes} " + self.tr("minutes"))
 
         self.aims_status_dialog.close()

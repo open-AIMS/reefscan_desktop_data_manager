@@ -9,7 +9,7 @@ from reefscanner.basic_model.survey import Survey
 from aims import utils
 
 logger = logging.getLogger("")
-def make_kml(survey: Survey, cots_waypoints, minimum_cots_score, output_folder):
+def make_kml(survey: Survey, cots_waypoints, minimum_cots_score, output_folder, depth=False):
     import alphashape
     input_folder = survey.folder
     points = track(input_folder, False)
@@ -17,7 +17,17 @@ def make_kml(survey: Survey, cots_waypoints, minimum_cots_score, output_folder):
     kml_file_name = f"{output_folder}/{survey.best_name()}.kml"
     kml = simplekml.Kml()
     for point in points:
-        kml.newpoint(coords=[(point[1], point[0])])
+        pnt = kml.newpoint(coords=[(point[1], point[0])])
+        #TODO Perhaps we need a legend for this
+        if depth:
+            # pnt.style.iconstyle.icon.href = 'http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png'
+            if point[3] < 8000:
+                pnt.style.iconstyle.color = simplekml.Color.red
+            elif point[3] < 12000:
+                pnt.style.iconstyle.color = simplekml.Color.yellow
+            else:
+                pnt.style.iconstyle.color = simplekml.Color.green
+
     kml.save(kml_file_name)
 
     if len(cots_waypoints) > 0:
@@ -26,7 +36,7 @@ def make_kml(survey: Survey, cots_waypoints, minimum_cots_score, output_folder):
         for point in cots_waypoints:
             score_ = point[3]
             if score_ > minimum_cots_score:
-                kml.newpoint(coords=[(point[1], point[0])])
+                pnt = kml.newpoint(coords=[(point[1], point[0])])
         kml.save(kml_file_name)
 
     points_for_poly = []
