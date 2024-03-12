@@ -1,5 +1,3 @@
-psutil
-Rust
 joblib
 pillow
 piexif
@@ -7,14 +5,16 @@ pyinstaller
 PyQt5==5.15.5
 shortuuid
 PyQtWebEngine
-reefscanner @ git+https://github.com/AIMS/reefscan-data-model@v1.1.5
-#reefscanner @ file:///C:/aa_git_root/techdev/reef_scanner_data_model/dist/reefscanner-1.1.4.6-py3-none-any.whl
-photoenhancer @ git+https://github.com/open-AIMS/photo_enhancer@v1.1.12
-#photoenhancer @ file:///C:/aa_git_root/techdev/photo_enhancer/dist/photoenhancer-1.1.9.2-py3-none-any.whl
+#reefscanner @ git+https://github.com/AIMS/reefscan-data-model@v1.1.6
+reefscanner @ file:///C:/aa_git_root/techdev/reef_scanner_data_model/dist/reefscanner-1.1.6.3-py3-none-any.whl
+#photoenhancer @ git+https://github.com/AIMS/photo_enhancer@v1.1.12
+photoenhancer @ file:///C:/aa_git_root/techdev/photo_enhancer/dist/photoenhancer-1.1.12-py3-none-any.whl
 pandas
 smbprotocol
 fabric2
 psutil;sys_platform == 'linux'
+psutil;sys_platform == 'darwin'
+Rust;sys_platform == 'darwin'
 pywin32;sys_platform == 'windows'
 pywin32;sys_platform == 'win32'
 tzlocal
