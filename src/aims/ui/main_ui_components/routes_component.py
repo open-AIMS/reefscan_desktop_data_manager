@@ -62,10 +62,14 @@ class RoutesComponent(QObject):
 
     def process(self):
         input_folder = self.widget.inputFolderText.text()
-        output_folder = f"{self.widget.outputFolderText.text()}/geojson"
-        make_geojson(input_folder, output_folder)
+        output_folder = self.widget.outputFolderText.text()
+        geojson_folder = f"{output_folder}/geojson"
+        gpx_folder = f"{output_folder}/gpx"
+
+        make_geojson(input_folder, geojson_folder, gpx_folder)
         self.widget.afterProcessWidget.setVisible(True)
-        self.widget.outputFolderLabel.setText(f"      {output_folder}")
+        self.widget.outputFolderLabel.setText(f"      {geojson_folder}")
+        self.widget.gpx_folder_label.setText(f"And copy the the files from {gpx_folder} to the gps")
         self.set_hint()
 
     def openInputFolder(self):
