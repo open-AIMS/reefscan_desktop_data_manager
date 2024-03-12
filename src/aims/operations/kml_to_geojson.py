@@ -23,17 +23,21 @@ def extract_linestrings_from_kml(kml_path):
     return linestrings
 
 
-def create_gpx_file(output_folder, kml_filename, feature_name, many, coordinates):
+def create_gpx_file(geojson_folder, gpx_folder, kml_filename, feature_name, coordinates):
     gpx = gpxpy.gpx.GPX()
-    gpx_track = gpxpy.gpx.GPXTrack()
+    gpx_track = gpxpy.gpx.GPXTrack(name=feature_name)
     gpx.tracks.append(gpx_track)
     gpx_segment = gpxpy.gpx.GPXTrackSegment()
     gpx_track.segments.append(gpx_segment)
     coords_list=[]
     for coord in coordinates.split():
         coord_list = coord.split(',')
-        coord_list = [float(coord_list[0]), float(coord_list[1])]
+        lon = float(coord_list[0])
+        lat = float(coord_list[1])
+        coord_list = [lon, lat]
         coords_list.append(coord_list)
+        gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(latitude=lat, longitude=lon))
+
     path_feature = {
         "type": "Feature",
         "properties": {
@@ -47,30 +51,27 @@ def create_gpx_file(output_folder, kml_filename, feature_name, many, coordinates
     features = [path_feature]
 
         # features.append(path_feature)
-        # lon, lat = coord.split(',')[:2]
-        # gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(latitude=float(lat), longitude=float(lon)))
 
     geojson_data = {
         "type": "FeatureCollection",
         "features": features
     }
-    if many:
-        gpx_filename = f"{output_folder}/{kml_filename}_{feature_name}.geojson"
-    else:
-        gpx_filename = f"{output_folder}/{kml_filename}.geojson"
+    geojson_filename = f"{geojson_folder}/{kml_filename}_{feature_name}.geojson"
+    gpx_filename = f"{gpx_folder}/{kml_filename}_{feature_name}.gpx"
 
 
-    with open(gpx_filename, 'w') as f:
+    with open(geojson_filename, 'w') as f:
         json.dump(geojson_data, f)
 
-        # f.write(gpx.to_xml())
+    with open(gpx_filename, 'w') as f:
+        f.write(gpx.to_xml())
 
 
-def create_start_points_gpx(output_folder, start_points):
-    # gpx = gpxpy.gpx.GPX()
+def create_points_gpx(geojson_folder, gpx_folder, start_points, filename, feature_suffix):
+    gpx = gpxpy.gpx.GPX()
     features = []
-    for lon, lat, name in start_points:
-        # gpx.waypoints.append(gpxpy.gpx.GPXWaypoint(latitude=float(lat), longitude=float(lon), name=name))
+    for lon, lat, name, short_name in start_points:
+        gpx.waypoints.append(gpxpy.gpx.GPXWaypoint(latitude=float(lat), longitude=float(lon), name=f"{short_name}_{feature_suffix}"))
         point_feature = {
             "type": "Feature",
             "properties": {
@@ -82,35 +83,46 @@ def create_start_points_gpx(output_folder, start_points):
             }
         }
         features.append(point_feature)
-    gpx_filename = f"{output_folder}/00__first_points.geojson"
+    geojson_filename = f"{geojson_folder}/{filename}.geojson"
+    gpx_filename = f"{gpx_folder}/{filename}.gpx"
     geojson_data = {
         "type": "FeatureCollection",
         "features": features
     }
-    with open(gpx_filename, 'w') as f:
+    with open(geojson_filename, 'w') as f:
         json.dump(geojson_data, f)
 
+    with open(gpx_filename, 'w') as f:
+        f.write(gpx.to_xml())
 
 
 
-def make_geojson(kml_folder, output_folder):
+def make_geojson(kml_folder, geojson_folder, gpx_folder):
     start_points = []
-    os.makedirs(output_folder, exist_ok=True)
+    finish_points = []
+    os.makedirs(geojson_folder, exist_ok=True)
+    os.makedirs(gpx_folder, exist_ok=True)
     for filename in os.listdir(kml_folder):
         if filename.endswith('.kml'):
             kml_path = os.path.join(kml_folder, filename)
             linestrings = extract_linestrings_from_kml(kml_path)
 
-            many = len(linestrings) > 1
+
 
             for feature_name, coordinates in linestrings:
-                create_gpx_file(output_folder, os.path.splitext(filename)[0], feature_name, many, coordinates)
+                create_gpx_file(geojson_folder, gpx_folder, os.path.splitext(filename)[0], feature_name, coordinates)
 
                 if coordinates:
-                    lon, lat = coordinates.split(' ')[0].split(',')[:2]
-                    start_points.append((lon, lat, f"{os.path.splitext(filename)[0]}_{feature_name}"))
+                    coordinates_list = coordinates.split(' ')
+                    lon, lat = coordinates_list[0].split(',')[:2]
+                    start_points.append((lon, lat, f"{os.path.splitext(filename)[0]}_{feature_name}", feature_name))
+
+                    lon, lat = coordinates_list[len(coordinates_list)-1].split(',')[:2]
+                    finish_points.append((lon, lat, f"{os.path.splitext(filename)[0]}_{feature_name}", feature_name))
+
     if start_points:
-        create_start_points_gpx(output_folder, start_points)
+        create_points_gpx(geojson_folder, gpx_folder, start_points, "00__first_points", "s")
+        create_points_gpx(geojson_folder, gpx_folder, finish_points, "00__finish_points", "f")
 
 
 

@@ -40,10 +40,13 @@ class Config(object):
         self.clear_reefcloud = False
 
         self.language = os.getenv("LANG")
-        if self.language is None:
-            windll = ctypes.windll.kernel32
-            windll.GetUserDefaultUILanguage()
-            self.language = locale.windows_locale[windll.GetUserDefaultUILanguage()]
+        try:
+            if self.language is None:
+                windll = ctypes.windll.kernel32
+                windll.GetUserDefaultUILanguage()
+                self.language = locale.windows_locale[windll.GetUserDefaultUILanguage()]
+        except:
+            self.language = "eng"
 
         self.vietnemese = self.language == "vi_VN"
 
