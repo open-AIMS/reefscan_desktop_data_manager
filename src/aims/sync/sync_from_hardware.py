@@ -5,6 +5,8 @@ import traceback
 from datetime import datetime
 
 from reefscanner.basic_model.json_utils import read_json_file
+from smbclient._io import SMBDirectoryIO
+from smbprotocol.file_info import FileInformationClass
 
 from aims.messages import messages
 from aims.state import state
@@ -67,12 +69,13 @@ class SyncFromHardware(Synchroniser):
                 i += 1
                 self.progress_queue.reset()
                 self.folder_message = f"{messages.survey()} {friendly_name}. {i} {messages.of()} {tot_surveys}"
-                l_survey_folder = self.find_local_survey_folder(survey_id)
                 if already_archived:
                     h_survey_folder = archive_folder + "/" + survey_id
                 else:
                     h_survey_folder = h_surveys_folder + "/" + survey_id
 
+                survey_id_after_2020 = self.after_2020(survey_id, h_survey_folder)
+                l_survey_folder = self.find_local_survey_folder(survey_id_after_2020)
 
                 self.copytree_parallel(h_survey_folder, l_survey_folder)
                 try:
@@ -187,3 +190,25 @@ class SyncFromHardware(Synchroniser):
     def set_progress_label(self, message):
         self.progress_queue.set_progress_label(f"{self.folder_message}\n{message}")
 
+    def after_2020(self, survey_id, camera_folder):
+        if survey_id > "2020":
+            return survey_id
+
+        first_good_photo = self.find_first_photo_after_2020(camera_folder)
+        if first_good_photo is None:
+            return survey_id
+
+        try:
+            date_part = first_good_photo[:15]
+            return date_part + survey_id[15:]
+        except:
+            return survey_id
+
+    def find_first_photo_after_2020(self, folder):
+        files = self.camera_os.listdir(folder)
+        files.sort()
+        for file in files:
+            if file.lower().endswith(".jpg") or file.lower().endswith(".jpeg"):
+                if file > "2020":
+                    return file
+        return None
