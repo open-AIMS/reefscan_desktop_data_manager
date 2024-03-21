@@ -141,11 +141,13 @@ class DiskDrivesComponent(QObject):
 
             else:
                 self.widget.copyButton.setVisible(True)
+                copy_question = self.tr(
+                    "Do you want to copy all the missing and modified files from the primary to the secondary drive?")
                 message = message \
-                    + "\n" \
-                    + self.tr("Do you want to copy all the missing and modified files from the primary to the secondary drive?") \
-                    + "\n"
-                self.widget.error_label2.setText("Do you want to copy all of the missing and modified files from the primary to the secondary drive?")
+                          + "\n" \
+                          + copy_question \
+                          + "\n"
+                self.widget.error_label2.setText(copy_question)
 
 
             for m in fixable_messages:
