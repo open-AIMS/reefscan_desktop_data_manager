@@ -1,6 +1,6 @@
 import os
 import shutil
-from time import process_time
+from time import process_time, sleep
 
 import smbclient
 
@@ -347,6 +347,9 @@ class MainUi(QMainWindow):
 
     def connect_disks(self):
         self.drives_connected = self.disk_drives_component.connect()
+        self.enable_workflow_buttons()
+        # sleep(1)
+        # print("I slept")
         if self.drives_connected:
             self.load_connect_screen()
 
