@@ -136,7 +136,7 @@ class DiskDrivesComponent(QObject):
                     message = message + "\n\n" + \
                          self.tr(
                             "The following issues can be fixed automatically after the other issues are rectified.")
-                self.widget.error_label2.setText("This cannot be fixed automatically")
+                self.widget.error_label2.setText(self.tr("This cannot be fixed automatically"))
                 self.widget.copyButton.setVisible(False)
 
             else:

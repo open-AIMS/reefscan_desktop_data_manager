@@ -135,7 +135,9 @@ if __name__ == "__main__":
         main_ui.show()
         app.exec()
 
-    except Exception:
+    except Exception as e:
+        print ("Error")
+        print (str(e))
         logger.exception("Error")
 
     if state.model.local_data_loaded and not state.read_only:

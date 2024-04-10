@@ -331,19 +331,24 @@
         <translation>Nội dung của ổ đĩa chính và phụ không khớp nhau</translation>
     </message>
     <message>
-        <location filename="../aims/ui/main_ui_components/disk_drives_component.py" line="146"/>
+        <location filename="../aims/ui/main_ui_components/disk_drives_component.py" line="144"/>
         <source>Do you want to copy all the missing and modified files from the primary to the secondary drive?</source>
         <translation>Bạn có muốn sao chép tất cả các tập tin bị thiếu và đã sửa đổi từ ổ chính sang ổ phụ không?</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/disk_drives_component.py" line="132"/>
         <source>The following issues cannot be automatically fixed. Please check the disk drives manually.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Các vấn đề sau đây không thể được khắc phục tự động. Vui lòng kiểm tra ổ đĩa bằng tay.</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/disk_drives_component.py" line="137"/>
         <source>The following issues can be fixed automatically after the other issues are rectified.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Các sự cố sau có thể được khắc phục tự động sau khi các sự cố khác được khắc phục.</translation>
+    </message>
+    <message>
+        <location filename="../aims/ui/main_ui_components/disk_drives_component.py" line="139"/>
+        <source>This cannot be fixed automatically</source>
+        <translation type="unfinished">Điều này không thể được sửa tự động</translation>
     </message>
 </context>
 <context>
@@ -830,7 +835,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../aims/ui/main_ui.py" line="101"/>
         <source>Choose &quot;Connect Disks&quot; from the workflow bar</source>
-        <translation type="unfinished">Chọn &quot;Kết nối ổ đĩa&quot; từ thanh quy trình làm việc</translation>
+        <translation type="unfinished">Chọn Kết nối ổ đĩa từ thanh quy trình làm việc</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui.py" line="313"/>
@@ -1039,7 +1044,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../aims/ui/main_ui_components/routes_component.py" line="31"/>
         <source>Press the button &quot;Create GeoJson&quot;</source>
-        <translation type="unfinished">Nhấn nút &quot;Tạo GeoJson&quot;</translation>
+        <translation type="unfinished">Nhấn nút Tạo GeoJson</translation>
     </message>
     <message>
         <location filename="../aims/ui/main_ui_components/routes_component.py" line="34"/>
@@ -1093,27 +1098,27 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>SyncFromHardware</name>
     <message>
-        <location filename="../aims/sync/sync_from_hardware.py" line="36"/>
+        <location filename="../aims/sync/sync_from_hardware.py" line="38"/>
         <source>Hardware not found at</source>
         <translation>Không tìm thấy phần cứng tại</translation>
     </message>
     <message>
-        <location filename="../aims/sync/sync_from_hardware.py" line="51"/>
+        <location filename="../aims/sync/sync_from_hardware.py" line="53"/>
         <source>Hardware surveys not found at</source>
         <translation>Không tìm thấy phần cứng trong quá trình rà soát tại</translation>
     </message>
     <message>
-        <location filename="../aims/sync/sync_from_hardware.py" line="60"/>
+        <location filename="../aims/sync/sync_from_hardware.py" line="62"/>
         <source>Downloaded Sequences</source>
         <translation>Các tiến trình đã được tải xuống</translation>
     </message>
     <message>
-        <location filename="../aims/sync/sync_from_hardware.py" line="88"/>
+        <location filename="../aims/sync/sync_from_hardware.py" line="91"/>
         <source>Your data has been synchronised to the local storage. </source>
         <translation>Dữ liệu của bạn đã được đồng bộ hóa với bộ nhớ cục bộ.</translation>
     </message>
     <message>
-        <location filename="../aims/sync/sync_from_hardware.py" line="89"/>
+        <location filename="../aims/sync/sync_from_hardware.py" line="92"/>
         <source>All photos have been copied to the local and backup folders.</source>
         <translation>Tất cả ảnh đã được sao chép vào thư mục cục bộ và thư mục sao lưu .</translation>
     </message>

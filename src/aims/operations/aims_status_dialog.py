@@ -38,14 +38,17 @@ class AimsStatusDialog(QObject):
                 self.progress_dialog.setValue(i)
                 self.progress_dialog.setLabelText(label)
         except Exception as e:
-            logger.info("ERROR")
-            logger.error("ERROR")
+            logger.error("ERROR setting value")
             logger.info(str(e))
 
     def set_progress_max(self, i):
         # logger.info(f"max {i}")
-        with self.redrawLock:
-            self.progress_dialog.setMaximum(i)
+        try:
+            with self.redrawLock:
+                self.progress_dialog.setMaximum(i)
+        except Exception as e:
+            logger.error("ERROR setting max")
+            logger.info(str(e))
 
     def set_operation_connections(self, operation):
         self.make_progress_dialog()
@@ -62,8 +65,11 @@ class AimsStatusDialog(QObject):
         try:
             self.progress_dialog.canceled.disconnect(self.operation.cancel)
         except:
-            pass
-        self.progress_dialog.close()
+            logger.warn("error disconnecting status box")
+        try:
+            self.progress_dialog.close()
+        except:
+            logger.warn("error closing status box")
         # timer = Timer(0.5, self.progress_dialog.close)
         # timer.start()
 
