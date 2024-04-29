@@ -4,6 +4,7 @@ import shutil
 import traceback
 from datetime import datetime
 
+from PyQt5.QtCore import QObject
 from reefscanner.basic_model.json_utils import read_json_file
 from smbclient._io import SMBDirectoryIO
 from smbprotocol.file_info import FileInformationClass
@@ -14,15 +15,18 @@ from aims.samba import aims_shutil
 from joblib import Parallel, delayed
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
-from aims.sync.synchroniser import Synchroniser
-
 logger = logging.getLogger("")
 
 
-class SyncFromHardware(Synchroniser):
+class SyncFromHardware(QObject):
 
     def __init__(self, progress_queue, hardware_folder, local_folder, backup_folder, camera_samba):
-        super().__init__(progress_queue)
+        super().__init__()
+        self.files_to_copy: list[tuple[str]] = []
+        self.total_files = 0
+        self.cancelled = False
+        self.progress_queue = progress_queue
+
         self.hardware_folder = hardware_folder
         self.local_folder = local_folder
         self.backup_folder = backup_folder
@@ -31,7 +35,7 @@ class SyncFromHardware(Synchroniser):
         self.camera_samba = camera_samba
         self.camera_os = get_file_ops(self.camera_samba)
         self.folder_message = ""
-        self.cancelled = False
+
 
     def sync(self, survey_infos):
         if not self.camera_os.isdir(self.hardware_folder):
@@ -65,7 +69,7 @@ class SyncFromHardware(Synchroniser):
             except:
                 friendly_name = survey_id
 
-            if not self.cancelled:
+            if not self.is_cancelled():
                 i += 1
                 self.progress_queue.reset()
                 self.folder_message = f"{messages.survey()} {friendly_name}. {i} {messages.of()} {tot_surveys}"
@@ -129,6 +133,8 @@ class SyncFromHardware(Synchroniser):
             #     delayed(self.copy2_verbose)(src, dst) for src, dst in files)
             for src, dst in files:
                 self.copy2_verbose(src, dst)
+                if self.is_cancelled():
+                    return
 
         finish = datetime.now()
         logger.warn(f'copy took {(finish - start).total_seconds()} seconds')
@@ -144,7 +150,7 @@ class SyncFromHardware(Synchroniser):
 
         a_dst = f"{self.hardware_folder}/archive/{src_last_part}"
 
-        if self.cancelled:
+        if self.is_cancelled():
             logger.debug("cancelled")
         else:
             message = f'{messages.copying()}  {src}'
@@ -212,3 +218,27 @@ class SyncFromHardware(Synchroniser):
                 if file > "2020":
                     return file
         return None
+
+
+    def _ignore_copy(self, path, names):
+        if self.cancelled:
+            return names   # everything ignored
+        else:
+            return []   # nothing will be ignored
+
+    def prepare_copy(self, src, dst):
+        if self.cancelled:
+            logger.info("cancelled")
+        else:
+            cnt = len(self.files_to_copy)
+            if cnt % 100 == 0:
+                message = f'Counting files. So far {cnt}'
+                self.progress_queue.set_progress_label(message)
+            # logger.info(message)
+            self.files_to_copy.append((src, dst))
+
+    def is_cancelled(self):
+        return self.cancelled
+
+    def cancel(self):
+        self.cancelled = True

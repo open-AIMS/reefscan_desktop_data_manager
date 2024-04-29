@@ -95,7 +95,6 @@ class MainUi(QMainWindow):
         self.load_start_screen()
         self.aims_status_dialog = AimsStatusDialog(self.ui)
         self.update_status()
-        self.camera_connected = False
         self.drives_connected = False
 
         self.hint(self.tr('Choose "Connect Disks" from the workflow bar'))
@@ -371,6 +370,8 @@ class MainUi(QMainWindow):
             raise Exception("Connect to the local disks first")
 
         data_loaded, message, space_avaliable = data_loader.load_camera_data_model(aims_status_dialog=self.aims_status_dialog)
+        data_loader.load_archive_data_model(aims_status_dialog=self.aims_status_dialog)
+
         logger.info(f"camera data loaded {process_time()}")
 
         if data_loaded:
