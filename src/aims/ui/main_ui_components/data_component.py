@@ -454,10 +454,10 @@ class DataComponent(QObject):
         self.aims_status_dialog.close()
 
         data_loader.load_camera_data_model(aims_status_dialog=self.aims_status_dialog)
-        self.archive_data_loaded = False
+        data_loader.load_archive_data_model(aims_status_dialog=self.aims_status_dialog)
 
-        state.model.archived_data_loaded = False
         self.setup_camera_tree()
+        data_loader.load_data_model(aims_status_dialog=self.aims_status_dialog)
         self.load_explore_surveys_tree()
 
         download_end = process_time()
@@ -514,9 +514,6 @@ class DataComponent(QObject):
     def setup_camera_tree(self):
         if state.model.camera_data_loaded:
             show_downloaded = self.data_widget.showDownloadedCheckBox.isChecked()
-            if not self.archive_data_loaded:
-                data_loader.load_archive_data_model(aims_status_dialog=self.aims_status_dialog)
-                self.archive_data_loaded = True
 
             camera_tree = self.data_widget.cameraTree
             self.camera_model = TreeModelMaker().make_tree_model(timezone=self.time_zone, include_local=False,
@@ -635,6 +632,7 @@ class DataComponent(QObject):
                 traceback.print_exc()
                 raise Exception("Error renaming folders. Maybe you have a file or folder open in another window.")
 
+            data_loader.load_data_model(aims_status_dialog=self.aims_status_dialog)
             self.load_explore_surveys_tree()
             self.setup_camera_tree()
             self.survey_id = old_survey_id
@@ -646,6 +644,7 @@ class DataComponent(QObject):
         self.check_save()
         old_survey_id = self.survey_id
         self.survey_id = None
+
         self.load_explore_surveys_tree()
         self.setup_camera_tree()
         self.survey_id = old_survey_id
@@ -772,34 +771,35 @@ class DataComponent(QObject):
 
         QApplication.processEvents()
 
-        from aims.operations.enhance_photo_operation import EnhancePhotoOperation
-
-        enhance_operation = EnhancePhotoOperation(target=subsampled_image_folder,
-                                                  load=float(cpu_load_string),
-                                                  suffix=output_suffix,
-                                                  output_folder=output_folder,
-                                                  disable_denoising=disable_denoising,
-                                                  disable_dehazing=disable_dehazing)
-
-        enhance_operation.update_interval = 1
-        self.aims_status_dialog.set_operation_connections(enhance_operation)
-        enhance_operation.set_msg_function(lambda msg: self.enhance_widget.textBrowser.append(msg))
-        # # operation.after_run.connect(self.after_sync)
-        logger.info("done connections")
-        result = self.aims_status_dialog.threadPool.apply_async(enhance_operation.run)
-        logger.info("thread started")
-        while not result.ready():
-            QApplication.processEvents()
-        logger.info("thread finished")
+        # from aims.operations.enhance_photo_operation import EnhancePhotoOperation
+        #
+        # enhance_operation = EnhancePhotoOperation(target=subsampled_image_folder,
+        #                                           load=float(cpu_load_string),
+        #                                           suffix=output_suffix,
+        #                                           output_folder=output_folder,
+        #                                           disable_denoising=disable_denoising,
+        #                                           disable_dehazing=disable_dehazing)
+        #
+        # enhance_operation.update_interval = 1
+        # self.aims_status_dialog.set_operation_connections(enhance_operation)
+        # enhance_operation.set_msg_function(lambda msg: self.enhance_widget.textBrowser.append(msg))
+        # # # operation.after_run.connect(self.after_sync)
+        # logger.info("done connections")
+        # result = self.aims_status_dialog.threadPool.apply_async(enhance_operation.run)
+        # logger.info("thread started")
+        # while not result.ready():
+        #     QApplication.processEvents()
+        # logger.info("thread finished")
         self.aims_status_dialog.close()
 
-        if enhance_operation.batch_monitor.finished:
-            self.enhance_widget.textBrowser.append("Photoenhancer finished")
-        else:
-            if enhance_operation.batch_monitor.cancelled:
-                self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
-
-        return not enhance_operation.batch_monitor.cancelled
+        # if enhance_operation.batch_monitor.finished:
+        #     self.enhance_widget.textBrowser.append("Photoenhancer finished")
+        # else:
+        #     if enhance_operation.batch_monitor.cancelled:
+        #         self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
+        #
+        # return not enhance_operation.batch_monitor.cancelled
+        return True
 
     def enable_everything(self):
         self.enable_workflow_buttons()
@@ -1310,8 +1310,6 @@ class DataComponent(QObject):
     def load_explore_surveys_tree(self):
         self.check_save()
 
-        state.config.camera_connected = False
-        data_loader.load_data_model(aims_status_dialog=self.aims_status_dialog)
         tree = self.data_widget.surveysTree
         self.surveys_tree_model = TreeModelMaker().make_tree_model(timezone=self.time_zone, include_camera=False,
                                                                    checkable=False)

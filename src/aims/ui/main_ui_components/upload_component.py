@@ -44,8 +44,6 @@ class UploadComponent(QObject):
 
         start = process_time()
 
-        state.config.camera_connected = False
-        data_loader.load_data_model(aims_status_dialog=self.aims_status_dialog)
         surveys = checked_surveys(self.surveys_tree_model)
         check_reefcloud_metadata(surveys)
 
@@ -79,8 +77,6 @@ class UploadComponent(QObject):
             self.hint_function(self.tr("Press the 'Upload Selected Surveys'"))
 
     def load_tree(self):
-        state.config.camera_connected = False
-        data_loader.load_data_model(aims_status_dialog=self.aims_status_dialog)
         tree = self.upload_widget.treeView
         self.surveys_tree_model = TreeModelMaker().make_tree_model(timezone=self.time_zone, include_camera=False, checkable=True)
         tree.setModel(self.surveys_tree_model)

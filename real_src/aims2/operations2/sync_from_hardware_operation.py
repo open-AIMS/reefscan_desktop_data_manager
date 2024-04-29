@@ -71,3 +71,9 @@ class SyncFromHardwareOperation(AbstractOperation):
                     {avaliable} {state.primary_drive} {_is_} {free_gb:.2f} Gb
                     """
                 raise Exception(message)
+
+    def cancel(self):
+        super().cancel()
+        if not self.finished:
+            logger.info("I will cancel")
+            self.sync.cancel()

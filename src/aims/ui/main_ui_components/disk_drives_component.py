@@ -5,6 +5,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import QSize, QObject
 from PyQt5.QtWidgets import QMessageBox, QMainWindow
 
+from aims import data_loader
 from aims.operations.disk_drive_sync import compare
 from aims.state import state
 logger = logging.getLogger("")
@@ -116,6 +117,7 @@ class DiskDrivesComponent(QObject):
             state.config.backup_folder = None
 
         state.set_data_folders()
+        data_loader.load_data_model(aims_status_dialog=self.aims_status_dialog)
 
         return True
 
