@@ -675,12 +675,15 @@ class DataComponent(QObject):
     def marks_table_clicked(self, selected, deselected):
         index = selected
         if self.marks_model is not None:
-            self.mark_filename = self.marks_model.photo_file(index.row())
-            self.marks_widget.lblFileName.setText(self.marks_model.photo_file_name(index.row()))
-            label: QLabel = self.marks_widget.lblPhoto
-            pixmap = QPixmap(self.mark_filename).scaled(label.size().width(), label.size().height(), Qt.KeepAspectRatio,
-                                                        Qt.SmoothTransformation)
-            label.setPixmap(pixmap)
+            try:
+                self.mark_filename = self.marks_model.photo_file(index.row())
+                self.marks_widget.lblFileName.setText(self.marks_model.photo_file_name(index.row()))
+                label: QLabel = self.marks_widget.lblPhoto
+                pixmap = QPixmap(self.mark_filename).scaled(label.size().width(), label.size().height(), Qt.KeepAspectRatio,
+                                                            Qt.SmoothTransformation)
+                label.setPixmap(pixmap)
+            except:
+                pass
 
     def open_folder(self):
         utils.open_file(self.survey().folder)
@@ -739,7 +742,7 @@ class DataComponent(QObject):
 
     # enhance all of the photos for one survey
     # returns true if successful false otherwise
-    def enhance_photos_for_survey(self, survey, disable_denoising=True,
+    def enhance_photos_for_survey(self, survey: Survey, disable_denoising=True,
                                   disable_dehazing=True, replace=False) -> bool:
         logger.info(f"start enhance_photos_for_survey {process_time()}")
 
@@ -747,7 +750,7 @@ class DataComponent(QObject):
         if replace or utils.is_empty_folder(subsampled_image_folder):
             from aims.operations.load_data import reefcloud_subsample
 
-            success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
+            success, selected_photo_infos = reefcloud_subsample(survey.camera_dirs, subsampled_image_folder,
                                                                 self.aims_status_dialog)
             if not success:
                 self.aims_status_dialog.close()
@@ -771,34 +774,34 @@ class DataComponent(QObject):
 
         QApplication.processEvents()
 
-        # from aims.operations.enhance_photo_operation import EnhancePhotoOperation
-        #
-        # enhance_operation = EnhancePhotoOperation(target=subsampled_image_folder,
-        #                                           load=float(cpu_load_string),
-        #                                           suffix=output_suffix,
-        #                                           output_folder=output_folder,
-        #                                           disable_denoising=disable_denoising,
-        #                                           disable_dehazing=disable_dehazing)
-        #
-        # enhance_operation.update_interval = 1
-        # self.aims_status_dialog.set_operation_connections(enhance_operation)
-        # enhance_operation.set_msg_function(lambda msg: self.enhance_widget.textBrowser.append(msg))
-        # # # operation.after_run.connect(self.after_sync)
-        # logger.info("done connections")
-        # result = self.aims_status_dialog.threadPool.apply_async(enhance_operation.run)
-        # logger.info("thread started")
-        # while not result.ready():
-        #     QApplication.processEvents()
-        # logger.info("thread finished")
+        from aims.operations.enhance_photo_operation import EnhancePhotoOperation
+
+        enhance_operation = EnhancePhotoOperation(target=subsampled_image_folder,
+                                                  load=float(cpu_load_string),
+                                                  suffix=output_suffix,
+                                                  output_folder=output_folder,
+                                                  disable_denoising=disable_denoising,
+                                                  disable_dehazing=disable_dehazing)
+
+        enhance_operation.update_interval = 1
+        self.aims_status_dialog.set_operation_connections(enhance_operation)
+        enhance_operation.set_msg_function(lambda msg: self.enhance_widget.textBrowser.append(msg))
+        # # operation.after_run.connect(self.after_sync)
+        logger.info("done connections")
+        result = self.aims_status_dialog.threadPool.apply_async(enhance_operation.run)
+        logger.info("thread started")
+        while not result.ready():
+            QApplication.processEvents()
+        logger.info("thread finished")
         self.aims_status_dialog.close()
 
-        # if enhance_operation.batch_monitor.finished:
-        #     self.enhance_widget.textBrowser.append("Photoenhancer finished")
-        # else:
-        #     if enhance_operation.batch_monitor.cancelled:
-        #         self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
-        #
-        # return not enhance_operation.batch_monitor.cancelled
+        if enhance_operation.batch_monitor.finished:
+            self.enhance_widget.textBrowser.append("Photoenhancer finished")
+        else:
+            if enhance_operation.batch_monitor.cancelled:
+                self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
+
+        return not enhance_operation.batch_monitor.cancelled
         return True
 
     def enable_everything(self):
@@ -868,7 +871,7 @@ class DataComponent(QObject):
 
         if replace or utils.is_empty_folder(subsampled_image_folder):
             from aims.operations.load_data import reefcloud_subsample
-            success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
+            success, selected_photo_infos = reefcloud_subsample(survey.camera_dirs, subsampled_image_folder,
                                                             self.aims_status_dialog)
             if not success:
                 self.aims_status_dialog.close()
@@ -1289,7 +1292,7 @@ class DataComponent(QObject):
         list_thumbnails.setIconSize(QSize(200, 200))
         list_thumbnails.setResizeMode(QListWidget.Adjust)
         if self.survey_id is not None:
-            folder = self.survey().folder
+            folder = self.survey().camera_dirs[1]
             samba = self.survey().samba
             file_ops = get_file_ops(samba)
             photos = [name for name in file_ops.listdir(folder) if

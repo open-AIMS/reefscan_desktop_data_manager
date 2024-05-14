@@ -82,7 +82,7 @@ class MapComponent(QObject):
         cots_waypoints = self.cots_waypoints_for_survey()
         tracks = []
         for survey in self.surveys:
-            folder = survey.folder
+            folder = survey.camera_dirs[1]
             try:
                 _track = track(folder, False)
                 tracks.extend(_track)

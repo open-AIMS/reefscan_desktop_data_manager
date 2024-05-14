@@ -17,7 +17,7 @@ def upload_surveys(surveys, aims_status_dialog):
         else:
             subsampled_image_folder = survey.folder.replace("/reefscan/", "/reefscan_reefcloud/")
 
-            success, selected_photo_infos = reefcloud_subsample(survey_folder, subsampled_image_folder,
+            success, selected_photo_infos = reefcloud_subsample(survey.camera_dirs, subsampled_image_folder,
                                                                 aims_status_dialog)
             if not success:
                 aims_status_dialog.close()
