@@ -13,11 +13,11 @@ logger = logging.getLogger("")
 
 class ReefcloudSubSampleOperation(AbstractOperation):
 
-    def __init__(self, image_dir, sample_dir):
+    def __init__(self, image_dirs, sample_dir):
         super().__init__()
         self.finished=False
         self.success=False
-        self.image_dir = image_dir
+        self.image_dirs = image_dirs
         self.sample_dir = sample_dir
         self.message = ""
         self.sub_sampler = SubSampler()
@@ -27,17 +27,20 @@ class ReefcloudSubSampleOperation(AbstractOperation):
         logger.info(f"start subsample _run {process_time()}")
 
         self.finished=False
-        self.success = False
+        self.success = True
         logger.info("start subsample")
-        try:
-            self.selected_photo_infos = self.sub_sampler.sub_sample_dir(image_dir=self.image_dir, sample_dir=self.sample_dir, progress_queue=self.progress_queue)
-            self.success = self.selected_photo_infos is not None
-        except Exception as e:
-            logger.error("ERROR ERROR")
-            traceback.print_exc()
-            self.message = str(e)
+        self.selected_photo_infos = []
+        for camera_id, image_dir in self.image_dirs.items():
+            try:
+                photo_infos = self.sub_sampler.sub_sample_dir(image_dir=image_dir, sample_dir=self.sample_dir, progress_queue=self.progress_queue)
+                self.selected_photo_infos.append(photo_infos)
+                self.success = self.success and (photo_infos is not None)
+            except Exception as e:
+                logger.error("ERROR ERROR")
+                traceback.print_exc()
+                self.message = str(e)
 
-            self.success = False
+                self.success = False
 
         logger.info("finish load data")
         self.finished=True

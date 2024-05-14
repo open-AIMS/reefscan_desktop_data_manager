@@ -34,9 +34,9 @@ def load_data(model, camera_connected, aims_status_dialog: AimsStatusDialog):
     return operation.success, operation.message
 
 
-def reefcloud_subsample(image_dir, sample_dir, aims_status_dialog: AimsStatusDialog):
+def reefcloud_subsample(image_dirs, sample_dir, aims_status_dialog: AimsStatusDialog):
     logger.info(f"start sub_sample {process_time()}")
-    operation = ReefcloudSubSampleOperation(image_dir, sample_dir)
+    operation = ReefcloudSubSampleOperation(image_dirs, sample_dir)
     operation.update_interval = 1
     aims_status_dialog.set_operation_connections(operation)
     result = aims_status_dialog.threadPool.apply_async(operation.run)
