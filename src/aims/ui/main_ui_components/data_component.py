@@ -113,7 +113,7 @@ class DataComponent(QObject):
         self.aims_status_dialog = None
 
         self.time_zone = None
-        self.site_lookup = {}
+        self.site_lookup = {"": ""}
         self.hint_function = hint_function
         # for long running processes we can disable the workflow buttons
         # and enable them when the process is complete
@@ -348,7 +348,7 @@ class DataComponent(QObject):
             self.data_widget.collapseTreeButton.setText("<<")
 
     def add_new_reefcloud_site(self):
-        project = self.metadata_widget.cb_reefcloud_project.currentText()
+        project = self.metadata_widget.cb_reefcloud_project.currentData()
         site = self.metadata_widget.ed_site.text()
 
         all_sites = [self.metadata_widget.cb_reefcloud_site.itemText(i) for i in
@@ -586,11 +586,11 @@ class DataComponent(QObject):
         self.metadata_widget.cb_vis.addItem("25-30")
         self.metadata_widget.cb_vis.addItem(">30")
 
-        self.metadata_widget.cb_reefcloud_project.addItem("")
-        self.project_lookups=[]
+        self.metadata_widget.cb_reefcloud_project.addItem("", "")
+        self.project_lookup = {"": ""}
         for project in state.reefcloud_projects:
-            self.metadata_widget.cb_reefcloud_project.addItem(project)
-            self.project_lookups.append(project)
+            self.metadata_widget.cb_reefcloud_project.addItem(project["project_name"], project["cognito_group"])
+            self.project_lookup[project["cognito_group"]] = project["project_name"]
 
         self.metadata_widget.cb_reefcloud_site.addItem("", userData="")
 
@@ -601,12 +601,12 @@ class DataComponent(QObject):
 
     def update_sites_combo(self):
         # figure out what project was selected.
-        project:str = self.metadata_widget.cb_reefcloud_project.currentText()
+        project:str = self.metadata_widget.cb_reefcloud_project.currentData()
         if project == "" or project.endswith("Permission Denied"):
             # No project was selected, site not meaningful.
             # Valid sites are set on per project basis.
             self.metadata_widget.cb_reefcloud_site.clear()
-            self.metadata_widget.cb_reefcloud_site.addItem("")
+            self.metadata_widget.cb_reefcloud_site.addItem("", "")
             self.metadata_widget.cb_reefcloud_site.setCurrentText("")
             self.metadata_widget.cb_reefcloud_site.setEnabled(False)
         else:
@@ -750,11 +750,11 @@ class DataComponent(QObject):
         if replace or utils.is_empty_folder(subsampled_image_folder):
             from aims.operations.load_data import reefcloud_subsample
 
-            success, selected_photo_infos = reefcloud_subsample(survey.camera_dirs, subsampled_image_folder,
+            success, selected_photo_infos, message = reefcloud_subsample(survey.camera_dirs, subsampled_image_folder,
                                                                 self.aims_status_dialog)
             if not success:
                 self.aims_status_dialog.close()
-                return False
+                raise Exception(message)
 
         output_suffix = "_enh"
         output_folder = self.enhanced_folder(survey.folder)
@@ -871,11 +871,11 @@ class DataComponent(QObject):
 
         if replace or utils.is_empty_folder(subsampled_image_folder):
             from aims.operations.load_data import reefcloud_subsample
-            success, selected_photo_infos = reefcloud_subsample(survey.camera_dirs, subsampled_image_folder,
+            success, selected_photo_infos, message = reefcloud_subsample(survey.camera_dirs, subsampled_image_folder,
                                                             self.aims_status_dialog)
             if not success:
                 self.aims_status_dialog.close()
-                raise Exception (f"Error subsampling photos for survey {survey.best_name()}")
+                raise Exception (f"Error subsampling photos for survey {survey.best_name()}, {message}")
 
         if utils.is_empty_folder(subsampled_image_folder):
             raise Exception(f"No photos to inference in {subsampled_image_folder}")
@@ -1169,7 +1169,7 @@ class DataComponent(QObject):
                self.xstr(self.survey().tide) != self.metadata_widget.cb_tide.currentData() or \
                self.xstr(self.survey().friendly_name) != self.metadata_widget.ed_name.text() or \
                ( not self.metadata_widget.cb_reefcloud_project.currentText().endswith("Permission Denied") and
-                 (self.xstr(self.survey().reefcloud_project) != self.metadata_widget.cb_reefcloud_project.currentText() or
+                 (self.xstr(self.survey().reefcloud_project) != self.metadata_widget.cb_reefcloud_project.currentData() or
                   self.survey().reefcloud_site != self.metadata_widget.cb_reefcloud_site.currentData())
                  )
 
@@ -1191,7 +1191,7 @@ class DataComponent(QObject):
             self.survey().tide = self.metadata_widget.cb_tide.currentData()
             self.survey().friendly_name = self.metadata_widget.ed_name.text()
             if not self.metadata_widget.cb_reefcloud_project.currentText().endswith("Permission Denied"):
-                self.survey().reefcloud_project = self.metadata_widget.cb_reefcloud_project.currentText()
+                self.survey().reefcloud_project = self.metadata_widget.cb_reefcloud_project.currentData()
                 self.survey().reefcloud_site = self.metadata_widget.cb_reefcloud_site.currentData()
 
             if not state.read_only:
@@ -1214,13 +1214,13 @@ class DataComponent(QObject):
             self.metadata_widget.cb_vis.setCurrentText(self.xstr(self.survey().visibility))
             self.metadata_widget.cb_tide.setCurrentText(self.xstr(self.survey().tide))
 
-            if (self.metadata_widget.cb_reefcloud_project.findText(self.survey().reefcloud_project) == -1):
+            if (self.metadata_widget.cb_reefcloud_project.findData(self.survey().reefcloud_project) == -1):
                 project_name = f"{self.survey().reefcloud_project} - Permission Denied"
-                if  (self.metadata_widget.cb_reefcloud_project.findText(project_name) == -1):
-                    self.metadata_widget.cb_reefcloud_project.addItem(project_name)
+                if  (self.metadata_widget.cb_reefcloud_project.findData(project_name) == -1):
+                    self.metadata_widget.cb_reefcloud_project.addItem(project_name, project_name)
                 self.metadata_widget.cb_reefcloud_project.setCurrentText(project_name)
             else:
-                self.metadata_widget.cb_reefcloud_project.setCurrentText(self.survey().reefcloud_project)
+                self.metadata_widget.cb_reefcloud_project.setCurrentText(self.project_lookup[self.survey().reefcloud_project])
             self.cb_reefcloud_project_changed(None)
 
             site_id = self.survey().reefcloud_site

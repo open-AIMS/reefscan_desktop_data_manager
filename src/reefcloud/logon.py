@@ -32,7 +32,7 @@ html = """
 <html>
     <head><title>ReefCloud Authentication</title></head>
     <body onload="submit();">
-        <p id="message">Waiting for token...</p>
+        <p id="message">Waiting...</p>
         <script>
             function submit() {
                 const queryParamsString = window.location.hash.substr(1);
@@ -42,7 +42,7 @@ html = """
                 http.onreadystatechange = function() {
                     if (this.readyState == 4 && this.status == 200) {
                         messagePara = document.getElementById("message");
-                        messagePara.innerText = "Token received, you can close this window"
+                        messagePara.innerText = "Log in was successful, you can close this window"
                         console.log("Token sent");
                     }
                 };
@@ -59,7 +59,7 @@ otherhtml = """
 <html>
     <head><title>ReefCloud Authentication</title></head>
     <body>
-        <p id="message">token received.  Please close this tab or window.</p>
+        <p id="message">Log in was successful.  Please close this tab or window.</p>
 
     </body
 </html>
