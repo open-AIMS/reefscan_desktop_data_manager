@@ -45,7 +45,7 @@ def reefcloud_subsample(image_dirs, sample_dir, aims_status_dialog: AimsStatusDi
 
     logger.info("Close the status dialog")
     aims_status_dialog.close()
-    return operation.success, operation.selected_photo_infos
+    return operation.success, operation.selected_photo_infos, operation.message
 
 
 def reefcloud_upload_survey(survey: Survey, survey_id, survey_folder, subsampled_image_folder, aims_status_dialog: AimsStatusDialog):

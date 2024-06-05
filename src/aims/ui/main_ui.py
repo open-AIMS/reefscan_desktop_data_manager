@@ -213,7 +213,7 @@ class MainUi(QMainWindow):
     def login_reefcloud(self):
         self.disable_all_workflow_buttons()
         if self.reefcloud_connect_component.login():
-            self.load_data_screen()
+            logger.info("connected successfully to reefcloud")
         self.enable_workflow_buttons()
 
     def load_start_screen(self):

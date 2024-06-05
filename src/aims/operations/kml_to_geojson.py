@@ -26,7 +26,9 @@ def extract_linestrings_from_kml(kml_path):
 def create_gpx_file(geojson_folder, gpx_folder, kml_filename, feature_name, coordinates):
     gpx = gpxpy.gpx.GPX()
     gpx_track = gpxpy.gpx.GPXTrack(name=feature_name)
+    gpx_route = gpxpy.gpx.GPXRoute(name=feature_name)
     gpx.tracks.append(gpx_track)
+    gpx.routes.append(gpx_route)
     gpx_segment = gpxpy.gpx.GPXTrackSegment()
     gpx_track.segments.append(gpx_segment)
     coords_list=[]
@@ -37,6 +39,7 @@ def create_gpx_file(geojson_folder, gpx_folder, kml_filename, feature_name, coor
         coord_list = [lon, lat]
         coords_list.append(coord_list)
         gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(latitude=lat, longitude=lon))
+        gpx_route.points.append(gpxpy.gpx.GPXRoutePoint(latitude=lat, longitude=lon))
 
     path_feature = {
         "type": "Feature",

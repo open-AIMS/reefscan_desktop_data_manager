@@ -55,9 +55,6 @@ class SubSampler(QObject):
         progress_queue.reset()
         progress_queue.set_progress_label(f"initializing {image_dir}")
 
-        if os.path.exists (sample_dir):
-            shutil.rmtree(sample_dir)
-
         os.makedirs(sample_dir, exist_ok=True)
         progress_queue.set_progress_value()
 

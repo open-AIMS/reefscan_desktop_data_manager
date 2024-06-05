@@ -86,7 +86,8 @@ class MapComponent(QObject):
             try:
                 _track = track(folder, False)
                 tracks.extend(_track)
-            except:
+            except Exception as e:
+                logger.error("Unable to make map", e)
                 _track = None
 
 

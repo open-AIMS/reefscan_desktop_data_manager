@@ -69,6 +69,7 @@ class Config(object):
             self.cognito_token_key_url = f'https://cognito-idp.{self.aws_region_id}.amazonaws.com/{self.cognito_user_pool_id}/.well-known/jwks.json'
             self.api_url = 'https://dev.reefscan.api.aims.gov.au/reefscan/api'
             self.projects_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/user/access?min-level=WRITE"
+            self.projects_details_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/organisation/list"
             self.sites_json_download_url = "https://api.dev.reefcloud.ai/reefcloud/api/locations"
             self.project_details_url = "https://api.dev.reefcloud.ai/reefcloud/api/organisation/list"
 
@@ -80,6 +81,7 @@ class Config(object):
             self.cognito_token_key_url = f'https://cognito-idp.{self.aws_region_id}.amazonaws.com/{self.cognito_user_pool_id}/.well-known/jwks.json'
             self.api_url = 'https://reefscan.api.aims.gov.au/reefscan/api'
             self.projects_json_download_url = "https://api.reefcloud.ai/reefcloud/api/user/access?min-level=WRITE"
+            self.projects_details_json_download_url = "https://api.reefcloud.ai/reefcloud/api/organisation/list"
             self.sites_json_download_url = "https://api.reefcloud.ai/reefcloud/api/locations"
             self.project_details_url = "https://api.reefcloud.ai/reefcloud/api/organisation/list"
 
