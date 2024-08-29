@@ -44,8 +44,8 @@ class ReefcloudSubSampleOperation(AbstractOperation):
         csv_files = []
 
         try:
-            if os.path.exists(self.sample_dir):
-                shutil.rmtree(self.sample_dir)
+            # if os.path.exists(self.sample_dir):
+            #     shutil.rmtree(self.sample_dir)
             for camera_id, image_dir in self.image_dirs.items():
                 photo_infos = self.sub_sampler.sub_sample_dir(image_dir=image_dir, sample_dir=self.sample_dir, progress_queue=self.progress_queue)
                 self.selected_photo_infos = self.selected_photo_infos + photo_infos

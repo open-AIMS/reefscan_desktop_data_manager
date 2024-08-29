@@ -5,6 +5,8 @@ import logging
 from reefscanner.basic_model.model_utils import print_time, replace_last
 
 from aims.operations.add_reefcloud_site_operation import create_reefcloud_site_with_progress
+from aims.operations.geotag_operation import geocode_folder, geocode_folders
+from aims.tools.geocode import Geocode
 
 logger = logging.getLogger("DataComponent")
 
@@ -25,7 +27,7 @@ from PyQt5.QtCore import QItemSelection, QSize, Qt, QObject
 from PyQt5.QtGui import QPixmap, QStandardItemModel, QStandardItem
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QWidget, QTableView, QLabel, QListView, \
-    QListWidget, QMessageBox, QTabWidget, QCheckBox, QHeaderView
+    QListWidget, QMessageBox, QTabWidget, QCheckBox, QHeaderView, QFileDialog, QTextEdit
 from pytz import utc
 from reefscanner.basic_model.exif_utils import get_exif_data
 from reefscanner.basic_model.model_helper import rename_folders
@@ -206,6 +208,8 @@ class DataComponent(QObject):
                                                      self.data_widget.marks_tab)
         self.enhance_widget = self.load_sequence_frame(f'{state.meipass}resources/enhance.ui',
                                                        self.data_widget.enhance_tab)
+        self.geotag_widget = self.load_sequence_frame(f'{state.meipass}resources/geotag.ui',
+                                                       self.data_widget.geotag_tab)
         self.cots_display_widget = self.load_sequence_frame(f'{state.meipass}resources/cots_display.ui',
                                                             self.data_widget.cots_display_tab)
 
@@ -257,6 +261,9 @@ class DataComponent(QObject):
 
         self.enhance_widget.btnEnhanceOpenFolder.clicked.connect(self.enhance_open_folder)
         self.enhance_widget.btnEnhanceFolder.clicked.connect(self.enhance_photos)
+
+        self.geotag_widget.geotagButton.clicked.connect(self.geotag)
+        self.geotag_widget.openGpxButton.clicked.connect(self.open_gpx)
 
         self.enhance_widget.textEditCPULoad.setPlainText("0.8")
         self.enhance_widget.checkBoxDisableDenoising.setChecked(False)
@@ -588,9 +595,10 @@ class DataComponent(QObject):
 
         self.metadata_widget.cb_reefcloud_project.addItem("", "")
         self.project_lookup = {"": ""}
-        for project in state.reefcloud_projects:
-            self.metadata_widget.cb_reefcloud_project.addItem(project["project_name"], project["cognito_group"])
-            self.project_lookup[project["cognito_group"]] = project["project_name"]
+        if state.reefcloud_projects is not None:
+            for project in state.reefcloud_projects:
+                self.metadata_widget.cb_reefcloud_project.addItem(project["project_name"], project["cognito_group"])
+                self.project_lookup[project["cognito_group"]] = project["project_name"]
 
         self.metadata_widget.cb_reefcloud_site.addItem("", userData="")
 
@@ -708,6 +716,27 @@ class DataComponent(QObject):
 
     def enhance_open_folder(self):
         utils.open_file(self.enhanced_folder(self.survey().folder))
+
+    # geotag all of the photos for the currently selected survey
+    # if a folder is selected do it for all descendant surveys of that folder
+    def geotag(self):
+        survey_infos = self.get_all_descendants(self.selected_index)
+        gpx_filename_text: QTextEdit = self.geotag_widget.textGpxFile
+        gpx_file = gpx_filename_text.toPlainText()
+        time_difference_str = self.geotag_widget.timeDifferenceEdit.text()
+        if time_difference_str is None or time_difference_str == "":
+            time_diffference = 0
+        else:
+            time_diffference = int (time_difference_str)
+
+        print (f"time_diffference: {time_diffference}")
+        geocode_folders(survey_infos, gpx_file, self.aims_status_dialog, time_diffference, "Z")
+
+    # open gpx file for geotagging
+    def open_gpx(self):
+        gpx_file_name = QFileDialog.getOpenFileName(self.geotag_widget, 'GPX file?')[0]
+        gpx_filename_text:QTextEdit = self.geotag_widget.textGpxFile
+        gpx_filename_text.setText(gpx_file_name)
 
     # enhance all of the photos for the currently selected survey
     # if a folder is selected do it for all descendant surveys of that folder
@@ -1087,16 +1116,19 @@ class DataComponent(QObject):
                 self.enhance_widget.btnEnhanceFolder.setText(f"Enhance all photos")
                 self.inference_widget.btnInferenceFolder.setText(f"Inference all photos")
                 self.eod_cots_widget.detectCotsButton.setText(f"Detect COTS in all photos")
+                self.geotag_widget.geotagButton.setText(f"GeoTag all photos")
             else:
                 self.enhance_widget.btnEnhanceFolder.setText(f"Enhance all photos for {folder_name}")
                 self.inference_widget.btnInferenceFolder.setText(f"Inference all photos for {folder_name}")
                 self.eod_cots_widget.detectCotsButton.setText(f"Detect COTS in all photos for {folder_name}")
+                self.geotag_widget.geotagButton.setText(f"GeoTag all photos for {folder_name}")
         else:
             self.enhance_widget.btnEnhanceOpenFolder.setVisible(os.path.exists(self.enhanced_folder(self.survey().folder)))
             self.inference_widget.btnInferenceOpenFolder.setVisible(True)
             self.enhance_widget.btnEnhanceFolder.setText(f"Enhance Photos for sequence {folder_name}")
             self.inference_widget.btnInferenceFolder.setText(f"Inference photos for {folder_name}")
             self.eod_cots_widget.detectCotsButton.setText(f"Detect COTS in photos for {folder_name}")
+            self.geotag_widget.geotagButton.setText(f"GeoTag all photos for {folder_name}")
 
     def find_selected_tree_index(self, item_selection):
         for index in item_selection.indexes():

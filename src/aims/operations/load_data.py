@@ -6,6 +6,7 @@ from reefscanner.basic_model.model_utils import print_time
 from reefscanner.basic_model.survey import Survey
 
 from aims.operations.aims_status_dialog import AimsStatusDialog
+from aims.operations.geotag_operation import GeotagOperation
 from aims2.operations2.load_archive_data_operation import LoadArchiveDataOperation
 from aims2.operations2.load_camera_data_operation import LoadCameraDataOperation
 from aims2.operations2.load_data_operation import LoadDataOperation
