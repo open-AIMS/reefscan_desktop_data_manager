@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>582</width>
-    <height>657</height>
+    <width>950</width>
+    <height>688</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -316,7 +316,7 @@ QGroupBox::title{
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>11</number>
      </property>
      <widget class="QWidget" name="empty_tab">
       <attribute name="title">
@@ -434,6 +434,12 @@ QGroupBox::title{
        <string>Chart</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_12"/>
+     </widget>
+     <widget class="QWidget" name="geotag_tab">
+      <attribute name="title">
+       <string>GeoTag</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_2"/>
      </widget>
     </widget>
    </item>
