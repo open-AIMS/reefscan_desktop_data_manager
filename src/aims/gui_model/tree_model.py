@@ -49,26 +49,30 @@ class TreeModelMaker(QMainWindow):
         for first_level_branch_name in first_level_branches.keys():
             first_level_branch = CheckTreeitem(first_level_branch_name, checkable, grey)
             branch.appendRow(first_level_branch)
+            date_level_branches = first_level_branches[first_level_branch_name]["dates"]
+            for date_name in date_level_branches:
+                date_level_branch = CheckTreeitem(date_name, checkable, grey)
+                first_level_branch.appendRow(date_level_branch)
 
-            surveys = first_level_branches[first_level_branch_name]
-            surveys = sorted(surveys, key=lambda s: s.best_name())
-            for survey in surveys:
-                survey_id = survey.id
-                if survey_id != "archive":
-                    name = best_name(survey, survey_id)
-                    site = survey.site
-                    if site is None:
-                        site = ""
+                surveys = date_level_branches[date_name]
+                surveys = sorted(surveys, key=lambda s: s.best_name())
+                for survey in surveys:
+                    survey_id = survey.id
+                    if survey_id != "archive":
+                        name = best_name(survey, survey_id)
+                        site = survey.site
+                        if site is None:
+                            site = ""
 
-                    __photos__ = self.tr("photos")
-                    if survey.photos is not None:
-                        photos = f"({survey.photos} {__photos__})"
-                    else:
-                        photos = ""
+                        __photos__ = self.tr("photos")
+                        if survey.photos is not None:
+                            photos = f"({survey.photos} {__photos__})"
+                        else:
+                            photos = ""
 
-                    survey_branch = CheckTreeitem(f"{name}-{site}{photos}", checkable, grey)
-                    survey_branch.setData({"survey_id": survey_id, "branch": top_level_name}, Qt.UserRole)
-                    first_level_branch.appendRow(survey_branch)
+                        survey_branch = CheckTreeitem(f"{name}-{site}{photos}", checkable, grey)
+                        survey_branch.setData({"survey_id": survey_id, "branch": top_level_name}, Qt.UserRole)
+                        date_level_branch.appendRow(survey_branch)
         return branch
 
 

@@ -15,6 +15,8 @@ from aims.samba import aims_shutil
 from joblib import Parallel, delayed
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
+from aims.utils import survey_id_parts
+
 logger = logging.getLogger("")
 
 
@@ -67,6 +69,9 @@ class SyncFromHardware(QObject):
             try:
                 friendly_name = state.model.camera_surveys[survey_id].friendly_name
             except:
+                friendly_name = survey_id
+
+            if friendly_name is None:
                 friendly_name = survey_id
 
             if not self.is_cancelled():
@@ -177,7 +182,7 @@ class SyncFromHardware(QObject):
                 if not already_archived:
                     archive_dir = os.path.dirname(a_dst)
                     if not self.camera_os.exists(archive_dir):
-                        self.camera_os.mkdir(archive_dir)
+                        self.camera_os.makedirs(archive_dir, exist_ok = True)
 
                     if self.camera_os.exists(a_dst):
                         self.camera_os.remove(src)
@@ -197,7 +202,9 @@ class SyncFromHardware(QObject):
         self.progress_queue.set_progress_label(f"{self.folder_message}\n{message}")
 
     def after_2020(self, survey_id, camera_folder):
-        if survey_id > "2020":
+        parts = survey_id_parts(survey_id)
+
+        if parts["date"] > "2020":
             return survey_id
 
         first_good_photo = self.find_first_photo_after_2020(camera_folder)

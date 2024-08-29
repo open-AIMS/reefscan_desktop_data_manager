@@ -170,8 +170,9 @@ def update_reefcloud_sites(oauth2_session):
     sites = {}
     site_count = 0
     for project in state.reefcloud_projects:
-        sites[project] = download_reefcloud_sites_for_project(oauth2_session, project)
-        site_count += len(sites[project])
+        cognito_group = project["cognito_group"]
+        sites[cognito_group] = download_reefcloud_sites_for_project(oauth2_session, cognito_group)
+        site_count += len(sites[cognito_group])
 
     filename = state.config_folder + "/" + state.reefcloud_sites_filename
     with open(filename, "w") as write_file:
@@ -186,23 +187,40 @@ def download_reefcloud_projects(oauth2_session):
     headers = {
         'Authorization': 'Bearer {}'.format(oauth2_session.id_token)
     }
+    # the projects service tells us which projects our user can access but only returns he cognitoGroup
+    # we have to load the details service to get the project name
     url = state.config.projects_json_download_url
     r = requests.get(url, headers=headers)
+    url_details = state.config.projects_details_json_download_url
+    r_details = requests.get(url_details, headers=headers)
     logger.info("response code " + str(r.status_code))
     if r.status_code < 400:
         projects_json = json.loads(r.text)
+        projects_details = parse_project_details(r_details)
         project_count = 0
+        projects_array = []
         for k, v in projects_json.items():
             project_count += len(v)
+            for cognito_group in v:
+                if (cognito_group in projects_details):
+                    projects_array.append({"cognito_group": cognito_group, "project_name": projects_details[cognito_group]["name"]})
         filename = state.config_folder + "/" + state.reefcloud_projects_filename
         with open(filename, 'w') as f:
-            f.write(r.text)
+            f.write(json.dumps(projects_array))
             f.close()
 
         return f"{project_count} projects downloaded"
     else:
         raise Exception("Error downloading projects " + r.text)
 
+
+def parse_project_details(r_details):
+    projects_array = json.loads(r_details.text)
+    projects_dict = {}
+    for project in projects_array:
+        projects_dict[project["cognitoGroup"]] = project
+
+    return projects_dict
 
 def download_reefcloud_sites_for_project(oauth2_session, reefcloud_project):
     logger.info("entering download_reefcloud_sites_for_project " + reefcloud_project)

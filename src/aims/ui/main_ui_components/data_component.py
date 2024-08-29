@@ -5,6 +5,8 @@ import logging
 from reefscanner.basic_model.model_utils import print_time, replace_last
 
 from aims.operations.add_reefcloud_site_operation import create_reefcloud_site_with_progress
+from aims.operations.geotag_operation import geocode_folder, geocode_folders
+from aims.tools.geocode import Geocode
 
 logger = logging.getLogger("DataComponent")
 
@@ -25,7 +27,7 @@ from PyQt5.QtCore import QItemSelection, QSize, Qt, QObject
 from PyQt5.QtGui import QPixmap, QStandardItemModel, QStandardItem
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QWidget, QTableView, QLabel, QListView, \
-    QListWidget, QMessageBox, QTabWidget, QCheckBox, QHeaderView
+    QListWidget, QMessageBox, QTabWidget, QCheckBox, QHeaderView, QFileDialog, QTextEdit
 from pytz import utc
 from reefscanner.basic_model.exif_utils import get_exif_data
 from reefscanner.basic_model.model_helper import rename_folders
@@ -113,7 +115,7 @@ class DataComponent(QObject):
         self.aims_status_dialog = None
 
         self.time_zone = None
-        self.site_lookup = {}
+        self.site_lookup = {"": ""}
         self.hint_function = hint_function
         # for long running processes we can disable the workflow buttons
         # and enable them when the process is complete
@@ -206,6 +208,8 @@ class DataComponent(QObject):
                                                      self.data_widget.marks_tab)
         self.enhance_widget = self.load_sequence_frame(f'{state.meipass}resources/enhance.ui',
                                                        self.data_widget.enhance_tab)
+        self.geotag_widget = self.load_sequence_frame(f'{state.meipass}resources/geotag.ui',
+                                                       self.data_widget.geotag_tab)
         self.cots_display_widget = self.load_sequence_frame(f'{state.meipass}resources/cots_display.ui',
                                                             self.data_widget.cots_display_tab)
 
@@ -257,6 +261,9 @@ class DataComponent(QObject):
 
         self.enhance_widget.btnEnhanceOpenFolder.clicked.connect(self.enhance_open_folder)
         self.enhance_widget.btnEnhanceFolder.clicked.connect(self.enhance_photos)
+
+        self.geotag_widget.geotagButton.clicked.connect(self.geotag)
+        self.geotag_widget.openGpxButton.clicked.connect(self.open_gpx)
 
         self.enhance_widget.textEditCPULoad.setPlainText("0.8")
         self.enhance_widget.checkBoxDisableDenoising.setChecked(False)
@@ -348,7 +355,7 @@ class DataComponent(QObject):
             self.data_widget.collapseTreeButton.setText("<<")
 
     def add_new_reefcloud_site(self):
-        project = self.metadata_widget.cb_reefcloud_project.currentText()
+        project = self.metadata_widget.cb_reefcloud_project.currentData()
         site = self.metadata_widget.ed_site.text()
 
         all_sites = [self.metadata_widget.cb_reefcloud_site.itemText(i) for i in
@@ -586,11 +593,12 @@ class DataComponent(QObject):
         self.metadata_widget.cb_vis.addItem("25-30")
         self.metadata_widget.cb_vis.addItem(">30")
 
-        self.metadata_widget.cb_reefcloud_project.addItem("")
-        self.project_lookups=[]
-        for project in state.reefcloud_projects:
-            self.metadata_widget.cb_reefcloud_project.addItem(project)
-            self.project_lookups.append(project)
+        self.metadata_widget.cb_reefcloud_project.addItem("", "")
+        self.project_lookup = {"": ""}
+        if state.reefcloud_projects is not None:
+            for project in state.reefcloud_projects:
+                self.metadata_widget.cb_reefcloud_project.addItem(project["project_name"], project["cognito_group"])
+                self.project_lookup[project["cognito_group"]] = project["project_name"]
 
         self.metadata_widget.cb_reefcloud_site.addItem("", userData="")
 
@@ -601,12 +609,12 @@ class DataComponent(QObject):
 
     def update_sites_combo(self):
         # figure out what project was selected.
-        project:str = self.metadata_widget.cb_reefcloud_project.currentText()
+        project:str = self.metadata_widget.cb_reefcloud_project.currentData()
         if project == "" or project.endswith("Permission Denied"):
             # No project was selected, site not meaningful.
             # Valid sites are set on per project basis.
             self.metadata_widget.cb_reefcloud_site.clear()
-            self.metadata_widget.cb_reefcloud_site.addItem("")
+            self.metadata_widget.cb_reefcloud_site.addItem("", "")
             self.metadata_widget.cb_reefcloud_site.setCurrentText("")
             self.metadata_widget.cb_reefcloud_site.setEnabled(False)
         else:
@@ -675,12 +683,15 @@ class DataComponent(QObject):
     def marks_table_clicked(self, selected, deselected):
         index = selected
         if self.marks_model is not None:
-            self.mark_filename = self.marks_model.photo_file(index.row())
-            self.marks_widget.lblFileName.setText(self.marks_model.photo_file_name(index.row()))
-            label: QLabel = self.marks_widget.lblPhoto
-            pixmap = QPixmap(self.mark_filename).scaled(label.size().width(), label.size().height(), Qt.KeepAspectRatio,
-                                                        Qt.SmoothTransformation)
-            label.setPixmap(pixmap)
+            try:
+                self.mark_filename = self.marks_model.photo_file(index.row())
+                self.marks_widget.lblFileName.setText(self.marks_model.photo_file_name(index.row()))
+                label: QLabel = self.marks_widget.lblPhoto
+                pixmap = QPixmap(self.mark_filename).scaled(label.size().width(), label.size().height(), Qt.KeepAspectRatio,
+                                                            Qt.SmoothTransformation)
+                label.setPixmap(pixmap)
+            except:
+                pass
 
     def open_folder(self):
         utils.open_file(self.survey().folder)
@@ -705,6 +716,27 @@ class DataComponent(QObject):
 
     def enhance_open_folder(self):
         utils.open_file(self.enhanced_folder(self.survey().folder))
+
+    # geotag all of the photos for the currently selected survey
+    # if a folder is selected do it for all descendant surveys of that folder
+    def geotag(self):
+        survey_infos = self.get_all_descendants(self.selected_index)
+        gpx_filename_text: QTextEdit = self.geotag_widget.textGpxFile
+        gpx_file = gpx_filename_text.toPlainText()
+        time_difference_str = self.geotag_widget.timeDifferenceEdit.text()
+        if time_difference_str is None or time_difference_str == "":
+            time_diffference = 0
+        else:
+            time_diffference = int (time_difference_str)
+
+        print (f"time_diffference: {time_diffference}")
+        geocode_folders(survey_infos, gpx_file, self.aims_status_dialog, time_diffference, "Z")
+
+    # open gpx file for geotagging
+    def open_gpx(self):
+        gpx_file_name = QFileDialog.getOpenFileName(self.geotag_widget, 'GPX file?')[0]
+        gpx_filename_text:QTextEdit = self.geotag_widget.textGpxFile
+        gpx_filename_text.setText(gpx_file_name)
 
     # enhance all of the photos for the currently selected survey
     # if a folder is selected do it for all descendant surveys of that folder
@@ -739,7 +771,7 @@ class DataComponent(QObject):
 
     # enhance all of the photos for one survey
     # returns true if successful false otherwise
-    def enhance_photos_for_survey(self, survey, disable_denoising=True,
+    def enhance_photos_for_survey(self, survey: Survey, disable_denoising=True,
                                   disable_dehazing=True, replace=False) -> bool:
         logger.info(f"start enhance_photos_for_survey {process_time()}")
 
@@ -747,11 +779,11 @@ class DataComponent(QObject):
         if replace or utils.is_empty_folder(subsampled_image_folder):
             from aims.operations.load_data import reefcloud_subsample
 
-            success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
+            success, selected_photo_infos, message = reefcloud_subsample(survey.camera_dirs, subsampled_image_folder,
                                                                 self.aims_status_dialog)
             if not success:
                 self.aims_status_dialog.close()
-                return False
+                raise Exception(message)
 
         output_suffix = "_enh"
         output_folder = self.enhanced_folder(survey.folder)
@@ -771,34 +803,34 @@ class DataComponent(QObject):
 
         QApplication.processEvents()
 
-        # from aims.operations.enhance_photo_operation import EnhancePhotoOperation
-        #
-        # enhance_operation = EnhancePhotoOperation(target=subsampled_image_folder,
-        #                                           load=float(cpu_load_string),
-        #                                           suffix=output_suffix,
-        #                                           output_folder=output_folder,
-        #                                           disable_denoising=disable_denoising,
-        #                                           disable_dehazing=disable_dehazing)
-        #
-        # enhance_operation.update_interval = 1
-        # self.aims_status_dialog.set_operation_connections(enhance_operation)
-        # enhance_operation.set_msg_function(lambda msg: self.enhance_widget.textBrowser.append(msg))
-        # # # operation.after_run.connect(self.after_sync)
-        # logger.info("done connections")
-        # result = self.aims_status_dialog.threadPool.apply_async(enhance_operation.run)
-        # logger.info("thread started")
-        # while not result.ready():
-        #     QApplication.processEvents()
-        # logger.info("thread finished")
+        from aims.operations.enhance_photo_operation import EnhancePhotoOperation
+
+        enhance_operation = EnhancePhotoOperation(target=subsampled_image_folder,
+                                                  load=float(cpu_load_string),
+                                                  suffix=output_suffix,
+                                                  output_folder=output_folder,
+                                                  disable_denoising=disable_denoising,
+                                                  disable_dehazing=disable_dehazing)
+
+        enhance_operation.update_interval = 1
+        self.aims_status_dialog.set_operation_connections(enhance_operation)
+        enhance_operation.set_msg_function(lambda msg: self.enhance_widget.textBrowser.append(msg))
+        # # operation.after_run.connect(self.after_sync)
+        logger.info("done connections")
+        result = self.aims_status_dialog.threadPool.apply_async(enhance_operation.run)
+        logger.info("thread started")
+        while not result.ready():
+            QApplication.processEvents()
+        logger.info("thread finished")
         self.aims_status_dialog.close()
 
-        # if enhance_operation.batch_monitor.finished:
-        #     self.enhance_widget.textBrowser.append("Photoenhancer finished")
-        # else:
-        #     if enhance_operation.batch_monitor.cancelled:
-        #         self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
-        #
-        # return not enhance_operation.batch_monitor.cancelled
+        if enhance_operation.batch_monitor.finished:
+            self.enhance_widget.textBrowser.append("Photoenhancer finished")
+        else:
+            if enhance_operation.batch_monitor.cancelled:
+                self.enhance_widget.textBrowser.append("Photoenhancer was cancelled")
+
+        return not enhance_operation.batch_monitor.cancelled
         return True
 
     def enable_everything(self):
@@ -868,11 +900,11 @@ class DataComponent(QObject):
 
         if replace or utils.is_empty_folder(subsampled_image_folder):
             from aims.operations.load_data import reefcloud_subsample
-            success, selected_photo_infos = reefcloud_subsample(survey.folder, subsampled_image_folder,
+            success, selected_photo_infos, message = reefcloud_subsample(survey.camera_dirs, subsampled_image_folder,
                                                             self.aims_status_dialog)
             if not success:
                 self.aims_status_dialog.close()
-                raise Exception (f"Error subsampling photos for survey {survey.best_name()}")
+                raise Exception (f"Error subsampling photos for survey {survey.best_name()}, {message}")
 
         if utils.is_empty_folder(subsampled_image_folder):
             raise Exception(f"No photos to inference in {subsampled_image_folder}")
@@ -1084,16 +1116,19 @@ class DataComponent(QObject):
                 self.enhance_widget.btnEnhanceFolder.setText(f"Enhance all photos")
                 self.inference_widget.btnInferenceFolder.setText(f"Inference all photos")
                 self.eod_cots_widget.detectCotsButton.setText(f"Detect COTS in all photos")
+                self.geotag_widget.geotagButton.setText(f"GeoTag all photos")
             else:
                 self.enhance_widget.btnEnhanceFolder.setText(f"Enhance all photos for {folder_name}")
                 self.inference_widget.btnInferenceFolder.setText(f"Inference all photos for {folder_name}")
                 self.eod_cots_widget.detectCotsButton.setText(f"Detect COTS in all photos for {folder_name}")
+                self.geotag_widget.geotagButton.setText(f"GeoTag all photos for {folder_name}")
         else:
             self.enhance_widget.btnEnhanceOpenFolder.setVisible(os.path.exists(self.enhanced_folder(self.survey().folder)))
             self.inference_widget.btnInferenceOpenFolder.setVisible(True)
             self.enhance_widget.btnEnhanceFolder.setText(f"Enhance Photos for sequence {folder_name}")
             self.inference_widget.btnInferenceFolder.setText(f"Inference photos for {folder_name}")
             self.eod_cots_widget.detectCotsButton.setText(f"Detect COTS in photos for {folder_name}")
+            self.geotag_widget.geotagButton.setText(f"GeoTag all photos for {folder_name}")
 
     def find_selected_tree_index(self, item_selection):
         for index in item_selection.indexes():
@@ -1166,7 +1201,7 @@ class DataComponent(QObject):
                self.xstr(self.survey().tide) != self.metadata_widget.cb_tide.currentData() or \
                self.xstr(self.survey().friendly_name) != self.metadata_widget.ed_name.text() or \
                ( not self.metadata_widget.cb_reefcloud_project.currentText().endswith("Permission Denied") and
-                 (self.xstr(self.survey().reefcloud_project) != self.metadata_widget.cb_reefcloud_project.currentText() or
+                 (self.xstr(self.survey().reefcloud_project) != self.metadata_widget.cb_reefcloud_project.currentData() or
                   self.survey().reefcloud_site != self.metadata_widget.cb_reefcloud_site.currentData())
                  )
 
@@ -1188,7 +1223,7 @@ class DataComponent(QObject):
             self.survey().tide = self.metadata_widget.cb_tide.currentData()
             self.survey().friendly_name = self.metadata_widget.ed_name.text()
             if not self.metadata_widget.cb_reefcloud_project.currentText().endswith("Permission Denied"):
-                self.survey().reefcloud_project = self.metadata_widget.cb_reefcloud_project.currentText()
+                self.survey().reefcloud_project = self.metadata_widget.cb_reefcloud_project.currentData()
                 self.survey().reefcloud_site = self.metadata_widget.cb_reefcloud_site.currentData()
 
             if not state.read_only:
@@ -1211,13 +1246,13 @@ class DataComponent(QObject):
             self.metadata_widget.cb_vis.setCurrentText(self.xstr(self.survey().visibility))
             self.metadata_widget.cb_tide.setCurrentText(self.xstr(self.survey().tide))
 
-            if (self.metadata_widget.cb_reefcloud_project.findText(self.survey().reefcloud_project) == -1):
+            if (self.metadata_widget.cb_reefcloud_project.findData(self.survey().reefcloud_project) == -1):
                 project_name = f"{self.survey().reefcloud_project} - Permission Denied"
-                if  (self.metadata_widget.cb_reefcloud_project.findText(project_name) == -1):
-                    self.metadata_widget.cb_reefcloud_project.addItem(project_name)
+                if  (self.metadata_widget.cb_reefcloud_project.findData(project_name) == -1):
+                    self.metadata_widget.cb_reefcloud_project.addItem(project_name, project_name)
                 self.metadata_widget.cb_reefcloud_project.setCurrentText(project_name)
             else:
-                self.metadata_widget.cb_reefcloud_project.setCurrentText(self.survey().reefcloud_project)
+                self.metadata_widget.cb_reefcloud_project.setCurrentText(self.project_lookup[self.survey().reefcloud_project])
             self.cb_reefcloud_project_changed(None)
 
             site_id = self.survey().reefcloud_site
@@ -1289,7 +1324,7 @@ class DataComponent(QObject):
         list_thumbnails.setIconSize(QSize(200, 200))
         list_thumbnails.setResizeMode(QListWidget.Adjust)
         if self.survey_id is not None:
-            folder = self.survey().folder
+            folder = self.survey().camera_dirs[1]
             samba = self.survey().samba
             file_ops = get_file_ops(samba)
             photos = [name for name in file_ops.listdir(folder) if

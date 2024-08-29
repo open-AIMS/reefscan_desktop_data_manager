@@ -94,17 +94,10 @@ class State:
     def read_reefcloud_projects(self):
         projects = []
         try:
-            reefcloud_projects_json = read_json_file(self.config_folder + "/" + self.reefcloud_projects_filename)
+            return read_json_file(self.config_folder + "/" + self.reefcloud_projects_filename)
         except Exception as e:
-            reefcloud_projects_json = {}
-        if 'WRITE' in reefcloud_projects_json and 'ADMIN' in reefcloud_projects_json:
-            return reefcloud_projects_json['WRITE'] + reefcloud_projects_json['ADMIN']
-        elif 'WRITE' in reefcloud_projects_json:
-            return reefcloud_projects_json['WRITE']
-        elif 'ADMIN' in reefcloud_projects_json:
-            return reefcloud_projects_json['ADMIN']
-        else:
             return []
+
 
     def read_reefcloud_sites(self):
         sites = {}
@@ -119,10 +112,10 @@ class State:
         return sites
 
     def valid_reefcloud_project(self, project_name):
-        if project_name in self.reefcloud_projects:
-            return True
-        else:
-            return False
+        for reefcloud_project in self.reefcloud_projects:
+            if reefcloud_project["cognito_group"] == project_name:
+                return True
+        return False
 
     def valid_reefcloud_site(self, site_id, project_name):
         for site in self.reefcloud_sites[project_name]:

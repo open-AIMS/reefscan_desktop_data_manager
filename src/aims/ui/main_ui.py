@@ -53,6 +53,7 @@ def remove_button_border(button):
 class MainUi(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.version = "2.0.0"
         self.current_screen = "start"
         self.app = QtWidgets.QApplication(sys.argv)
         self.workflow_collapsed = False
@@ -212,7 +213,7 @@ class MainUi(QMainWindow):
     def login_reefcloud(self):
         self.disable_all_workflow_buttons()
         if self.reefcloud_connect_component.login():
-            self.load_data_screen()
+            logger.info("connected successfully to reefcloud")
         self.enable_workflow_buttons()
 
     def load_start_screen(self):
@@ -422,9 +423,9 @@ class MainUi(QMainWindow):
 
     def show(self):
         if state.config.deep:
-            self.ui.setWindowTitle("Reefscan Deep " + self.tr("Data Manager"))
+            self.ui.setWindowTitle("Reefscan Deep " + self.tr("Data Manager ") + self.version)
         else:
-            self.ui.setWindowTitle("Reefscan Transom " + self.tr("Data Manager"))
+            self.ui.setWindowTitle("Reefscan Transom " + self.tr("Data Manager ") + self.version)
 
         if state.config.dev:
             self.ui.setWindowTitle(self.ui.windowTitle() + " - DEV")
