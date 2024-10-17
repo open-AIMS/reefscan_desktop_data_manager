@@ -7,7 +7,7 @@ shortuuid
 PyQtWebEngine
 #reefscanner @ git+https://github.com/AIMS/reefscan-data-model@v1.1.8
 reefscanner @ file:///C:/aa_git_root/techdev/reef_scanner_data_model/dist/reefscanner-2.0.0.10-py3-none-any.whl
-photoenhancer @ git+https://github.com/AIMS/photo_enhancer@v1.1.13
+photoenhancer @ git+https://github.com/AIMS/photo_enhancer@main
 #photoenhancer @ file:///C:/aa_git_root/techdev/photo_enhancer/dist/photoenhancer-1.1.12-py3-none-any.whl
 pandas
 smbprotocol
