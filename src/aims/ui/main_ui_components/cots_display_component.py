@@ -32,11 +32,7 @@ class CotsDisplayComponent(QObject):
         self.sequence_id = None
         self.cots_widget.button_next.clicked.connect(self.next)
         self.cots_widget.button_previous.clicked.connect(self.previous)
-        eod_check_box: QCheckBox = self.cots_widget.eod_check_box
-        eod_check_box.stateChanged.connect(self.create_cots_detections_table)
         self.cots_widget.highlight_scars_check_box.stateChanged.connect(self.redraw_photo)
-        confirmed_check_box: QCheckBox = self.cots_widget.confirmed_check_box
-        confirmed_check_box.stateChanged.connect(self.confirmed_check_box_state_changed)
         self.cots_widget.refreshButton.clicked.connect(self.create_cots_detections_table)
         self.cots_widget.openPhotoButton.clicked.connect(self.open_photo)
         self.cots_display_params = cots_display_params
@@ -54,8 +50,11 @@ class CotsDisplayComponent(QObject):
         by_class_combo_box.addItem(self.tr("Show COTS and Scars"), userData="both")
         by_class_combo_box.addItem(self.tr("Show COTS"), userData="COTS")
         by_class_combo_box.addItem(self.tr("Show Scars"), userData="Scars")
-        by_class_combo_box.currentIndexChanged.connect(self.create_cots_detections_table)
+        by_class_combo_box.setCurrentText(cots_display_params.by_class)
 
+        camera_combo_box: QComboBox = self.cots_widget.camera_combo_box
+        camera_combo_box.addItem(self.tr("Camera 1"), userData="cam_1")
+        camera_combo_box.addItem(self.tr("Camera 2"), userData="cam_2")
 
         table_view: QTableView = self.cots_widget.tableView
         table_view.setModel(self.item_model)
@@ -89,12 +88,6 @@ class CotsDisplayComponent(QObject):
         else:
             check_box.setCheckState(Qt.Checked)
         self.redraw_photo()
-
-    def confirmed_check_box_state_changed(self, state):
-        self.cots_display_params.only_show_confirmed = self.cots_widget.confirmed_check_box.checkState() == Qt.Checked
-
-        self.create_cots_detections_table()
-
 
     def confirmed_field_to_string(self, cots_detection: CotsDetection):
         if cots_detection.confirmed is None:
@@ -139,6 +132,10 @@ class CotsDisplayComponent(QObject):
     def create_cots_detections_table(self):
         eod_check_box: QCheckBox = self.cots_widget.eod_check_box
         self.cots_display_params.eod = eod_check_box.checkState() == Qt.Checked
+        camera = self.cots_widget.camera_combo_box.currentData(role=Qt.UserRole)
+        self.cots_display_params.camera = camera
+
+        self.cots_display_params.only_show_confirmed = self.cots_widget.confirmed_check_box.checkState() == Qt.Checked
 
         try:
             self.cots_display_params.minimum_score = float(self.cots_widget.minimumScoreTextBox.text())

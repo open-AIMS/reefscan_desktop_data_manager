@@ -4,6 +4,7 @@ import logging
 
 from reefscanner.basic_model.model_utils import print_time, replace_last
 
+from aims.operations import load_data
 from aims.operations.add_reefcloud_site_operation import create_reefcloud_site_with_progress
 from aims.operations.geotag_operation import geocode_folder, geocode_folders
 from aims.tools.geocode import Geocode
@@ -140,8 +141,9 @@ class DataComponent(QObject):
         if not self.programatic_tab_changing:
             logger.info(index)
             if index == self.get_index_by_tab_text(self.tr('Map')):
-                from aims.ui.main_ui_components.map_component import MapComponent
-                self.map_component = MapComponent(self.data_widget.map_tab, self.cots_display_params)
+                if self.map_component is None:
+                    from aims.ui.main_ui_components.map_component import MapComponent
+                    self.map_component = MapComponent(self.data_widget.map_tab, self.cots_display_params)
                 surveys = self.get_all_descendants_as_surveys(self.selected_index)
                 self.map_component.show(surveys)
             if index == self.get_index_by_tab_text(self.tr('COTS Photos')):
@@ -315,7 +317,7 @@ class DataComponent(QObject):
             return
 
         if self.cots_display_params is not None:
-            self.cots_display_params.read_data(self.survey().folder, samba)
+            self.cots_display_params.read_data(self.aims_status_dialog, f"{self.survey().folder}", samba)
 
     def detect_cots(self):
         survey_infos = self.get_all_descendants(self.selected_index)
@@ -331,9 +333,13 @@ class DataComponent(QObject):
                 self.cots_detector.callProgram(survey.folder)
                 while not self.cots_detector.batch_result.finished:
                     QApplication.processEvents()
-                self.cots_display_params.cots_detection_list().read_eod_files(
-                        f"{survey.folder}", samba=False, use_cache=False)
 
+                load_data.read_eod_detections(self.aims_status_dialog, f"{survey.folder}/cam_1",
+                                              self.cots_display_params.realtime_cots_detection_list["cam_1"],
+                                              samba=False, use_cache=False)
+                load_data.read_eod_detections(self.aims_status_dialog, f"{survey.folder}/cam_2",
+                                          self.cots_display_params.realtime_cots_detection_list["cam_2"],
+                                          samba=False, use_cache=False)
             if self.cots_detector.batch_result.finished:
                 self.enable_everything()
                 return
@@ -709,7 +715,7 @@ class DataComponent(QObject):
                 # logger.info(command)
                 subprocess.call(command)
             except:
-                utils.open_file(self.mark_filename, "open")
+                utils.open_file(self.mark_filename)
 
     def enhanced_folder(self, survey):
         return replace_last(survey, "/reefscan/", "/reefscan_enhanced/")

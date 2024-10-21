@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>568</width>
+    <width>749</width>
     <height>656</height>
    </rect>
   </property>
@@ -74,6 +74,9 @@
        <widget class="QComboBox" name="filter_by_class_combo_box"/>
       </item>
       <item>
+       <widget class="QComboBox" name="camera_combo_box"/>
+      </item>
+      <item>
        <widget class="QLabel" name="label">
         <property name="text">
          <string>Minimum Score</string>
@@ -92,7 +95,7 @@
          </size>
         </property>
         <property name="text">
-         <string>0.5</string>
+         <string/>
         </property>
        </widget>
       </item>

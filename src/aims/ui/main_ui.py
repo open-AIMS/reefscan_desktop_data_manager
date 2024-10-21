@@ -55,7 +55,6 @@ class MainUi(QMainWindow):
         super().__init__()
         self.version = "2.0.0"
         self.current_screen = "start"
-        self.app = QtWidgets.QApplication(sys.argv)
         self.workflow_collapsed = False
 
         if state.config.vietnemese:

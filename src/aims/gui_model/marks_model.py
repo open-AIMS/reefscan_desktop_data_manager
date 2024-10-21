@@ -1,4 +1,5 @@
 import logging
+from os import path
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QModelIndex, QVariant
@@ -19,10 +20,13 @@ class MarksModel(QtCore.QAbstractTableModel):
             print(e)
 
     def photo_file(self, r):
-        return self.survey_folder + "/" + self.data_frame["file"][r]
+        return self.survey_folder + "/" + self.photo_file_name(r)
 
     def photo_file_name(self, r):
-        return self.data_frame["file"][r]
+        full_file_name = self.data_frame["file"][r]
+        (dir, filename) = path.split(full_file_name)
+        (dir, camera_dir) = path.split(dir)
+        return f"{camera_dir}/{filename}"
 
     def data(self, index: QModelIndex, role: int) -> any:
         row = index.row()

@@ -56,6 +56,9 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="5">
+       <widget class="QComboBox" name="camera_combo_box"/>
+      </item>
      </layout>
     </widget>
    </item>
@@ -246,7 +249,7 @@
          </size>
         </property>
         <property name="text">
-         <string>0.5</string>
+         <string/>
         </property>
        </widget>
       </item>

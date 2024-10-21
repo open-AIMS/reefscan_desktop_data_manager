@@ -7,6 +7,26 @@ from time import process_time
 from reefscanner.basic_model.json_utils import read_json_file
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
+# sometimes (in the csv file) the photo filenames appear without the device and camera information.
+# Just date time and sequence number
+# This function will convert the long name to the short name
+def short_file_name(photo_file_name: str):
+    start_index = 0
+    parts = []
+    while True:
+        underscore = photo_file_name.find("_", start_index)
+        if underscore == -1:
+            parts.append(photo_file_name[start_index:])
+            break
+        parts.append(photo_file_name[start_index:underscore])
+        start_index = underscore + 1
+
+    no_parts = len(parts)
+    if no_parts <5:
+        return photo_file_name
+    else:
+        return f"{parts[no_parts - 4]}_{parts[no_parts - 3]}_{parts[no_parts - 2]}_{parts[no_parts-1]}"
+
 
 def survey_id_parts(survey_id: str):
     start_index = 0
@@ -105,3 +125,4 @@ def is_empty_folder(path):
 
 if __name__ == "__main__":
     print(survey_id_parts("REEFSCAN_09_20240507_051927_Seq01"))
+    print(short_file_name("REEFSCAN_DEEP_02_cam1_20231121_211328_738_0001.jpg"))

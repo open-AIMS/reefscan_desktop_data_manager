@@ -29,11 +29,6 @@ class MapComponent(QObject):
         clearLayout(parent_widget.layout())
         parent_widget.layout().addWidget(self.map_widget)
 
-
-        eod_check_box: QCheckBox = self.map_widget.eod_check_box
-        eod_check_box.stateChanged.connect(self.draw_map)
-        confirmed_check_box: QCheckBox = self.map_widget.confirmed_check_box
-        confirmed_check_box.stateChanged.connect(self.draw_map)
         self.map_widget.refreshButton.clicked.connect(self.draw_map)
         self.map_widget.export_kml_button.clicked.connect(self.export_kml)
         self.surveys = []
@@ -43,7 +38,11 @@ class MapComponent(QObject):
         by_class_combo_box.addItem(self.tr("Show COTS and Scars"), userData="both")
         by_class_combo_box.addItem(self.tr("Show COTS"), userData="COTS")
         by_class_combo_box.addItem(self.tr("Show Scars"), userData="Scars")
-        by_class_combo_box.currentIndexChanged.connect(self.draw_map)
+
+        camera_combo_box: QComboBox = self.map_widget.camera_combo_box
+        camera_combo_box.addItem(self.tr("Camera 1"), userData="cam_1")
+        camera_combo_box.addItem(self.tr("Camera 2"), userData="cam_2")
+
         if cots_display_params is not None:
             from aims.model.cots_display_params import CotsDisplayParams
             self.cots_display_params:CotsDisplayParams = cots_display_params
@@ -73,6 +72,9 @@ class MapComponent(QObject):
             eod_check_box: QCheckBox = self.map_widget.eod_check_box
             self.cots_display_params.eod = eod_check_box.checkState() == Qt.Checked
             self.cots_display_params.only_show_confirmed = self.map_widget.confirmed_check_box.checkState() == Qt.Checked
+            camera = self.map_widget.camera_combo_box.currentData(role=Qt.UserRole)
+            self.cots_display_params.camera = camera
+
             try:
                 self.cots_display_params.minimum_score = float(self.map_widget.minimumScoreTextBox.text())
             except Exception as e:
@@ -169,7 +171,7 @@ class MapComponent(QObject):
 
             if self.cots_display_params is not None and len(self.surveys) == 1:
                 # TODO use the cots_display_params configuration
-                cots_waypoints = self.cots_display_params.realtime_cots_detection_list.cots_waypoints
+                cots_waypoints = self.cots_waypoints_for_survey()
                 minimum_score = self.cots_display_params.minimum_score
             else:
                 cots_waypoints = []

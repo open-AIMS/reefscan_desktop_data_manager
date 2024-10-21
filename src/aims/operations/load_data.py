@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QApplication
 from reefscanner.basic_model.model_utils import print_time
 from reefscanner.basic_model.survey import Survey
 
+from aims.model.cots_detection_list import CotsDetectionList
 from aims.operations.aims_status_dialog import AimsStatusDialog
 from aims.operations.geotag_operation import GeotagOperation
 from aims2.operations2.load_archive_data_operation import LoadArchiveDataOperation
@@ -12,6 +13,7 @@ from aims2.operations2.load_camera_data_operation import LoadCameraDataOperation
 from aims2.operations2.load_data_operation import LoadDataOperation
 from aims.operations.reefcloud_sub_sample_operation import ReefcloudSubSampleOperation
 from aims.operations.reefcloud_upload_operation import ReefcloudUploadOperation
+from aims2.operations2.read_eod_detections_operation import ReadEodDetectionsOperation
 
 logger = logging.getLogger("load_data")
 
@@ -88,3 +90,18 @@ def load_archive_data(model, aims_status_dialog: AimsStatusDialog):
     aims_status_dialog.close()
     print (operation.message)
     return operation.success, operation.message
+
+def read_eod_detections(aims_status_dialog: AimsStatusDialog, folder, cots_detection_list: CotsDetectionList, samba=False, use_cache=True):
+
+    operation = ReadEodDetectionsOperation(folder, cots_detection_list, samba, use_cache)
+    operation.update_interval = 1
+    aims_status_dialog.set_operation_connections(operation)
+    result = aims_status_dialog.threadPool.apply_async(operation.run)
+    while not result.ready():
+        QApplication.processEvents()
+
+    logger.info("Close the status dialog")
+    aims_status_dialog.close()
+    print (operation.message)
+    if not operation.success:
+        raise Exception(operation.message)

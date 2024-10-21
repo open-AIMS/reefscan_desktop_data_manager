@@ -83,8 +83,8 @@ class SyncFromHardware(QObject):
                 else:
                     h_survey_folder = h_surveys_folder + "/" + survey_id
 
-                survey_id_after_2020 = self.after_2020(survey_id, h_survey_folder)
-                l_survey_folder = self.find_local_survey_folder(survey_id_after_2020)
+                survey_id_after_2024 = self.after_2024(survey_id, h_survey_folder)
+                l_survey_folder = self.find_local_survey_folder(survey_id_after_2024)
 
                 self.copytree_parallel(h_survey_folder, l_survey_folder)
                 try:
@@ -201,13 +201,13 @@ class SyncFromHardware(QObject):
     def set_progress_label(self, message):
         self.progress_queue.set_progress_label(f"{self.folder_message}\n{message}")
 
-    def after_2020(self, survey_id, camera_folder):
+    def after_2024(self, survey_id, camera_folder):
         parts = survey_id_parts(survey_id)
 
-        if parts["date"] > "2020":
+        if parts["date"] > "2024":
             return survey_id
 
-        first_good_photo = self.find_first_photo_after_2020(camera_folder)
+        first_good_photo = self.find_first_photo_after_2024(camera_folder)
         if first_good_photo is None:
             return survey_id
 
@@ -217,12 +217,12 @@ class SyncFromHardware(QObject):
         except:
             return survey_id
 
-    def find_first_photo_after_2020(self, folder):
+    def find_first_photo_after_2024(self, folder):
         files = self.camera_os.listdir(folder)
         files.sort()
         for file in files:
             if file.lower().endswith(".jpg") or file.lower().endswith(".jpeg"):
-                if file > "2020":
+                if file > "2024":
                     return file
         return None
 
