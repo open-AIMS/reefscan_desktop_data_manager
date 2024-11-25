@@ -17,7 +17,7 @@ import csv
 
 import pandas as pd
 
-from aims.utils import replace_last
+from reefscanner.basic_model.model_utils import replace_last
 
 logger = logging.getLogger("")
 

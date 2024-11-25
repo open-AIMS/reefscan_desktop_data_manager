@@ -85,6 +85,9 @@ if os.path.basename(sys.executable) == 'reefscan-transom-installer.exe':
         from aims.ui.main_ui_components.cots_display_component import CotsDisplayComponent
 
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+
+        logger.log("Inferencer loaded")
+
     except Exception as e:
         logger.warn("Can't load inferencer", e)
         PYINSTALLER_COMPILED = True
