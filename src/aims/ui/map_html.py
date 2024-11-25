@@ -133,17 +133,13 @@ html_str = """
 
 
 
-def map_html_str(folder, cots_waypoints, samba):
+def map_html_str(_track, cots_waypoints):
     # try:
     #     make_photo_csv(folder)
     # except Exception as e:
     #     pass
     try:
-        try:
-            _track = track(folder, samba)
-            logger.info(len(_track))
-        except:
-            _track = None
+        logger.info(len(_track))
 
         if _track is None or len(_track) < 2:
             return "<html>No Map</html"

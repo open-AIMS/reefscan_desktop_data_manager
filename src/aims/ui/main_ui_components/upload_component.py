@@ -29,23 +29,21 @@ class UploadComponent(QObject):
         self.time_zone = time_zone
         self.upload_widget.upload_button.clicked.connect(self.upload)
         self.upload_widget.max_distance_edit.setInputMask("00")
-        self.upload_widget.max_distance_edit.setText(state.config.reef_cloud_max_depth)
+        self.upload_widget.max_distance_edit.setText(state.reef_cloud_max_depth)
         self.upload_widget.max_distance_edit.editingFinished.connect(self.save_max_distance_to_config)
 
         self.load_tree()
         self.set_hint()
 
     def save_max_distance_to_config(self):
-        state.config.reef_cloud_max_depth = self.upload_widget.max_distance_edit.text()
-        state.config.save_config_file()
+        state.reef_cloud_max_depth = self.upload_widget.max_distance_edit.text()
+        state.save_config_file()
 
     def upload(self):
         logger.info("uploading")
 
         start = process_time()
 
-        state.config.camera_connected = False
-        data_loader.load_data_model(aims_status_dialog=self.aims_status_dialog)
         surveys = checked_surveys(self.surveys_tree_model)
         check_reefcloud_metadata(surveys)
 
@@ -59,7 +57,7 @@ class UploadComponent(QObject):
 
         logger.info(f"Upload Finished in {minutes} minutes")
         errorbox = QtWidgets.QMessageBox()
-        errorbox.setText(self.tr("Upload finished"))
+        errorbox.setText(self.tr("Upload finished. Your data should be available in ReefCloud within half an hour."))
         errorbox.setDetailedText(self.tr("Finished in") + f" {minutes} " + self.tr("minutes"))
 
         self.aims_status_dialog.close()
@@ -79,8 +77,6 @@ class UploadComponent(QObject):
             self.hint_function(self.tr("Press the 'Upload Selected Surveys'"))
 
     def load_tree(self):
-        state.config.camera_connected = False
-        data_loader.load_data_model(aims_status_dialog=self.aims_status_dialog)
         tree = self.upload_widget.treeView
         self.surveys_tree_model = TreeModelMaker().make_tree_model(timezone=self.time_zone, include_camera=False, checkable=True)
         tree.setModel(self.surveys_tree_model)

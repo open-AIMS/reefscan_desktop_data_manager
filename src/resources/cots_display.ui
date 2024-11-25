@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0">
+  <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0">
    <item row="1" column="1" colspan="4">
     <widget class="QWidget" name="widget" native="true">
      <property name="minimumSize">
@@ -38,7 +38,7 @@
       <item row="0" column="2">
        <widget class="QCheckBox" name="highlight_scars_check_box">
         <property name="text">
-         <string>Highlight Scars</string>
+         <string>Highlight Scars (F3)</string>
         </property>
        </widget>
       </item>
@@ -52,7 +52,7 @@
       <item row="0" column="4">
        <widget class="QCheckBox" name="enhance_check_box">
         <property name="text">
-         <string>Enhance Photo</string>
+         <string>Enhance Photo (F4)</string>
         </property>
        </widget>
       </item>
@@ -134,7 +134,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>No</string>
+         <string>No (F2)</string>
         </property>
        </widget>
       </item>
@@ -184,7 +184,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Yes</string>
+         <string>Yes (F1)</string>
         </property>
        </widget>
       </item>

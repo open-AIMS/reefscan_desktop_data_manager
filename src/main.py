@@ -2,7 +2,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("")
 logger_smb = logging.getLogger('smbprotocol')
-logger_smb.setLevel(level=logging.WARNING)
+logger_smb.setLevel(level=logging.WARN)
 
 import multiprocessing
 import traceback
@@ -21,16 +21,6 @@ from aims.ui.main_ui import MainUi
 from aims2 import simulated
 
 
-config_folder = state.config.config_folder
-
-if not os.path.isdir(config_folder):
-    os.makedirs(config_folder)
-path = f"{config_folder}/reefscan.log"
-formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
-handler = RotatingFileHandler(path, maxBytes=1000000,
-                              backupCount=5)
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 
 def gui_except_hook(exc_class, exc_value, tb):
@@ -92,9 +82,9 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
     logger.info(app.font().pointSize())
-    font = app.font()
-    font.setPointSize(12)
-    app.setFont(font)
+    # font = app.font()
+    # font.setPointSize(12)
+    # app.setFont(font)
     logger.info(app.font().pointSize())
 
     app_icon = QtGui.QIcon()
@@ -145,7 +135,9 @@ if __name__ == "__main__":
         main_ui.show()
         app.exec()
 
-    except Exception:
+    except Exception as e:
+        print ("Error")
+        print (str(e))
         logger.exception("Error")
 
     if state.model.local_data_loaded and not state.read_only:

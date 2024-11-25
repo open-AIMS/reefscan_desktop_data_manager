@@ -1,6 +1,7 @@
 import logging
 import sys
 import traceback
+from time import process_time
 
 from reefscanner.basic_model.basic_model import BasicModel
 
@@ -21,6 +22,7 @@ class LoadDataOperation(AbstractOperation):
         self.camera_connected = camera_connected
 
     def _run(self):
+        logger.info(f"start run method {process_time()}")
         self.finished=False
         self.success = False
         logger.info("start load data")

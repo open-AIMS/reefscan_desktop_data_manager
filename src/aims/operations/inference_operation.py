@@ -3,6 +3,8 @@ import threading
 
 import os
 
+from reefscanner.basic_model.model_utils import replace_last
+
 from aims.operations.abstract_operation import AbstractOperation
 
 import inferencer.models 

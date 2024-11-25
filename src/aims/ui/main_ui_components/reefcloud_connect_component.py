@@ -1,21 +1,16 @@
 import logging
 from time import process_time
-from typing import List
-
-from PyQt5 import QtWidgets, QtTest
-from PyQt5.QtCore import QObject
-from PyQt5.QtWidgets import QApplication
-from reefscanner.basic_model.survey import Survey
-
-from aims import data_loader
-from aims.state import state
-from aims.gui_model.tree_model import TreeModelMaker, checked_survey_ids, checked_surveys
-from aims2.reefcloud2.reefcloud_utils import upload_file, write_reefcloud_photos_json, update_reefcloud_projects, \
-    update_reefcloud_sites, check_reefcloud_metadata
-from aims2.reefcloud2.reefcloud_session import ReefCloudSession
-from aims2.reefcloud2.upload_surveys import upload_surveys
 
 logger = logging.getLogger("")
+logger.info(f"reefcloud connect start {process_time()}")
+
+from PyQt5.QtCore import QObject
+from PyQt5.QtWidgets import QApplication
+
+from aims.state import state
+
+logger.info(f"reefcloud connect imports done {process_time()}")
+
 class ReefcloudConnectComponent(QObject):
     def __init__(self, hint_function):
         super().__init__()
@@ -57,16 +52,18 @@ class ReefcloudConnectComponent(QObject):
 
 
     def update(self):
+        from aims2.reefcloud2.reefcloud_utils import update_reefcloud_projects, update_reefcloud_sites
+
         self.login_widget.username_label.setText(self.tr("Downloading projects"))
         QApplication.processEvents()
 
         projects_response = update_reefcloud_projects(state.reefcloud_session)
-        state.config.load_reefcloud_projects()
+        state.load_reefcloud_projects()
         self.login_widget.username_label.setText(self.tr("Downloading sites"))
         QApplication.processEvents()
 
         sites_response = update_reefcloud_sites(state.reefcloud_session)
-        state.config.load_reefcloud_sites()
+        state.load_reefcloud_sites()
 
         # msg_box = QtWidgets.QMessageBox()
         # msg_box.setText(self.tr("Download finished"))
@@ -76,6 +73,7 @@ class ReefcloudConnectComponent(QObject):
     def login(self):
 
         if not self.logged_in():
+            from aims2.reefcloud2.reefcloud_session import ReefCloudSession
 
             logger.info("*******************************************About to attempt login")
             self.hint_function(self.tr("Log in to Reefcloud using the browser window which just popped up; or press the cancel button."))

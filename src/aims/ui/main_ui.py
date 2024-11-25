@@ -1,5 +1,9 @@
 import os
 import shutil
+from time import process_time, sleep
+
+import smbclient
+
 try:
     import psutil
 except ImportError:
@@ -28,9 +32,6 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView
 logger = logging.getLogger("")
 
 
-def remove_control_characters(s):
-    return "".join(ch for ch in s if unicodedata.category(ch)[0] != "C")
-
 
 workflow_button_border = ";border: 5px solid red;"
 
@@ -52,6 +53,7 @@ def remove_button_border(button):
 class MainUi(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.version = "2.0.0"
         self.current_screen = "start"
         self.app = QtWidgets.QApplication(sys.argv)
         self.workflow_collapsed = False
@@ -77,7 +79,7 @@ class MainUi(QMainWindow):
         self.upload_component = None
         self.reefcloud_connect_component = None
         self.routes_component = None
-        self.archive_checker = None
+        # self.archive_checker = None
 
 
         self.workflow_widget = None
@@ -94,7 +96,6 @@ class MainUi(QMainWindow):
         self.load_start_screen()
         self.aims_status_dialog = AimsStatusDialog(self.ui)
         self.update_status()
-        self.camera_connected = False
         self.drives_connected = False
 
         self.hint(self.tr('Choose "Connect Disks" from the workflow bar'))
@@ -172,6 +173,7 @@ class MainUi(QMainWindow):
         self.workflow_widget.workflowLabel.setVisible(not self.workflow_collapsed)
         if self.workflow_collapsed:
             self.workflow_widget.collapseButton.setText(">>")
+            self.workflow_widget.sizeHint = 0
         else:
             self.workflow_widget.collapseButton.setText("<<")
 
@@ -193,6 +195,7 @@ class MainUi(QMainWindow):
         self.highlight_button(self.workflow_widget.uploadButton)
 
     def load_reefcloud_connect_screen(self):
+        logger.info(f"start load reefcloud connect {process_time()}")
         if self.reefcloud_connect_component is None:
             from aims.ui.main_ui_components.reefcloud_connect_component import ReefcloudConnectComponent
             self.reefcloud_connect_component = ReefcloudConnectComponent(hint_function=self.hint)
@@ -205,11 +208,12 @@ class MainUi(QMainWindow):
         self.reefcloud_connect_component.login_widget.login_button.clicked.connect(self.login_reefcloud)
 
         self.highlight_button(self.workflow_widget.connectReefcloudButton)
+        logger.info(f"finished load reefcloud connect {process_time()}")
 
     def login_reefcloud(self):
         self.disable_all_workflow_buttons()
         if self.reefcloud_connect_component.login():
-            self.load_data_screen()
+            logger.info("connected successfully to reefcloud")
         self.enable_workflow_buttons()
 
     def load_start_screen(self):
@@ -343,47 +347,47 @@ class MainUi(QMainWindow):
 
     def connect_disks(self):
         self.drives_connected = self.disk_drives_component.connect()
+        self.enable_workflow_buttons()
+        # sleep(1)
+        # print("I slept")
         if self.drives_connected:
             self.load_connect_screen()
 
     def load_main_frame(self, ui_file, package=None):
+        if self.data_component is not None and self.data_component.thumbnail_model is not None:
+            self.data_component.thumbnail_model.interrupt()
+
         clearLayout(self.ui.mainFrame.layout())
         widget: QWidget = uic.loadUi(ui_file, package=package)
         self.ui.mainFrame.layout().addWidget(widget)
         return widget
 
     def connect(self):
+        logger.info(f"start connect {process_time()}")
         from aims import data_loader
         try:
             state.set_data_folders()
         except:
             raise Exception("Connect to the local disks first")
 
-        data_loaded, message = data_loader.load_camera_data_model(aims_status_dialog=self.aims_status_dialog)
+        data_loaded, message, space_avaliable = data_loader.load_camera_data_model(aims_status_dialog=self.aims_status_dialog)
+        data_loader.load_archive_data_model(aims_status_dialog=self.aims_status_dialog)
+
+        logger.info(f"camera data loaded {process_time()}")
+
         if data_loaded:
+            self.update_camera_status(space_avaliable)
             self.connect_widget.lblMessage.setText(self.tr("Connected Successfully"))
             if self.drives_connected:
                 self.load_reefcloud_connect_screen()
-            state.reefscan_id = remove_control_characters(state.read_reefscan_id())
             self.camera_connected = True
-            self.update_status()
         else:
             self.connect_widget.lblMessage.setText(message)
 
-    def update_status(self):
-        if state.model.camera_data_loaded:
-            if self.archive_checker is None:
-                from aims2.operations2.archive_checker import ArchiveChecker
-                self.archive_checker = ArchiveChecker()
+        logger.info(f"connect finished {process_time()}")
 
-            self.archive_checker.check()
-            bytes_available = self.archive_checker.archive_stats.available_size()
-            gb_available = round(bytes_available / 1000000000)
-            self.status_widget.lblDevice.setText(f"{state.reefscan_id}: {gb_available}  " + self.tr("Gb Free"))
-            self.status_widget.lblSequences.setText(f"{len(state.model.camera_surveys)} " + self.tr("sequences"))
-        else:
-            self.status_widget.lblDevice.setText(self.tr("camera not connected"))
-            self.status_widget.lblSequences.setText(self.tr("camera not connected"))
+    def update_status(self):
+        logger.info(f"start update status {process_time()}")
 
         self.load_fixed_drives()
         local_space = ""
@@ -402,11 +406,26 @@ class MainUi(QMainWindow):
         if self.current_screen == "connect_disks":
             self.load_connect_disks_screen()
 
+        logger.info(f"finish update status {process_time()}")
+
+    def update_camera_status(self, space):
+        logger.info(f"start update camera status {process_time()}")
+        if state.model.camera_data_loaded:
+
+            bytes_available = space.actual_available_size
+            gb_available = round(bytes_available / 1000000000)
+            self.status_widget.lblDevice.setText(f"{state.reefscan_id}: {gb_available}  " + self.tr("Gb Free"))
+            self.status_widget.lblSequences.setText(f"{len(state.model.camera_surveys)} " + self.tr("sequences"))
+        else:
+            self.status_widget.lblDevice.setText(self.tr("camera not connected"))
+            self.status_widget.lblSequences.setText(self.tr("camera not connected"))
+        logger.info(f"finish update camera status {process_time()}")
+
     def show(self):
         if state.config.deep:
-            self.ui.setWindowTitle("Reefscan Deep " + self.tr("Data Manager"))
+            self.ui.setWindowTitle("Reefscan Deep " + self.tr("Data Manager ") + self.version)
         else:
-            self.ui.setWindowTitle("Reefscan Transom " + self.tr("Data Manager"))
+            self.ui.setWindowTitle("Reefscan Transom " + self.tr("Data Manager ") + self.version)
 
         if state.config.dev:
             self.ui.setWindowTitle(self.ui.windowTitle() + " - DEV")

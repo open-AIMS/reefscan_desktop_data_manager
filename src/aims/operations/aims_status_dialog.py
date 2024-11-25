@@ -1,10 +1,12 @@
+from time import process_time, sleep
+
 from PyQt5.QtWidgets import QProgressDialog
 from PyQt5.QtCore import Qt, QObject
 import logging
 from threading import RLock, Timer
 from multiprocessing.pool import ThreadPool
 
-logger = logging.getLogger("")
+logger = logging.getLogger("AimsStatusDialog")
 
 
 class AimsStatusDialog(QObject):
@@ -31,19 +33,22 @@ class AimsStatusDialog(QObject):
     def set_progress_value(self, params):
         (i, label) = params
         try:
-            logger.debug(f"value {i}")
+            # logger.info(f"value {i} {label} {process_time()}")
             with self.redrawLock:
                 self.progress_dialog.setValue(i)
                 self.progress_dialog.setLabelText(label)
         except Exception as e:
-            logger.info("ERROR")
-            logger.error("ERROR")
+            logger.error("ERROR setting value")
             logger.info(str(e))
 
     def set_progress_max(self, i):
-        logger.info(f"max {i}")
-        with self.redrawLock:
-            self.progress_dialog.setMaximum(i)
+        # logger.info(f"max {i}")
+        try:
+            with self.redrawLock:
+                self.progress_dialog.setMaximum(i)
+        except Exception as e:
+            logger.error("ERROR setting max")
+            logger.info(str(e))
 
     def set_operation_connections(self, operation):
         self.make_progress_dialog()
@@ -52,6 +57,7 @@ class AimsStatusDialog(QObject):
         operation.set_max.connect(self.set_progress_max)
         operation.set_value.connect(self.set_progress_value)
         operation.exception.connect(self.throw_exception)
+        sleep(0.1)
 
     def close(self):
         # Close seems to trigger the cancel signal and sometimes we need to know
@@ -59,8 +65,11 @@ class AimsStatusDialog(QObject):
         try:
             self.progress_dialog.canceled.disconnect(self.operation.cancel)
         except:
-            pass
-        self.progress_dialog.close()
+            logger.warn("error disconnecting status box")
+        try:
+            self.progress_dialog.close()
+        except:
+            logger.warn("error closing status box")
         # timer = Timer(0.5, self.progress_dialog.close)
         # timer.start()
 
