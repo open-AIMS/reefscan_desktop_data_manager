@@ -283,8 +283,12 @@ class DataComponent(QObject):
         self.inference_widget.btnInferenceFolder.clicked.connect(self.inference)
         self.inference_widget.reportCheckBox.setChecked(False)
 
+        label_points_file = self.inference_widget.pointsCSVLabel
+        self.inference_widget.pointsCSVFileSelector.clicked.connect(lambda fn: select_file(label_points_file))
+
         label_training_file = self.inference_widget.trainingCSVLabel
         self.inference_widget.trainingCSVFileSelector.clicked.connect(lambda fn: select_file(label_training_file))
+
 
         # if PYINSTALLER_COMPILED:
         if not os.path.basename(sys.executable) == 'reefscan-transom-installer.exe':
@@ -988,14 +992,24 @@ class DataComponent(QObject):
 
         if replace or utils.is_empty_folder(output_folder):
 
-            self.inference_widget.textBrowser.append(f"Inferencer starting for {survey.best_name()}")
+            from aims.ui.main_ui_components.file_selector import FILE_SELECTOR_NULL_LABEL
 
+            self.inference_widget.textBrowser.append(f"Inferencer starting for {survey.best_name()}")
 
             QApplication.processEvents()
 
             target = subsampled_image_folder
-            points_file = InferenceOperation.DEFAULT_POINTS_CSV_FILENAME
-            if os.path.exists(os.path.join(survey.folder, points_file)):
+
+            points_file = os.path.join(survey.folder, InferenceOperation.DEFAULT_POINTS_CSV_FILENAME)
+
+            points_csv_label = self.inference_widget.trainingCSVLabel.text()
+
+            points_file_uploaded = points_csv_label != FILE_SELECTOR_NULL_LABEL
+
+            if points_file_uploaded:
+                points_file = points_csv_label
+
+            if os.path.exists(points_file):
                 target = survey.folder
 
             inference_operation = InferenceOperation(target=target, results_folder=output_folder)

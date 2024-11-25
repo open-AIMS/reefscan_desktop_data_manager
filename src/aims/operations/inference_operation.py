@@ -50,18 +50,18 @@ class InferenceOperation(AbstractOperation):
 
     DEFAULT_POINTS_CSV_FILENAME = 'points.csv'
 
-    def __init__(self, target=TEST_IMAGES_PATH, results_folder=TEST_IMAGES_PATH, replace=False):
+    def __init__(self, target=TEST_IMAGES_PATH, results_folder=TEST_IMAGES_PATH, points_csv_path="", replace=False):
         super().__init__()
         self.target = target
 
-        points_csv_path = os.path.join(target, self.DEFAULT_POINTS_CSV_FILENAME)
-        print("points path: \n" + points_csv_path)
-        points_csv_path = points_csv_path.replace('reefscan_reefcloud', 'reefscan')
+        if not points_csv_path:
+            points_csv_path = os.path.join(target, self.DEFAULT_POINTS_CSV_FILENAME)
+        # points_csv_path = points_csv_path.replace('reefscan_reefcloud', 'reefscan')
+
         if os.path.exists(points_csv_path):
-            print("**\n\n POINTS PATH EXISTS \n\n**")
+            # print("**\n\n POINTS PATH EXISTS \n\n**")
             self.points_csv_path = filter_points_file_for_current_images(self.target, points_csv_path)
 
-        print("points path: \n" + self.points_csv_path)
 
         features_folder = os.path.join(results_folder, 'features')
 

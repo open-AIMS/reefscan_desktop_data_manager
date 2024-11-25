@@ -20,42 +20,118 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="11" column="0">
-    <widget class="QLabel" name="label_3">
+   <item row="11" column="2">
+    <widget class="QPushButton" name="pointsCSVFileSelector">
      <property name="text">
-      <string>Message Box</string>
+      <string>Select File</string>
      </property>
     </widget>
    </item>
-   <item row="10" column="3">
+   <item row="16" column="2">
     <widget class="QPushButton" name="trainingCSVFileSelector">
      <property name="text">
       <string>Select File</string>
      </property>
     </widget>
    </item>
-   <item row="9" column="2">
-    <widget class="QLabel" name="label_5">
+   <item row="8" column="0">
+    <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>features.csv for training data:</string>
+      <string>Upload points.csv file</string>
      </property>
     </widget>
    </item>
-   <item row="8" column="2" colspan="2">
+   <item row="11" column="0">
+    <widget class="QLabel" name="pointsCSVLabel">
+     <property name="text">
+      <string>No file selected</string>
+     </property>
+     <property name="wordWrap">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="14" column="0">
     <widget class="QCheckBox" name="reportCheckBox">
      <property name="text">
-      <string>Display train-inference scores vs. train-validation scores</string>
+      <string>Display dataset distance report</string>
      </property>
     </widget>
    </item>
-   <item row="11" column="2">
+   <item row="17" column="0">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Message Box</string>
+     </property>
+    </widget>
+   </item>
+   <item row="17" column="1">
     <widget class="QLabel" name="label">
      <property name="text">
       <string/>
      </property>
     </widget>
    </item>
-   <item row="7" column="0" colspan="4">
+   <item row="16" column="0">
+    <widget class="QLabel" name="trainingCSVLabel">
+     <property name="text">
+      <string>No file selected</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0" colspan="3">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>(Note: If no file is uploaded then this software will try to look for a points.csv file in the image directory)</string>
+     </property>
+     <property name="textFormat">
+      <enum>Qt::AutoText</enum>
+     </property>
+     <property name="scaledContents">
+      <bool>false</bool>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="15" column="0">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>Upload features.csv for training data:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="0">
+    <widget class="QLabel" name="label_7">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Training data vs inference data reporting</string>
+     </property>
+     <property name="scaledContents">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="19" column="0" colspan="3">
+    <widget class="QPushButton" name="btnInferenceOpenFolder">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string> Open Folder</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0" colspan="3">
     <widget class="QPushButton" name="btnInferenceFolder">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -74,26 +150,13 @@
      </property>
     </widget>
    </item>
-   <item row="13" column="0" colspan="3">
-    <widget class="QPushButton" name="btnInferenceOpenFolder">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="text">
-      <string> Open Folder</string>
-     </property>
-    </widget>
-   </item>
-   <item row="12" column="0" colspan="4">
+   <item row="18" column="0" colspan="3">
     <widget class="QTextBrowser" name="textBrowser"/>
    </item>
-   <item row="10" column="2">
-    <widget class="QLabel" name="trainingCSVLabel">
-     <property name="text">
-      <string>No file selected</string>
+   <item row="12" column="0" colspan="3">
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
      </property>
     </widget>
    </item>
