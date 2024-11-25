@@ -13,7 +13,8 @@ from PyQt5.QtCore import QItemSelection, QSize, Qt, QObject
 from PyQt5.QtGui import QPixmap, QStandardItemModel, QStandardItem
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QWidget, QTableView, QLabel, QListView, \
-    QListWidget, QMessageBox, QTabWidget, QCheckBox, QHeaderView
+    QListWidget, QMessageBox, QTabWidget, QCheckBox, QHeaderView, QTextBrowser, QVBoxLayout, \
+    QFileDialog
 from pytz import utc
 from reefscanner.basic_model.exif_utils import get_exif_data
 from reefscanner.basic_model.model_helper import rename_folders
@@ -44,6 +45,7 @@ from aims2.operations2.camera_utils import delete_archives, get_kilo_bytes_used
 from aims2.reefcloud2.reefcloud_utils import create_reefcloud_site
 
 from aims.operations.enhance_photo_operation import EnhancePhotoOperation
+from aims.ui.main_ui_components.file_selector import select_file
 
 import sys
 logger = logging.getLogger("DataComponent")
@@ -62,10 +64,13 @@ these operations but it is too large for the purposes
 of a pyinstaller executable
 """
 PYINSTALLER_COMPILED = getattr(sys, 'frozen', False)
-if not PYINSTALLER_COMPILED:
+# if not PYINSTALLER_COMPILED:
+if os.path.basename(sys.executable) == 'reefscan-transom-installer.exe':
     try:
         from aims.operations.inference_operation import InferenceOperation, inference_result_folder
+        from aims.operations.inference_report_operation import InferenceReportOperation
         from aims.operations.chart_operation import ChartOperation
+        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
     except Exception as e:
         logger.warn("Can't load inferencer", e)
         PYINSTALLER_COMPILED = True
@@ -242,10 +247,16 @@ class DataComponent(QObject):
 
         self.inference_widget.btnInferenceOpenFolder.clicked.connect(self.inference_open_folder)
         self.inference_widget.btnInferenceFolder.clicked.connect(self.inference)
+        self.inference_widget.reportCheckBox.setChecked(False)
 
-        if PYINSTALLER_COMPILED:
+        label_training_file = self.inference_widget.trainingCSVLabel
+        self.inference_widget.trainingCSVFileSelector.clicked.connect(lambda fn: select_file(label_training_file))
+
+        # if PYINSTALLER_COMPILED:
+        if not os.path.basename(sys.executable) == 'reefscan-transom-installer.exe':
             self.remove_tab_by_tab_text(self.tr('Inference'))
             self.remove_tab_by_tab_text(self.tr('Chart'))
+            self.remove_tab_by_tab_text(self.tr('Inference Report'))
 
         self.eod_cots_widget.detectCotsButton.clicked.connect(self.detect_cots)
         self.eod_cots_widget.cancelButton.clicked.connect(self.cancel_detect)
@@ -782,9 +793,13 @@ class DataComponent(QObject):
         self.disable_all_tabs(current_tab)
         self.data_widget.treesWidget.setEnabled(False)
 
+    def load_inference_analyses(self):
+        self.load_inference_charts()
+        # self.load_inference_report()
+
     def load_inference_charts(self):
         if self.survey() is not None:
-            if not PYINSTALLER_COMPILED:
+            if True: # temp change # not PYINSTALLER_COMPILED:
                 coverage_results_file = f"{inference_result_folder(self.survey().folder)}/coverage.csv"
                 if os.path.exists(coverage_results_file):
                     self.show_tab_by_tab_text(self.tr('Chart'))
@@ -804,6 +819,62 @@ class DataComponent(QObject):
                     pie_browser.setHtml(fig)
                 else:
                     self.hide_tab_by_tab_text(self.tr('Chart'))
+
+    def load_inference_report(self, inf_op: InferenceOperation):
+        from aims.ui.main_ui_components.file_selector import FILE_SELECTOR_NULL_LABEL
+
+        if self.survey() is not None:
+            if True: # temp change TODO(pierre): uncomment before pushing --> # not PYINSTALLER_COMPILED:
+                if not self.inference_widget.reportCheckBox.isChecked():
+                    self.hide_tab_by_tab_text(self.tr('Inference Report'))
+                else:
+                    self.show_tab_by_tab_text(self.tr('Inference Report'))
+
+                    self.inference_report_widget = self.load_sequence_frame(f'{state.meipass}resources/inference_report.ui',
+                                                                    self.data_widget.inference_report_tab)
+                    self.inference_report_widget = self.load_sequence_frame(f'{state.meipass}resources/inference_report.ui',
+                                                                    self.data_widget.inference_report_tab)
+
+                    features_path = inf_op.get_features_csv_filepath()
+                    classifier_path = inf_op.get_classifier_model_path()
+
+                    training_csv_features_path = self.inference_widget.trainingCSVLabel.text()
+                    self.inference_widget.textBrowser.append(f"training file: {training_csv_features_path}")
+
+                    training_data_exists = training_csv_features_path != FILE_SELECTOR_NULL_LABEL
+
+                    if training_data_exists:
+                        inference_report_operation = InferenceReportOperation()
+                        inference_report_operation.perform_analysis(features_path, 
+                                                                    training_csv_features_path,
+                                                                    classifier_path)
+                        
+                        if inference_report_operation.features_detected():
+                                train_val_dist, train_inf_dist = inference_report_operation.get_distance_report()
+                                correlation_plot = inference_report_operation.get_correlation_plot()
+
+                                pixmap = QPixmap()
+                                pixmap.loadFromData(correlation_plot.getvalue())
+
+                                train_val_tb: QTextBrowser = self.inference_report_widget.trainValTextBrowser
+                                train_inf_tb: QTextBrowser = self.inference_report_widget.trainInfTextBrowser
+                                correlation_plot_widget: QWidget = self.inference_report_widget.correlationPlotWidget
+
+                                train_val_tb.setText(str(train_val_dist))
+                                train_inf_tb.setText(str(train_inf_dist))
+
+                                label = QLabel()
+                                label.setPixmap(pixmap)
+                                label.setAlignment(Qt.AlignCenter)
+                                
+                                layout = QVBoxLayout()
+                                layout.addWidget(label)        
+                                correlation_plot_widget.setLayout(layout)
+                        else:
+                            self.inference_widget.textBrowser.append("INFO: There are no valid points to compare train-inference and train-validation scores. Inference report will not be generated.")
+                    else:
+                        self.inference_widget.textBrowser.append("INFO: Training data not uploaded. Inference report will not be generated")
+
 
     def inference_open_folder(self):
         utils.open_file(inference_result_folder(self.survey().folder))
@@ -852,9 +923,15 @@ class DataComponent(QObject):
 
             self.inference_widget.textBrowser.append(f"Inferencer starting for {survey.best_name()}")
 
+
             QApplication.processEvents()
 
-            inference_operation = InferenceOperation(target=subsampled_image_folder, results_folder=output_folder)
+            target = subsampled_image_folder
+            points_file = InferenceOperation.DEFAULT_POINTS_CSV_FILENAME
+            if os.path.exists(os.path.join(survey.folder, points_file)):
+                target = survey.folder
+
+            inference_operation = InferenceOperation(target=target, results_folder=output_folder)
 
             inference_operation.update_interval = 1
             self.aims_status_dialog.set_operation_connections(inference_operation)
@@ -876,6 +953,10 @@ class DataComponent(QObject):
             coverage_file = f"{output_folder}/coverage.csv"
             self.inference_widget.textBrowser.append(f'Pie Chart from {coverage_file}')
             self.load_inference_charts()
+
+            report_check_box: QCheckBox = self.inference_widget.reportCheckBox
+            if report_check_box.isChecked():
+                self.load_inference_report(inference_operation)
             return not inference_operation.batch_monitor.cancelled
         else:
             return True
@@ -1020,7 +1101,7 @@ class DataComponent(QObject):
             self.display_cots_detections(samba=False)
             self.load_thumbnails()
             self.load_marks()
-            self.load_inference_charts()
+            self.load_inference_analyses()
 
         self.tab_changed(self.read_current_tab())
 

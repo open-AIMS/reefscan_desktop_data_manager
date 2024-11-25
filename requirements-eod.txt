@@ -5,3 +5,5 @@ tensorflow==2.9.2
 keras==2.9
 scikit-learn
 plotly
+cleanlab
+seaborn

@@ -13,6 +13,8 @@ from inferencer.batch_monitor import BatchMonitor
 
 import csv
 
+import pandas as pd
+
 from aims.utils import replace_last
 
 logger = logging.getLogger("")
@@ -21,6 +23,17 @@ logger = logging.getLogger("")
 def inference_result_folder(target):
     return replace_last(target, "/reefscan/", "/reefscan_inference/")
 
+def filter_points_file_for_current_images(images_folder, points_csv_file):
+    original_df = pd.read_csv(points_csv_file)
+    img_list = [str(file) for file in os.listdir(images_folder) if file.endswith('.jpg')]
+    img_df = original_df[original_df['image_name'].isin(img_list)]
+
+    file_extension = points_csv_file.split('.')[-1]
+    output_filename = points_csv_file.replace(f'.{file_extension}', f'_filtered.{file_extension}')
+
+    img_df.to_csv(output_filename, index=False)
+
+    return output_filename
 
 class InferenceOperation(AbstractOperation):
     msg_func = lambda msg: None
@@ -29,13 +42,24 @@ class InferenceOperation(AbstractOperation):
     classifier_path = os.path.join(reefscan_classifier.__path__[0], 'reefscan.sav')
     group_labels_path = os.path.join(inferencer.models.__path__[0], 'reefscan_group_labels.csv')
     output_coverage_file = ''
+    points_csv_path = ''
 
     TEST_IMAGES_PATH = 'C:\\reefscan\\reefscan-inf-test-images'
+
+    DEFAULT_POINTS_CSV_FILENAME = 'points.csv'
 
     def __init__(self, target=TEST_IMAGES_PATH, results_folder=TEST_IMAGES_PATH, replace=False):
         super().__init__()
         self.target = target
 
+        points_csv_path = os.path.join(target, self.DEFAULT_POINTS_CSV_FILENAME)
+        print("points path: \n" + points_csv_path)
+        points_csv_path = points_csv_path.replace('reefscan_reefcloud', 'reefscan')
+        if os.path.exists(points_csv_path):
+            print("**\n\n POINTS PATH EXISTS \n\n**")
+            self.points_csv_path = filter_points_file_for_current_images(self.target, points_csv_path)
+
+        print("points path: \n" + self.points_csv_path)
 
         features_folder = os.path.join(results_folder, 'features')
 
@@ -62,6 +86,12 @@ class InferenceOperation(AbstractOperation):
 
     def get_coverage_filepath(self):
         return self.output_coverage_file
+
+    def get_features_csv_filepath(self):
+        return self.features_path
+    
+    def get_classifier_model_path(self):
+        return self.classifier_path
 
     def set_msg_function(self, msg_func):
         self.msg_func = msg_func
@@ -97,6 +127,7 @@ class InferenceOperation(AbstractOperation):
         try:
             inference(feature_extractor=self.feature_extractor_path,
                   classifier=self.classifier_path,
+                  points_csv_file=self.points_csv_path,
                   group_labels_csv_file=self.group_labels_path,
                   local_image_dir=self.target,
                   output_results_file=self.output_results_file,
