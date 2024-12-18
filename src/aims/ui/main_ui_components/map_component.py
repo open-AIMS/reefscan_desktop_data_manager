@@ -1,4 +1,5 @@
 import logging
+import os
 
 from PyQt5 import uic
 from PyQt5.QtCore import Qt
@@ -22,8 +23,9 @@ def parse_sequences_string_to_sequence_ids(seq_str):
 
 
 class MapComponent(QObject):
-    def __init__(self, parent_widget, cots_display_params):
+    def __init__(self, parent_widget, cots_display_params, aims_status_dialog):
         super().__init__()
+        self.aims_status_dialog = aims_status_dialog
         self.map_widget = uic.loadUi(f'{state.meipass}resources/map.ui')
 
         clearLayout(parent_widget.layout())
@@ -42,6 +44,8 @@ class MapComponent(QObject):
         camera_combo_box: QComboBox = self.map_widget.camera_combo_box
         camera_combo_box.addItem(self.tr("Camera 1"), userData="cam_1")
         camera_combo_box.addItem(self.tr("Camera 2"), userData="cam_2")
+        camera_combo_box.addItem(self.tr("Both"), userData="both")
+
 
         if cots_display_params is not None:
             from aims.model.cots_display_params import CotsDisplayParams
@@ -49,6 +53,8 @@ class MapComponent(QObject):
         else:
             self.cots_display_params = None
             self.map_widget.cots_controls_widget.setVisible(False)
+
+        self.cots_waypoints = []
 
     def show(self, surveys):
         if self.cots_display_params is not None:
@@ -68,21 +74,18 @@ class MapComponent(QObject):
         self.draw_map()
 
     def draw_map(self):
-        if self.cots_display_params is not None:
-            eod_check_box: QCheckBox = self.map_widget.eod_check_box
-            self.cots_display_params.eod = eod_check_box.checkState() == Qt.Checked
-            self.cots_display_params.only_show_confirmed = self.map_widget.confirmed_check_box.checkState() == Qt.Checked
-            camera = self.map_widget.camera_combo_box.currentData(role=Qt.UserRole)
-            self.cots_display_params.camera = camera
+        tracks = self.make_tracks()
 
-            try:
-                self.cots_display_params.minimum_score = float(self.map_widget.minimumScoreTextBox.text())
-            except Exception as e:
-                logger.warn("error getting minimum score", e)
-                self.cots_display_params.minimum_score = 0
-        # logger.info("draw map")
-        cots_waypoints = self.cots_waypoints_for_survey()
+        html_str = map_html_str(tracks, self.cots_waypoints)
+        # html_str = map_html_str(tracks, [])
+        # logger.info(html_str)
+        if html_str is not None:
+                # view.stop()
+            self.map_widget.mapView.setHtml(html_str)
+
+    def make_tracks(self):
         tracks = []
+        self.cots_waypoints = []
         for survey in self.surveys:
             folder = survey.camera_dirs[1]
             try:
@@ -92,37 +95,71 @@ class MapComponent(QObject):
                 logger.error("Unable to make map", e)
                 _track = None
 
+            try:
+                if self.cots_display_params is not None:
+                    self.cots_display_params.read_data(self.aims_status_dialog, f"{survey.folder}", False)
+                    eod_check_box: QCheckBox = self.map_widget.eod_check_box
+                    self.cots_display_params.eod = eod_check_box.checkState() == Qt.Checked
+                    self.cots_display_params.only_show_confirmed = self.map_widget.confirmed_check_box.checkState() == Qt.Checked
+                    camera = self.map_widget.camera_combo_box.currentData(role=Qt.UserRole)
+                    self.cots_display_params.camera = camera
 
-        html_str = map_html_str(tracks, cots_waypoints)
-            # logger.info(html_str)
-        if html_str is not None:
-
-                # view.stop()
-            self.map_widget.mapView.setHtml(html_str)
+                    try:
+                        self.cots_display_params.minimum_score = float(self.map_widget.minimumScoreTextBox.text())
+                    except Exception as e:
+                        logger.warn("error getting minimum score", e)
+                        self.cots_display_params.minimum_score = 0
+                    # logger.info("draw map")
+                    self.cots_waypoints.extend(self.cots_waypoints_for_survey())
+            except Exception as e:
+                logger.error("Unable to addn COTS to map", e)
+                _track = None
+        return tracks
 
     def cots_waypoints_for_survey(self):
+        waypoints = []
+        if self.cots_display_params.camera == "both":
+            waypoints = self.cots_waypoints_for_survey_camera("cam_1")
+            waypoints.extend(self.cots_waypoints_for_survey_camera("cam_2"))
+        else:
+            waypoints = self.cots_waypoints_for_survey_camera()
+
+# sort by photo sequence number then keep a maximum of one per ten photos
+        waypoints.sort(key=lambda x: x[4])
+        last_kept = 0
+        keep = []
+        for wp in waypoints:
+            if wp[4] - last_kept > 10:
+                last_kept = wp[4]
+                keep.append(wp)
+        return keep
+
+    def cots_waypoints_for_survey_camera(self, camera=None):
         cots_waypoints = []
         if self.cots_display_params is not None:
             try:
-                detection_list = self.cots_display_params.cots_detection_list()
+                detection_list = self.cots_display_params.cots_detection_list(camera)
 
                 for waypoint in detection_list.cots_waypoints:
-                    score_ = waypoint[3]
-                    only_show_confirmed = self.map_widget.confirmed_check_box.checkState() == Qt.Checked
+                    if (abs(waypoint[0]) > 0.0001) and (abs(waypoint[1]) > 0.0001):
+                        score_ = waypoint[3]
+                        only_show_confirmed = self.map_widget.confirmed_check_box.checkState() == Qt.Checked
 
-                    sequence_ids = parse_sequences_string_to_sequence_ids(waypoint[2])
-                    sequence_ids = self.filter_id_array_by_class(sequence_ids, detection_list)
+                        sequence_ids = parse_sequences_string_to_sequence_ids(waypoint[2])
+                        sequence_ids = self.filter_id_array_by_class(sequence_ids, detection_list)
 
-                    if only_show_confirmed:
-                        sequence_ids = self.filter_id_array_by_confirmed(sequence_ids, detection_list)
+                        if only_show_confirmed:
+                            sequence_ids = self.filter_id_array_by_confirmed(sequence_ids, detection_list)
 
-                    if sequence_ids:
-                        new_sequences_str = self.id_array_to_sequence_string(sequence_ids)
-                        if score_ > self.cots_display_params.minimum_score:
-                            cots_waypoints.append([waypoint[0],
-                                                   waypoint[1],
-                                                   new_sequences_str,
-                                                   waypoint[3]])
+                        if sequence_ids:
+                            new_sequences_str = self.id_array_to_sequence_string(sequence_ids)
+                            if score_ > self.cots_display_params.minimum_score:
+                                cots_waypoints.append([waypoint[0],
+                                                       waypoint[1],
+                                                       new_sequences_str,
+                                                       waypoint[3],
+                                                       waypoint[4],
+                                                       ])
 
             except Exception as e:
                 logger.error("error getting cots waypoints", e)
@@ -167,17 +204,25 @@ class MapComponent(QObject):
     def export_kml(self):
 
         if not state.read_only:
-            from aims.operations.kml_maker import make_kml
+            #from aims.operations.kml_maker import make_kml
+            #
+            # if self.cots_display_params is not None and len(self.surveys) == 1:
+            #     # TODO use the cots_display_params configuration
+            #     minimum_score = self.cots_display_params.minimum_score
+            # else:
+            #     minimum_score = 0
+            # init_kml_folder = f"{state.primary_drive}/kml"
+            # os.makedirs(init_kml_folder, exist_ok=True)
+            # output_folder = QFileDialog.getExistingDirectory(self.map_widget, 'Folder to save KML file to?', directory=init_kml_folder)
+            # if (output_folder is not None and output_folder != ""):
+            #     for survey in self.surveys:
+            #         make_kml(survey=survey, cots_waypoints=self.cots_waypoints, minimum_cots_score=minimum_score, output_folder=output_folder, depth=True)
 
-            if self.cots_display_params is not None and len(self.surveys) == 1:
-                # TODO use the cots_display_params configuration
-                cots_waypoints = self.cots_waypoints_for_survey()
-                minimum_score = self.cots_display_params.minimum_score
-            else:
-                cots_waypoints = []
-                minimum_score = 0
+            init_kml_folder = f"{state.primary_drive}/kml"
+            os.makedirs(init_kml_folder, exist_ok=True)
+            output_file, filter = QFileDialog.getSaveFileName(self.map_widget, 'Folder to save KML file to?', directory=f"{init_kml_folder}/reefscan.kml")
+            if (output_file is not None and output_file != ""):
+                from aims.operations.kml_maker import make_kml2
+                tracks = self.make_tracks()
+                make_kml2(output_file, tracks, self.cots_waypoints)
 
-            output_folder = QFileDialog.getExistingDirectory(self.map_widget, 'Folder to save KML file to?')
-            if (output_folder is not None and output_folder != ""):
-                for survey in self.surveys:
-                    make_kml(survey=survey, cots_waypoints=cots_waypoints, minimum_cots_score=minimum_score, output_folder=output_folder, depth=True)

@@ -72,12 +72,14 @@ due to file size requirements, i.e. tensorflow is required for
 these operations but it is too large for the purposes
 of a pyinstaller executable
 """
+
 PYINSTALLER_COMPILED = getattr(sys, 'frozen', False)
+from aims.ui.main_ui_components.cots_display_component import CotsDisplayComponent
+
 if not PYINSTALLER_COMPILED:
     try:
         from aims.operations.inference_operation import InferenceOperation, inference_result_folder
         from aims.operations.chart_operation import ChartOperation
-        from aims.ui.main_ui_components.cots_display_component import CotsDisplayComponent
 
     except Exception as e:
         logger.warn("Can't load inferencer", e)
@@ -134,6 +136,8 @@ class DataComponent(QObject):
         self.archive_data_loaded = False
         self.programatic_tab_changing = False
 
+
+
         print_time("Init done", start, logger)
 
     def tab_changed(self, index):
@@ -143,10 +147,11 @@ class DataComponent(QObject):
             if index == self.get_index_by_tab_text(self.tr('Map')):
                 if self.map_component is None:
                     from aims.ui.main_ui_components.map_component import MapComponent
-                    self.map_component = MapComponent(self.data_widget.map_tab, self.cots_display_params)
+                    self.map_component = MapComponent(self.data_widget.map_tab, self.cots_display_params, self.aims_status_dialog)
                 surveys = self.get_all_descendants_as_surveys(self.selected_index)
                 self.map_component.show(surveys)
             if index == self.get_index_by_tab_text(self.tr('COTS Photos')):
+                self.display_cots_detections(samba=self.camera_tree_selected)
                 self.cots_display_component.show()
 
     def copy(self):
@@ -278,7 +283,7 @@ class DataComponent(QObject):
             self.remove_tab_by_tab_text(self.tr('Inference'))
             self.remove_tab_by_tab_text(self.tr('Chart'))
             self.remove_tab_by_tab_text(self.tr('End-Of-Day-COTS'))
-            self.remove_tab_by_tab_text(self.tr('COTS Photos'))
+            # self.remove_tab_by_tab_text(self.tr('COTS Photos'))
             self.cots_display_params = None
         else:
             self.eod_cots_widget.detectCotsButton.clicked.connect(self.detect_cots)
@@ -287,9 +292,9 @@ class DataComponent(QObject):
             self.cots_detector = CotsDetector(output=self.eod_cots_widget.detectorOutput,
                                               parent=self
                                               )
-            from aims.model.cots_display_params import CotsDisplayParams
-            self.cots_display_params = CotsDisplayParams()
-            self.cots_display_component = CotsDisplayComponent(self.cots_display_widget, self.cots_display_params)
+        from aims.model.cots_display_params import CotsDisplayParams
+        self.cots_display_params = CotsDisplayParams()
+        self.cots_display_component = CotsDisplayComponent(self.cots_display_widget, self.cots_display_params)
 
         self.data_widget.tabWidget.currentChanged.connect(self.tab_changed)
 

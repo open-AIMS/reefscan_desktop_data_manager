@@ -11,6 +11,7 @@ from reefscanner.basic_model.model_utils import replace_last
 
 from aims import utils
 from aims.model.cots_detection import CotsDetection
+from aims.model.image_with_score import ImageWithScore
 from aims.model.proportional_rectangle import ProportionalRectangle
 
 from functools import partial
@@ -210,7 +211,7 @@ class CotsDisplayComponent(QObject):
         self.cots_widget.button_previous.setVisible(True)
 
 
-        photo = self.photos[self.selected_photo]
+        photo = self.photos[self.selected_photo].path
         if self.enhanced:
             photo_to_show = self.enhanced_photo(photo)
         else:
@@ -298,8 +299,8 @@ class CotsDisplayComponent(QObject):
         if self.photos is None:
             return
 
-        photo = self.photos[self.selected_photo]
-        utils.open_file(photo)
+        photo:ImageWithScore = self.photos[self.selected_photo]
+        utils.open_file(photo.path)
 
     # Draw the rectangles over the photo
     # The cots for the current sequence will have a red rectangle. Yellow rectangles for the others

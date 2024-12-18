@@ -15,13 +15,24 @@ class CotsDisplayParams:
         self.minimum_score = 0.5
         self.realtime_cots_detection_list = {"cam_1": CotsDetectionList(), "cam_2": CotsDetectionList()}
         self.eod_cots_detection_list = {"cam_1": CotsDetectionList(), "cam_2": CotsDetectionList()}
+
+        # self.realtime_cots_detection_list = {"cam_1": CotsDetectionList()}
+        # self.eod_cots_detection_list = {"cam_1": CotsDetectionList()}
+
         self.by_class = "both"
 
-    def cots_detection_list(self):
+    def cots_detection_list(self, camera=None):
+        if camera == None:
+            camera = self.camera
         if self.eod:
-            return self.eod_cots_detection_list[self.camera]
+            detection_list = self.eod_cots_detection_list
         else:
-            return self.realtime_cots_detection_list[self.camera]
+            detection_list = self.realtime_cots_detection_list
+
+        # if self.camera == "both":
+        #     return cat_detection_lists(detection_list["cam_1"], detection_list["cam_2"])
+        # else:
+        return detection_list[camera]
 
 
     def read_data(self, aims_status_dialog, folder, samba):

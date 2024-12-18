@@ -56,8 +56,8 @@ class Config(object):
     def set_deep(self, deep):
         self.deep = deep
         if deep:
-            self.camera_ip = "192.168.2.12"
-            self.hardware_data_folder = r"\\192.168.2.12\images"
+            self.camera_ip = "192.168.2.2"
+            self.hardware_data_folder = r"\\192.168.2.2\images"
 
     def set_dev(self, dev):
         self.dev = dev

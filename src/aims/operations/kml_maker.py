@@ -10,6 +10,23 @@ from aims import utils
 
 logger = logging.getLogger("")
 
+def make_kml2(filename, tracks, cots):
+    kml = simplekml.Kml()
+    cots_folder = kml.newfolder(name="cots")
+    for cot in cots:
+        pnt = cots_folder.newpoint(coords=[(cot[1], cot[0])])
+        pnt.style.iconstyle.icon.href = 'https://maps.google.com/mapfiles/kml/paddle/wht-blank.png'
+        pnt.style.iconstyle.color = simplekml.Color.red
+
+    tracks_folder = kml.newfolder(name="track")
+    for track in tracks:
+        pnt = tracks_folder.newpoint(coords=[(track[1], track[0])])
+        pnt.style.iconstyle.icon.href = 'https://maps.google.com/mapfiles/kml/paddle/wht-blank.png'
+        pnt.style.iconstyle.color = simplekml.Color.gray
+
+    kml.save(filename)
+
+
 
 def make_kml(survey: Survey, cots_waypoints, minimum_cots_score, output_folder, depth=False):
     import alphashape

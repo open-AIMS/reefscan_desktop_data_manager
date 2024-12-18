@@ -27,7 +27,7 @@ class ReadEodDetectionsOperation(AbstractOperation):
             self.cots_detection_list.read_eod_files(self.progress_queue, self, self.folder, samba=self.samba, use_cache=self.use_cache)
             self.success=True
         except Exception as e:
-            logger.error("ERROR ERROR: resd_eod_detections_operation from real_src")
+            logger.error("ERROR ERROR: read_eod_detections_operation from real_src")
             traceback.print_exc()
             self.message = str(e)
             logger.info(self.message)

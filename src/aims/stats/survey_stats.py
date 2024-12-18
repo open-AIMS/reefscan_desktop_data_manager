@@ -42,28 +42,33 @@ class SurveyStats:
         self.min_ping = None
 
     def calculate(self, survey):
-        folder = survey.folder
-        self.photos = survey.photos
-        csv_file_name = folder + "/photo_log.csv"
-        if os.path.exists(csv_file_name):
-            with open(csv_file_name, mode="r") as file:
-                df = pd.read_csv(file)
-            self.photos_from_csv = len(df)
-            no_lat = df[pd.to_numeric(df['latitude'], errors='coerce').isnull() | (pd.to_numeric(df['latitude'], errors='coerce') == 0)]
-            self.missing_gps = len(no_lat)
-            try:
-                ping_numeric = pd.to_numeric(df['ping_depth'], errors='coerce')
-                no_ping = df[ping_numeric.isnull() | (ping_numeric < 0)]
-                self.max_ping = round(ping_numeric.max()/1000, 1)
-                self.min_ping = round(ping_numeric.min()/1000, 1)
-                self.missing_ping_depth = len(no_ping)
-            except:
-                pass
-            try:
-                no_pressure = df[pd.to_numeric(df['pressure_depth'], errors='coerce').isnull() | (pd.to_numeric(df['pressure_depth'], errors='coerce')<0)]
-                self.missing_pressure_depth = len(no_pressure)
-            except:
-                pass
+        survey_dfs = []
+        for (camera, folder) in survey.camera_dirs.items():
+            self.photos = survey.photos
+            csv_file_name = folder + "/photo_log.csv"
+            if os.path.exists(csv_file_name):
+                with open(csv_file_name, mode="r") as file:
+                    df = pd.read_csv(file)
+            survey_dfs.append(df)
+
+        survey_df = pd.concat(survey_dfs)
+
+        self.photos_from_csv = len(survey_df)
+        no_lat = survey_df[pd.to_numeric(survey_df['latitude'], errors='coerce').isnull() | (pd.to_numeric(survey_df['latitude'], errors='coerce') == 0)]
+        self.missing_gps = len(no_lat)
+        try:
+            ping_numeric = pd.to_numeric(survey_df['ping_depth'], errors='coerce')
+            no_ping = survey_df[ping_numeric.isnull() | (ping_numeric < 0)]
+            self.max_ping = round(ping_numeric.max()/1000, 1)
+            self.min_ping = round(ping_numeric.min()/1000, 1)
+            self.missing_ping_depth = len(no_ping)
+        except:
+            pass
+        try:
+            no_pressure = survey_df[pd.to_numeric(df['pressure_depth'], errors='coerce').isnull() | (pd.to_numeric(survey_df['pressure_depth'], errors='coerce')<0)]
+            self.missing_pressure_depth = len(no_pressure)
+        except:
+            pass
 
 
     def calculate_surveys(self, survey_infos):

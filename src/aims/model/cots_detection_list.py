@@ -7,21 +7,33 @@ import pandas as pd
 from PIL import Image
 from PIL import UnidentifiedImageError
 from pandas import DataFrame
+from reefscanner.basic_model import exif_utils
 from reefscanner.basic_model.json_utils import read_json_file
 from reefscanner.basic_model.model_utils import replace_last
 from reefscanner.basic_model.progress_queue import ProgressQueue
 from reefscanner.basic_model.samba.file_ops_factory import get_file_ops
 
 from aims.model.cots_detection import CotsDetection, serialize_cots_detection_list, de_serialize_cots_detection_list
+from aims.model.image_with_score import ImageWithScore
 from aims.model.proportional_rectangle import ProportionalRectangle, serialize_proportional_rectangle_lookup, \
     de_serialize_proportional_rectangle_lookup
 
 # This stores all the information for COTS detections for a reefscan sequence
 from aims.operations.abstract_operation import AbstractOperation
+
 from aims.utils import read_json_file_support_samba, read_json_file, write_json_file, short_file_name
 
 import logging
+
+from reefcloud.sub_sample import not_overlapping
+
 logger = logging.getLogger("")
+
+
+def photo_no(photo_file_name):
+    num_str = photo_file_name[-8:-4]
+    return int(num_str)
+
 
 class CotsDetectionList():
     def __init__(self):
@@ -118,7 +130,6 @@ class CotsDetectionList():
 
         # If the folder is the same as the one passed
         if self.folder == folder:
-            self.has_data = False
             return False
 
         self.folder = folder
@@ -138,6 +149,7 @@ class CotsDetectionList():
         self.read_realtime_image_files()
         self.read_confirmations(None, self.folder)
         self.has_data = True
+        self.sort_photos()
         if not samba:
             self.serialize()
         return True
@@ -147,7 +159,6 @@ class CotsDetectionList():
         progress_queue.set_progress_label(f"Reading EOD detections for {folder}")
 
         if self.folder == folder:
-            self.has_data = False
             return False
 
         self.folder = folder
@@ -167,11 +178,19 @@ class CotsDetectionList():
 
         self.load_waypoints(progress_queue)
         self.read_eod_detection_files(progress_queue, operation, self.eod_detections_folder)
+        self.sort_photos()
+
         if not operation.cancelled:
             self.read_confirmations(progress_queue, self.eod_detections_folder)
             self.has_data = True
             self.serialize()
-        return True             
+        return True
+
+    def sort_photos(self):
+        for detection in self.cots_detections_list:
+            detection:CotsDetection = detection
+            detection.images.sort(key=lambda i: i.score, reverse=True)
+
 
 # realtime confirmations are stores in a csv file. The csv file can have conflicting informations
 # We always believe the most recent rows (ie towards the end of the file)
@@ -249,6 +268,7 @@ class CotsDetectionList():
                         waypoint_df = self.waypoint_by_filename(photo_file_name)
                         waypoint_df["sequence_ids"] = sequence_ids
                         waypoint_df["score"] = max_score
+                        waypoint_df["photo_no"] = photo_no(photo_file_name)
                         cots_waypoint_dfs.append(waypoint_df)
                 except Exception as e:
                     logger.error(f"Error decoding JSON in {filename}: {e}", e)
@@ -320,7 +340,7 @@ class CotsDetectionList():
             def __init__(self):
                 self.reference_dict = {}
 
-            def insert(self, cots_detection_item: CotsDetection, image_path):
+            def insert(self, cots_detection_item: CotsDetection, image_path, score):
                 sequence_id = cots_detection_item.sequence_id
                 current_images = []                
                 if sequence_id not in self.reference_dict:
@@ -332,7 +352,7 @@ class CotsDetectionList():
                         self.reference_dict[sequence_id] = cots_detection_item
                         
                 if image_path not in current_images:
-                    current_images.append(image_path)
+                    current_images.append(ImageWithScore(image_path, score))
                     self.reference_dict[sequence_id].images = current_images
 
 
@@ -349,7 +369,10 @@ class CotsDetectionList():
 
         # scars don't have sequence ids so we make them up
         # negative so as to not clash with the COTS sequences
-        next_scar_sequence_id = -1
+        cur_scar_sequence_id = 0
+        this_sequence_start_exif = None
+        current_scar_detection = None
+
 
         # keep track of the sequence_id from the JSON which is not really sequence id but
         # is a count of the number of photos for this sequence so far
@@ -372,6 +395,7 @@ class CotsDetectionList():
 
                 # Check if the file is a JSON file
                 if filename.endswith(".json") and os.path.isfile(file_path):
+                    sequence_ids = None
                     try:
                         # Load the JSON content from local disk or samba drive
                         json_data = read_json_file_support_samba(file_path, self.samba)
@@ -384,17 +408,21 @@ class CotsDetectionList():
                                 # scar_score = json_data['data']['pixel_prediction']['mean']
                                 scar_score = json_data['data']['pixel_prediction']['max'] / 255
                                 max_score=scar_score
-                                sequence_ids = f"sequences: {next_scar_sequence_id}"
                                 # if scar_score > 0.01:
                                 if scar_score > 0.5:
-                                    cots_detections_info = CotsDetection(sequence_id=next_scar_sequence_id,
-                                                                        best_class_id=1,
-                                                                        best_score=scar_score,
-                                                                        confirmed=None,
-                                                                        images=[]
-                                                                        )
-                                    detection_ref.insert(cots_detections_info, photo_file_name_path)
-                                    next_scar_sequence_id-= 1
+                                    this_photo_exif = exif_utils.get_exif_data(photo_file_name_path, True)
+                                    if not_overlapping(this_sequence_start_exif, this_photo_exif):
+                                        cur_scar_sequence_id -= 1
+                                        this_sequence_start_exif = this_photo_exif
+                                        current_scar_detection = CotsDetection(sequence_id=cur_scar_sequence_id,
+                                                                             best_class_id=1,
+                                                                             best_score=scar_score,
+                                                                             confirmed=None,
+                                                                             images=[]
+                                                                             )
+
+                                    sequence_ids = f"sequences: {cur_scar_sequence_id}"
+                                    detection_ref.insert(current_scar_detection, photo_file_name_path, scar_score)
 
                             detections_list = json_data['data']['detections']
                             if len(detections_list) > 0:
@@ -425,7 +453,7 @@ class CotsDetectionList():
                                                                         confirmed=confirmed,
                                                                         images=[]
                                                                         )
-                                    detection_ref.insert(cots_detections_info, photo_file_name_path)
+                                    detection_ref.insert(cots_detections_info, photo_file_name_path, score)
 
                                 rectangles = []
                                 for result in detections_list:
@@ -445,10 +473,11 @@ class CotsDetectionList():
                                 self.image_rectangles_by_filename[photo_file_name_path] = rectangles
 #                                cots_waypoint_dfs.append(self.waypoint_by_filename(photo_file_name))
 
-                            if (len(detections_list) > 0) or ('pixel_prediction' in json_data['data']):
+                            if (sequence_ids is not None):
                                 cots_waypoint_df = self.waypoint_by_filename(photo_file_name)
                                 cots_waypoint_df["sequence_ids"] = sequence_ids
                                 cots_waypoint_df["score"] = max_score
+                                cots_waypoint_df["photo_no"] = photo_no(photo_file_name)
                                 cots_waypoint_dfs.append(cots_waypoint_df)
 
 
@@ -469,17 +498,15 @@ class CotsDetectionList():
     def image_list(self, detection_list):
         images = []
         for detection in detection_list:
-            try:
-                photo_file_name = ntpath.basename(detection["filename"])
-            except:
-                # I changed the format while we are still in development but I want to support the old format for a little while
-                photo_file_name = ntpath.basename(detection["image"]["header"]["frame_id"])
-            images.append(f"{self.folder}/{photo_file_name}")
+            photo_file_name = ntpath.basename(detection["filename"])
+            score = detection["detection_results"][0]["score"]
+
+            images.append(ImageWithScore(f"{self.folder}/{photo_file_name}", score))
         return images
 
 # read all waypoint for the reefscan sequence into a pandas data frane
     def load_waypoints (self, progress_queue: ProgressQueue):
-        # if not self.samba:
+        # if not self.samba
         #     try:
         #         make_photo_csv(self.folder)
         #     except Exception as e:
@@ -521,10 +548,14 @@ class CotsDetectionList():
         return self.cots_detections_list[idx].confirmed if idx else None
 
     def write_confirmed_field_to_cots_sequence(self):
+
         if self.eod:
             cots_folder = self.eod_detections_folder
         else:
             cots_folder = self.folder
+
+        if cots_folder is None:
+            raise Exception('Confirmations are not allowed when camera is "Both"')
 
         file_name = f"{cots_folder}/cots_class_confirmations_current.csv"
         with open(file_name, "w") as csvfile:
@@ -541,3 +572,22 @@ class CotsDetectionList():
         suffix = str(sequence_id).zfill(6)
         return f'cots_sequence_detection_{suffix}.json'
 
+
+
+# def cat_detection_lists(list1: CotsDetectionList, list2: CotsDetectionList):
+#     big_list = CotsDetectionList()
+#
+#     big_list.cots_detections_list.extend(list1.cots_detections_list)
+#     big_list.cots_detections_list.extend(list2.cots_detections_list)
+#
+#     big_list.image_rectangles_by_filename.update(list1.image_rectangles_by_filename)
+#     big_list.image_rectangles_by_filename.update(list2.image_rectangles_by_filename)
+#
+#     big_list.cots_waypoints.extend(list1.cots_waypoints)
+#     big_list.cots_waypoints.extend(list2.cots_waypoints)
+#
+#     big_list.has_data = list1.has_data or list2.has_data
+#     return big_list
+
+if __name__ == "__main__":
+    print(photo_no("REEFSCAN_12_cam1_20241125_053944_689_0001.jpg"))

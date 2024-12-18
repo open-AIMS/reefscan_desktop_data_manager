@@ -14,6 +14,34 @@ from aims.state import state
 import logging
 logger = logging.getLogger("")
 
+def wp(exif):
+    return exif["latitude"], exif["longitude"]
+
+def not_overlapping(exif1, exif2):
+    if exif1 is None:
+        return True
+
+    return should_keep(wp(exif2), wp(exif1), exif1["subject_distance"], exif2["subject_distance"])
+
+
+def should_keep(wp, old_wp, target_distance, subject_distance, maximum_target_distance=12):
+    if subject_distance > maximum_target_distance:
+        return False
+
+    if target_distance is None:
+        return True
+
+    if old_wp is None:
+        return True
+
+    if wp is None:
+        return False
+
+    d = geopy.distance.distance(old_wp, wp).meters
+
+    return d > target_distance
+
+
 class SubSampler(QObject):
     def __init__(self):
         super().__init__()
@@ -31,24 +59,6 @@ class SubSampler(QObject):
 
         proportion_bad = bad_photos / total_photos
         return proportion_bad < 0.1
-
-
-    def should_keep(self, wp, old_wp, target_distance, subject_distance, maximum_target_distance=12):
-
-
-        if subject_distance > maximum_target_distance:
-            return False
-
-        if old_wp is None:
-            return True
-
-        if wp is None:
-            return False
-
-        d = geopy.distance.distance(old_wp, wp).meters
-
-        return d > target_distance
-
 
     def sub_sample_dir(self, image_dir, sample_dir, progress_queue: ProgressQueue):
         logger.info(f"sub_sample dir {time.process_time()}")
@@ -87,19 +97,17 @@ class SubSampler(QObject):
                 full_file_name = image_dir + "/" + file_name
                 try:
                     exif = get_exif_data(full_file_name, False)
-                    subject_distance = exif["altitude"]
+                    subject_distance = exif["subject_distance"]
                     if subject_distance is None:
                         subject_distance = 8
 
-                    if target_distance is None:
-                        target_distance = subject_distance
-
-
-                    wp = exif["latitude"], exif["longitude"]
-                    keep = self.should_keep(wp, old_wp, target_distance, subject_distance, maximum_subject_distance)
-                    # Ignore photos with bad geolocation in exif data.
                     if exif["latitude"] is None or exif["longitude"] is None:
                         keep = False
+
+                    wp = exif["latitude"], exif["longitude"]
+                    keep = should_keep(wp, old_wp, target_distance, subject_distance, maximum_subject_distance)
+
+                    # Ignore photos with bad geolocation in exif data.
                 except Exception as e:
                     print (e)
                     keep = False
@@ -110,7 +118,7 @@ class SubSampler(QObject):
                     exif = get_exif_data(full_file_name, True)
                     exif["filename"] = file_name
                     selected_photo_infos.append(exif)
-                    target_distance = None
+                    target_distance = subject_distance
             progress_queue.set_progress_value()
         return selected_photo_infos
 
