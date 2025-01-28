@@ -283,7 +283,7 @@ class DataComponent(QObject):
             self.remove_tab_by_tab_text(self.tr('Inference'))
             self.remove_tab_by_tab_text(self.tr('Chart'))
             self.remove_tab_by_tab_text(self.tr('End-Of-Day-COTS'))
-            # self.remove_tab_by_tab_text(self.tr('COTS Photos'))
+            self.remove_tab_by_tab_text(self.tr('COTS Photos'))
             self.cots_display_params = None
         else:
             self.eod_cots_widget.detectCotsButton.clicked.connect(self.detect_cots)
@@ -292,9 +292,9 @@ class DataComponent(QObject):
             self.cots_detector = CotsDetector(output=self.eod_cots_widget.detectorOutput,
                                               parent=self
                                               )
-        from aims.model.cots_display_params import CotsDisplayParams
-        self.cots_display_params = CotsDisplayParams()
-        self.cots_display_component = CotsDisplayComponent(self.cots_display_widget, self.cots_display_params)
+            from aims.model.cots_display_params import CotsDisplayParams
+            self.cots_display_params = CotsDisplayParams()
+            self.cots_display_component = CotsDisplayComponent(self.cots_display_widget, self.cots_display_params)
 
         self.data_widget.tabWidget.currentChanged.connect(self.tab_changed)
 
@@ -516,7 +516,7 @@ class DataComponent(QObject):
         if self.cots_display_component is not None:
             for survey_info in surveys:
                 survey = state.model.surveys_data[survey_info["survey_id"]]
-                self.cots_display_params.cots_detection_list().read_realtime_files(survey.folder, samba=False, use_cache=False)
+                self.cots_display_params.read_realtime_data(survey.folder,samba=False)
 
         self.initial_disables()
 

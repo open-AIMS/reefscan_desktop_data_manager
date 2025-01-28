@@ -37,14 +37,20 @@ class CotsDisplayParams:
 
     def read_data(self, aims_status_dialog, folder, samba):
 
-        for camera, detection_list in self.realtime_cots_detection_list.items():
-            camera_folder = f"{folder}/{camera}"
-            if os.path.exists(camera_folder):
-                detection_list.read_realtime_files(camera_folder, samba, use_cache=True)
+        self.read_realtime_data(folder, samba)
 
+        self.read_eod_data(aims_status_dialog, folder, samba)
+
+    def read_eod_data(self, aims_status_dialog, folder, samba):
         for camera, detection_list in self.eod_cots_detection_list.items():
             if samba:
                 detection_list.has_data = False
             else:
                 load_data.read_eod_detections(aims_status_dialog, f"{folder}/{camera}",
                                               detection_list)
+
+    def read_realtime_data(self, folder, samba):
+        for camera, detection_list in self.realtime_cots_detection_list.items():
+            camera_folder = f"{folder}/{camera}"
+            if os.path.exists(camera_folder):
+                detection_list.read_realtime_files(camera_folder, samba, use_cache=True)

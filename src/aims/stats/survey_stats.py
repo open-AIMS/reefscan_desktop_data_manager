@@ -42,6 +42,8 @@ class SurveyStats:
         self.min_ping = None
 
     def calculate(self, survey):
+        if survey.samba:
+            return
         survey_dfs = []
         for (camera, folder) in survey.camera_dirs.items():
             self.photos = survey.photos
@@ -49,7 +51,7 @@ class SurveyStats:
             if os.path.exists(csv_file_name):
                 with open(csv_file_name, mode="r") as file:
                     df = pd.read_csv(file)
-            survey_dfs.append(df)
+                survey_dfs.append(df)
 
         survey_df = pd.concat(survey_dfs)
 
