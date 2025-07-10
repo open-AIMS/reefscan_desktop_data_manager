@@ -27,7 +27,9 @@ class ReefCloudSession():
         expires_in_secs = expire_time - now
         # if the tokens expire less than a minute from now then refresh
         if expires_in_secs < 60:
+            logger.info(f"check refresh cognito uri: {self.cognito_uri}")
             token_url = f'{self.cognito_uri}/oauth2/token'
+            logger.info(f"token_url: {token_url}")
             tokens = self.oauth2_session.refresh_token(token_url,
                                                           refresh_token=self.tokens["refresh_token"],
                                                        client_id=self.client_id,
@@ -40,6 +42,8 @@ class ReefCloudSession():
 
     def login(self):
         try:
+            logger.info(f"login cognito uri: {self.cognito_uri}")
+
             self.login_worker = LoginWorker(self.client_id, self.cognito_uri)
             self.login_worker.start()
             self.login_worker.join()
