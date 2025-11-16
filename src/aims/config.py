@@ -14,8 +14,14 @@ class Config(object):
         super().__init__()
 
 
+        # self.camera_ip = "192.168.3.59"
+        # self.hardware_data_folder = r"\\192.168.3.59\images"
+        # self.username = "reefscan"
+
         self.camera_ip = "192.168.3.2"
         self.hardware_data_folder = r"\\192.168.3.2\images"
+        self.username = "jetson"
+
 
         # self.camera_ip = "10.42.0.1"
         # self.hardware_data_folder = r"\\10.42.0.1\images"

@@ -31,6 +31,7 @@ class State:
         self.oauth2_state = None
         self.read_only = False
         self.is_simulated = False
+        self.v2 = False
 
         self.config_file_name = "reefscan_config.json"
         self.reefcloud_projects_filename = "reefcloud_projects.json"
@@ -48,7 +49,7 @@ class State:
         return self.meipass.replace("\\", "/")
 
     def set_data_folders(self):
-        self.model.set_data_folders(self.primary_folder, self.backup_folder, self.config.hardware_data_folder)
+        self.model.set_data_folders(self.primary_folder, self.backup_folder, self.config.hardware_data_folder, username=self.config.username)
         self.config_folder = f"{self.primary_drive}/config"
         self.config_file = f"{self.config_folder}/{self.config_file_name}"
 
@@ -64,7 +65,7 @@ class State:
         logger.addHandler(handler)
 
     def read_reefscan_id(self):
-        return read_reefscan_id_for_ip(self.config.camera_ip)
+        return read_reefscan_id_for_ip(self.config.camera_ip, self.config.username)
 
     def save_config_file(self):
         data_folder_json = {

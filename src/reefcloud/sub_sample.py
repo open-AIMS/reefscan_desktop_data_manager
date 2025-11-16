@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import shutil
@@ -12,6 +13,9 @@ import pandas as pd
 
 from aims.state import state
 import logging
+
+from aims.tools.bmp_to_tiff import bmp_to_tiff
+
 logger = logging.getLogger("")
 
 def wp(exif):
@@ -46,6 +50,7 @@ class SubSampler(QObject):
     def __init__(self):
         super().__init__()
         self.canceled = False
+        self.file_infos = {}
 
     def has_waypoints(self, folder):
         csv_file_name = folder + "/photo_log.csv"
@@ -54,6 +59,27 @@ class SubSampler(QObject):
                 df = pd.read_csv(file)
         else:
             return False
+
+        # for each row of df add an element to distances_and_waypoints
+        for index, row in df.iterrows():
+            subject_distance = row["ping_depth"] / 1000
+            latitude = row["latitude"]
+            longitude = row["longitude"]
+            filename = row["filename_string"]
+            altitude = row["pressure_depth"]
+            date_taken = datetime.datetime.fromtimestamp(row["time_secs"]).isoformat()
+
+            self.file_infos[filename] = {"subject_distance": subject_distance,
+                                           "latitude": latitude,
+                                           "longitude": longitude,
+                                           "altitude": altitude,
+                                           "date_taken": date_taken,
+                                           "filename": filename,
+                                           "width": 800,
+                                           "height": 600
+                                         }
+
+
         total_photos = len(df)
         bad_photos = (df['latitude'].isna() | df['longitude'].isna()).sum()
 
@@ -92,36 +118,43 @@ class SubSampler(QObject):
         for file_name in listdir:
             if self.canceled:
                 return None
+            full_file_name = image_dir + "/" + file_name
 
-            if file_name.lower().endswith(".jpg"):
-                full_file_name = image_dir + "/" + file_name
+            if file_name.lower().endswith(".jpg") or file_name.lower().endswith(".bmp"):
                 try:
-                    exif = get_exif_data(full_file_name, False)
-                    subject_distance = exif["subject_distance"]
+                    file_info = self.get_file_info(file_name, full_file_name)
+                    subject_distance = file_info["subject_distance"]
                     if subject_distance is None:
                         subject_distance = 8
 
-                    if exif["latitude"] is None or exif["longitude"] is None:
+                    if file_info["latitude"] is None or file_info["longitude"] is None:
                         keep = False
-
-                    wp = exif["latitude"], exif["longitude"]
-                    keep = should_keep(wp, old_wp, target_distance, subject_distance, maximum_subject_distance)
+                    else:
+                        wp = file_info["latitude"], file_info["longitude"]
+                        keep = should_keep(wp, old_wp, target_distance, subject_distance, maximum_subject_distance)
 
                     # Ignore photos with bad geolocation in exif data.
                 except Exception as e:
                     print (e)
                     keep = False
                 if keep:
-
+                    if file_name.lower().endswith(".bmp"):
+                        bmp_to_tiff(full_file_name, sample_dir)
                     shutil.copy2(full_file_name, sample_dir + "/" + file_name)
                     old_wp = wp
-                    exif = get_exif_data(full_file_name, True)
-                    exif["filename"] = file_name
-                    selected_photo_infos.append(exif)
+                    selected_photo_infos.append(file_info)
                     target_distance = subject_distance
+
             progress_queue.set_progress_value()
         return selected_photo_infos
 
+    def get_file_info(self, file_name, full_file_name):
+        try:
+            return self.file_infos[file_name]
+        except:
+            exif = get_exif_data(full_file_name, False)
+            exif["filename"] = file_name
+            return exif
 
     def sub_sample_dir_simple(self, image_dir, sample_dir, progress_queue: ProgressQueue):
         progress_queue.reset()
@@ -138,13 +171,12 @@ class SubSampler(QObject):
         selected_photo_infos = []
 
         for file_name in listdir:
-            if file_name.lower().endswith(".jpg"):
+            if file_name.lower().endswith(".jpg") or file_name.lower().endswith(".bmp"):
                 full_file_name = image_dir + "/" + file_name
                 if i % 10 == 0:
-                    exif = get_exif_data(full_file_name, True)
+                    file_info = self.get_file_info(file_name, full_file_name)
                     shutil.copy2(full_file_name, sample_dir + "/" + file_name)
-                    exif["filename"] = file_name
-                    selected_photo_infos.append(exif)
+                    selected_photo_infos.append(file_info)
 
                 i+=1
             progress_queue.set_progress_value()

@@ -38,9 +38,9 @@ def write_reefcloud_photos_json(survey_id, outputfile, selected_photo_infos):
             "distance-from-camera": info["subject_distance"],
             "latitude": info["latitude"],
             "longitude": info["longitude"],
+            "time": info["date_taken"] + "Z",
             "width": info["width"],
-            "height": info["height"],
-            "time": info["date_taken"] + "Z"
+            "height": info["height"]
         }
         reefcloud_infos.append(reefcloud_info)
 
@@ -99,7 +99,9 @@ def get_project_country(project_name):
     oauth2_session.check_refresh()
     logger.info(oauth2_session.id_token)
     headers = {
-        'Authorization': 'Bearer {}'.format(oauth2_session.id_token)
+        'Authorization': 'Bearer {}'.format(oauth2_session.id_token),
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36'
+
     }
     r = requests.get(url, headers=headers)
     if r.status_code >= 400:
@@ -127,7 +129,9 @@ def create_reefcloud_site(project_name, site_name, latitude, longitude, depth):
     oauth2_session = state.reefcloud_session
     oauth2_session.check_refresh()
     headers = {
-        'Authorization': 'Bearer {}'.format(oauth2_session.id_token)
+        'Authorization': 'Bearer {}'.format(oauth2_session.id_token),
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36'
+
     }
     # url = state.config.projects_json_download_url
     url = f"{state.config.sites_json_download_url}?org={project_name}"
@@ -185,7 +189,8 @@ def download_reefcloud_projects(oauth2_session):
     logger.info("In update_reefcloud_projects")
     logger.info(oauth2_session.id_token)
     headers = {
-        'Authorization': 'Bearer {}'.format(oauth2_session.id_token)
+        'Authorization': 'Bearer {}'.format(oauth2_session.id_token),
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36'
     }
     # the projects service tells us which projects our user can access but only returns he cognitoGroup
     # we have to load the details service to get the project name
@@ -226,7 +231,9 @@ def download_reefcloud_sites_for_project(oauth2_session, reefcloud_project):
     logger.info("entering download_reefcloud_sites_for_project " + reefcloud_project)
     url = f"{state.config.sites_json_download_url}?org={reefcloud_project}"
     headers = {
-        'Authorization': 'Bearer {}'.format(oauth2_session.id_token)
+        'Authorization': 'Bearer {}'.format(oauth2_session.id_token),
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36'
+
     }
     logger.info(url)
     r = requests.get(url, headers=headers)

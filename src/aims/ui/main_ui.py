@@ -53,7 +53,7 @@ def remove_button_border(button):
 class MainUi(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.version = "2.0.2"
+        self.version = "2.1.0"
         self.current_screen = "start"
         self.workflow_collapsed = False
 
