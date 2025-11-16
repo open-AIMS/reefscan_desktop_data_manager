@@ -11,9 +11,9 @@ logger = logging.getLogger("")
 
 class SyncFromHardwareOperation(AbstractOperation):
 
-    def __init__(self, hardware_folder, local_folder, backup_data_folder, surveys, camera_samba):
+    def __init__(self, hardware_folder, local_folder, backup_data_folder, surveys, camera_samba, username):
         super().__init__()
-        self.sync = SyncFromHardware(self.progress_queue, hardware_folder, local_folder, backup_data_folder, camera_samba)
+        self.sync = SyncFromHardware(self.progress_queue, hardware_folder, local_folder, backup_data_folder, camera_samba, username)
         self.surveys = surveys
 
     def _run(self):
@@ -29,7 +29,7 @@ class SyncFromHardwareOperation(AbstractOperation):
                 else:
                     command = f'du -s /media/jetson/*/images/archive/{survey["survey_id"]}'
 
-                kilo_bytes_used = get_kilo_bytes_used(state.config.camera_ip, command)
+                kilo_bytes_used = get_kilo_bytes_used(state.config.camera_ip, command, state.config.username)
                 logger.info(self.tr("Bytes used: ") + f"{kilo_bytes_used}")
                 total_kilo_bytes_used += kilo_bytes_used
 

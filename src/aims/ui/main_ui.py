@@ -53,7 +53,7 @@ def remove_button_border(button):
 class MainUi(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.version = "2.0.2"
+        self.version = "2.1.0"
         self.current_screen = "start"
         self.workflow_collapsed = False
 
@@ -99,10 +99,18 @@ class MainUi(QMainWindow):
 
         self.hint(self.tr('Choose "Connect Disks" from the workflow bar'))
         self.ping_thread_ = None
+        self.is_camera_ready = False
+        self.camera_connection_attempts = 0
 
-    def camera_ready(self):
-        self.connect_widget.btnConnect.setEnabled(True)
-        self.connect_widget.readyLabel.setText(self.tr("Camera is ready"))
+    def camera_ready(self, ready: bool):
+        self.is_camera_ready = ready
+        self.connect_widget.btnConnect.setEnabled(ready)
+        if ready:
+            self.connect_widget.readyLabel.setText(self.tr("Camera is ready"))
+        else:
+            self.camera_connection_attempts += 1
+            self.connect_widget.readyLabel.setText(self.tr(f"Could not find camera box. Trying again. Attempts so far: {self.camera_connection_attempts}"))
+            self.ping_camera()
 
     def hint(self, text):
         self.ui.hint_label.setText(text)
@@ -318,8 +326,11 @@ class MainUi(QMainWindow):
             self.ping_thread_ = PingThread()
             self.ping_thread_.ready.connect(self.camera_ready)
 
-        self.ping_thread_.start()
+        self.camera_connection_attempts = 0
+        self.ping_camera()
 
+    def ping_camera(self):
+        self.ping_thread_.start()
 
     def load_routes_screen(self):
         if self.routes_component is None:
@@ -428,4 +439,8 @@ class MainUi(QMainWindow):
 
         if state.config.dev:
             self.ui.setWindowTitle(self.ui.windowTitle() + " - DEV")
+
+        if state.config.v2:
+            self.ui.setWindowTitle(self.ui.windowTitle() + " - Generation 2")
+
         self.ui.show()

@@ -33,12 +33,12 @@ class ReefcloudUploader(QObject):
                 return False
             upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=subsampled_image_folder,
                         file_name=file)
-            if file.lower().endswith(".jpg"):
+            if file.lower().endswith(".jpg") or file.lower().endswith(".bmp"):
                 if survey.reefcloud.first_photo_uploaded is None:
                     survey.reefcloud.first_photo_uploaded = file
                 survey.reefcloud.last_photo_uploaded = file
                 survey.reefcloud.uploaded_photo_count += 1
-                save_survey(survey, state.primary_folder, state.backup_folder, False)
+                save_survey(survey, state.primary_folder, state.backup_folder, False, username=None)
 
             progress_queue.set_progress_value()
         # upload other files (not images or survey.json)
@@ -47,7 +47,7 @@ class ReefcloudUploader(QObject):
                 upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=survey_folder,
                             file_name=file)
         survey.reefcloud.total_photo_count = survey.photos
-        save_survey(survey, state.primary_folder, state.backup_folder, False)
+        save_survey(survey, state.primary_folder, state.backup_folder, False, username=None)
         # upload survey.json last
         upload_file(oauth2_session=state.reefcloud_session, survey_id=survey_id, folder=survey_folder,
                     file_name="survey.json")

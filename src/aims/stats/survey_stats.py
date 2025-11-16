@@ -1,6 +1,8 @@
+import datetime
 import logging
 import os
 import pandas as pd
+from reefscanner.basic_model.survey import Survey
 
 from aims.state import state
 
@@ -41,9 +43,10 @@ class SurveyStats:
         self.max_ping = None
         self.min_ping = None
 
-    def calculate(self, survey):
+
+    def calculate(self, survey: Survey) -> bool:
         if survey.samba:
-            return
+            return False
         survey_dfs = []
         for (camera, folder) in survey.camera_dirs.items():
             self.photos = survey.photos
@@ -72,6 +75,43 @@ class SurveyStats:
         except:
             pass
 
+        survey_changed = False
+        if survey.start_date is None or survey.start_date == "":
+            date = datetime.datetime.fromtimestamp(survey_df["time_secs"].iloc[0])
+            survey.start_date = datetime.datetime.strftime(date, "%Y-%m-%dT%H:%M:%S")
+            survey_changed = True
+
+
+        if survey.start_lat is None or survey.start_lat == "":
+            survey.start_lat = survey_df["latitude"].iloc[0]
+            survey_changed = True
+
+        if survey.start_lon is None or survey.start_lon == "":
+            survey.start_lon = survey_df["longitude"].iloc[0]
+            survey_changed = True
+
+        if survey.start_depth is None or survey.start_depth == "":
+            survey.start_depth = survey_df["pressure_depth"].iloc[0]
+            survey_changed = True
+
+        if survey.finish_date is None or survey.finish_date == "":
+            date = datetime.datetime.fromtimestamp(survey_df["time_secs"].iloc[-1])
+            survey.finish_date = datetime.datetime.strftime(date, "%Y-%m-%dT%H:%M:%S")
+            survey_changed = True
+
+        if survey.finish_lat is None or survey.finish_lat == "":
+            survey.finish_lat = survey_df["latitude"].iloc[-1]
+            survey_changed = True
+
+        if survey.finish_lon is None or survey.finish_lon == "":
+            survey.finish_lon = survey_df["longitude"].iloc[-1]
+            survey_changed = True
+
+        if survey.finish_depth is None or survey.finish_depth == "":
+            survey.finish_depth = survey_df["pressure_depth"].iloc[-1]
+            survey_changed = True
+
+        return survey_changed
 
     def calculate_surveys(self, survey_infos):
         self.photos_from_csv = 0

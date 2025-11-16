@@ -192,7 +192,9 @@ class UserInfo(QObject):
             email_ = decoded.get('email')
 
             headers = {
-                'Authorization': 'Bearer {}'.format(access_token)
+                'Authorization': 'Bearer {}'.format(access_token),
+                'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36'
+
             }
 
             response = requests.get(user_info_url, headers=headers)

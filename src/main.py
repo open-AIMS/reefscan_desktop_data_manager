@@ -25,7 +25,10 @@ from aims2 import simulated
 
 def gui_except_hook(exc_class, exc_value, tb):
     logger.info("except hook")
-    traceback1 = ''.join(traceback.format_tb(tb))
+    try:
+        traceback1 = 'TRACE_BACK ' + ''.join(traceback.format_tb(tb))
+    except:
+        "Traceback not available"
     error_message = str(exc_value)
 
     logger.exception(exc_class)
@@ -107,6 +110,10 @@ if __name__ == "__main__":
     try:
         state.config.set_deep(sys.argv[0].lower().endswith("reefscan-deep.exe")
                               or (len(sys.argv) > 1 and sys.argv[1].lower() == "deep")
+                              )
+
+        state.config.v2 = (sys.argv[0].endswith("2.exe")
+                              or (len(sys.argv) > 1 and sys.argv[1].lower() == "v2")
                               )
 
         dev = len(sys.argv) > 1 and "dev" in sys.argv

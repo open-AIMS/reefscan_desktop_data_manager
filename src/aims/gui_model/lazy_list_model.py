@@ -25,14 +25,14 @@ def read_local_file(file):
     return blob_data
 
 
-def read_file(file, samba):
-    file_ops = file_ops_factory.get_file_ops(samba)
+def read_file(file, samba, username):
+    file_ops = file_ops_factory.get_file_ops(samba, username)
     with file_ops.open(file, 'rb') as file_t:
         blob_data = bytearray(file_t.read())
     return blob_data
 
 
-def thumbnail_from_disk_cache(folder, id, photo, samba):
+def thumbnail_from_disk_cache(folder, id, photo, samba, username):
     thumbnail_folder = state.primary_drive + "/reefscan_thumbnails/" + id
     os.makedirs(thumbnail_folder, exist_ok=True)
     thumbnail_file = thumbnail_folder + "/" + photo
@@ -40,7 +40,7 @@ def thumbnail_from_disk_cache(folder, id, photo, samba):
         thumbnail = read_local_file(thumbnail_file)
     else:
         orig_file = folder + "/" + photo
-        _bytes = read_file(orig_file, samba)
+        _bytes = read_file(orig_file, samba, username)
         image = Image.open(io.BytesIO(_bytes))
         image.thumbnail(size=(100, 100))
         image.save(thumbnail_file)
@@ -75,13 +75,14 @@ class NameAndIcon:
 class ThumbnailMaker(QThread):
     add_thumbnail = pyqtSignal(NameAndIcon)
 
-    def __init__(self, photos, folder, id, samba):
+    def __init__(self, photos, folder, id, samba, username):
         super().__init__()
         self.photos = photos
         self.folder = folder
         self.id = id
         self.interrupted = False
         self.samba = samba
+        self.username = username
 
     def run(self):
         # Your long-running task goes here ...
@@ -90,7 +91,7 @@ class ThumbnailMaker(QThread):
                 return
             full_path = self.folder + "/" + photo
             try:
-                thumbnail = thumbnail_from_disk_cache(self.folder, self.id, photo, self.samba)
+                thumbnail = thumbnail_from_disk_cache(self.folder, self.id, photo, self.samba, self.username)
                 pixmap = QPixmap()
                 pixmap.loadFromData(thumbnail)
                 icon = QIcon(pixmap)
@@ -103,7 +104,7 @@ class ThumbnailMaker(QThread):
 class LazyListModel (QAbstractListModel):
     numberPopulated = pyqtSignal(int)
 
-    def __init__(self, all_items, folder, id, samba):
+    def __init__(self, all_items, folder, id, samba, username):
         super().__init__()
         self.all_items = all_items
         self.icons = []
@@ -111,7 +112,7 @@ class LazyListModel (QAbstractListModel):
         self.loaded_count = 0
         self.folder = folder
         self.thumbnails = []
-        self.thumbnailMaker = ThumbnailMaker(self.all_items, folder, id, samba)
+        self.thumbnailMaker = ThumbnailMaker(self.all_items, folder, id, samba, username)
         self.thumbnailMaker.add_thumbnail.connect(self.add_thumbnail)
         # logger.info("start now")
         self.thumbnailMaker.start()

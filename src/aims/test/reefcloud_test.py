@@ -16,7 +16,9 @@ while not result.ready():
 
 state.reefcloud_session.check_refresh()
 headers = {
-    'Authorization': 'Bearer {}'.format(state.reefcloud_session.id_token)
+    'Authorization': 'Bearer {}'.format(state.reefcloud_session.id_token),
+    'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36'
+
 }
 
 url = "https://api.reefcloud.ai/reefcloud/api/user/access?min-level=WRITE"
