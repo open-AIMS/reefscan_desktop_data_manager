@@ -31,6 +31,7 @@ class State:
         self.oauth2_state = None
         self.read_only = False
         self.is_simulated = False
+        self.v2 = False
 
         self.config_file_name = "reefscan_config.json"
         self.reefcloud_projects_filename = "reefcloud_projects.json"
