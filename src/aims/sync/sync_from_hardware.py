@@ -192,7 +192,6 @@ class SyncFromHardware(QObject):
                 self.set_progress_label(message)
             except Exception as e:
                 print (f"there is an exception. {e}")
-                traceback.print_exception(e)
                 raise e
 
         self.progress_queue.set_progress_value()
