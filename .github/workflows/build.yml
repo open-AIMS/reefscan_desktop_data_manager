@@ -38,4 +38,4 @@ jobs:
     - name: Upload Release Asset
       uses: softprops/action-gh-release@v2
       with:
-        files: ./dist/reefscan-exe.zip
+        files: ./dist/reefscan/reefscan-exe.zip
