@@ -26,7 +26,7 @@ jobs:
         echo "build-date: $(Get-Date -Format 'yyyy-MM-dd'), version: ${{ github.ref }}" > src/resources/version.txt
       shell: pwsh
     - name: Build with pyinstaller
-      run: pyinstaller reefscan-simulated.spec
+      run: pyinstaller reefscan.spec
     - name: Copy executable
       run: Copy-Item -Path dist/reefscan.exe -Destination dist/reefscan-deep.exe
       shell: pwsh
