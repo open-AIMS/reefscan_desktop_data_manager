@@ -28,11 +28,11 @@ jobs:
     - name: Build with pyinstaller
       run: pyinstaller reefscan.spec
     - name: Copy executable
-      run: Copy-Item -Path dist/reefscan.exe -Destination dist/reefscan-deep.exe
+      run: Copy-Item -Path dist/reefscan/reefscan.exe -Destination dist/reefscan/reefscan-deep.exe
       shell: pwsh
     - name: Create zip file
       run: |
-        cd dist
+        cd dist/reefscan
         Compress-Archive -Path reefscan.exe,reefscan_deep.exe,_internal -DestinationPath reefscan-exe.zip
       shell: pwsh
     - name: Upload Release Asset
