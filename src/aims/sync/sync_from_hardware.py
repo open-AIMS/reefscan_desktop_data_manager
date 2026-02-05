@@ -22,7 +22,7 @@ logger = logging.getLogger("")
 
 class SyncFromHardware(QObject):
 
-    def __init__(self, progress_queue, hardware_folder, local_folder, backup_folder, camera_samba):
+    def __init__(self, progress_queue, hardware_folder, local_folder, backup_folder, camera_samba, username):
         super().__init__()
         self.files_to_copy: list[tuple[str]] = []
         self.total_files = 0
@@ -35,7 +35,7 @@ class SyncFromHardware(QObject):
         self.backup = state.config.backup
 
         self.camera_samba = camera_samba
-        self.camera_os = get_file_ops(self.camera_samba)
+        self.camera_os = get_file_ops(self.camera_samba, username)
         self.folder_message = ""
 
 

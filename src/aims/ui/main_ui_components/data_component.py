@@ -82,7 +82,7 @@ if not PYINSTALLER_COMPILED:
         from aims.operations.chart_operation import ChartOperation
 
     except Exception as e:
-        logger.warn("Can't load inferencer", e)
+        logger.info("Can't load inferencer")
         PYINSTALLER_COMPILED = True
 
 
@@ -443,7 +443,7 @@ class DataComponent(QObject):
         reply = msgBox.exec()
 
         if reply == QMessageBox.Yes:
-            delete_archives(state.config.camera_ip)
+            delete_archives(state.config.camera_ip, state.config.username)
 
         state.model.archived_data_loaded = False
         self.setup_camera_tree()
@@ -461,7 +461,8 @@ class DataComponent(QObject):
             raise Exception("Please select at least one survey")
 
         operation = SyncFromHardwareOperation(state.config.hardware_data_folder, state.primary_folder,
-                                              state.backup_folder, surveys, state.config.camera_samba)
+                                              state.backup_folder, surveys, state.config.camera_samba,
+                                              state.config.username)
         operation.update_interval = 1
         self.aims_status_dialog.set_operation_connections(operation)
         # # operation.after_run.connect(self.after_sync)
@@ -1241,7 +1242,7 @@ class DataComponent(QObject):
                 backup_folder = state.backup_folder
                 if self.camera_tree_selected:
                     backup_folder = None
-                save_survey(self.survey(), state.primary_folder, backup_folder, False)
+                save_survey(self.survey(), state.primary_folder, backup_folder, False, state.config.username)
 
     def data_to_ui(self):
         if self.survey_id is not None:
@@ -1285,7 +1286,9 @@ class DataComponent(QObject):
                 self.finish_waypoint_as_text())
             self.data_widget.folder_label.setText(self.survey().folder)
             survey_stats = SurveyStats()
-            survey_stats.calculate(self.survey())
+            if survey_stats.calculate(self.survey()) and (not self.camera_tree_selected):
+                save_survey(self.survey(), state.primary_folder, state.backup_folder, False, state.config.username)
+
             self.survey_stats_to_ui(survey_stats)
 
             self.disable_save_cancel()
@@ -1339,9 +1342,10 @@ class DataComponent(QObject):
             samba = self.survey().samba
             file_ops = get_file_ops(samba)
             photos = [name for name in file_ops.listdir(folder) if
-                      name.lower().endswith(".jpg") or name.lower().endswith(".jpeg")]
+                      name.lower().endswith(".jpg") or name.lower().endswith(".jpeg")
+                      or name.lower().endswith(".bmp")]
             photos.sort()
-            self.thumbnail_model = LazyListModel(photos, folder, self.survey_id, samba)
+            self.thumbnail_model = LazyListModel(photos, folder, self.survey_id, samba, username=state.model.username)
             list_thumbnails.setModel(self.thumbnail_model)
             list_thumbnails.clicked.connect(self.thumbnail_clicked)
 
