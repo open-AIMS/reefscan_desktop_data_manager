@@ -21,7 +21,12 @@ def delete_archives(camera_ip, username="jetson"):
         username + "@" + camera_ip,
         connect_kwargs={"password": ("%s" % username)}
     )
+
     conn.run("rm -r " + archive_folder, hide=True)
+    # Check if the archive folder still exists after deletion
+    check_result = conn.run(f"ls {archive_folder}", hide=True, warn=True)
+    if check_result.ok and check_result.stdout.strip():
+        raise Exception(f"Archive folder {archive_folder} was not deleted on {camera_ip}")
 
 
 def get_kilo_bytes_used(camera_ip, command, username="jetson"):

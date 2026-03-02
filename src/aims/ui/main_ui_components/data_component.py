@@ -445,7 +445,8 @@ class DataComponent(QObject):
         if reply == QMessageBox.Yes:
             delete_archives(state.config.camera_ip, state.config.username)
 
-        state.model.archived_data_loaded = False
+        data_loader.load_data_model(aims_status_dialog=self.aims_status_dialog)
+        self.load_explore_surveys_tree()
         self.setup_camera_tree()
 
     def download(self):
