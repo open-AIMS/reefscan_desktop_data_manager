@@ -88,9 +88,25 @@ class SyncFromHardware(QObject):
 
                 self.copytree_parallel(h_survey_folder, l_survey_folder)
                 try:
+                    # Remove any empty subfolders of h_survey_folder
+                    # List all subdirectories in parent_dir
+                    subdirs = self.camera_os.listdir(h_survey_folder)
+                    logger.info(f"subdirs in {h_survey_folder}: {subdirs}")
+                    for subdir in subdirs:
+                        logger.info(f"checking subdir {subdir}")
+                        subdir_path = os.path.join(h_survey_folder, subdir)
+                        if self.camera_os.isdir(subdir_path):
+                            logger.info(f"checking if subdir {subdir_path} is empty")
+                            # Check if the subdir is empty
+                            if not self.camera_os.listdir(subdir_path):
+                                logger.info(f"removing empty subdir {subdir_path}")
+                                try:
+                                    self.camera_os.rmdir(subdir_path)
+                                except Exception as e:
+                                    logger.warn(f"Cannot remove empty subfolder {subdir_path}: {e}")
                     self.camera_os.rmdir(h_survey_folder)
-                except:
-                    logger.warn(f"Cannot remove folder {h_survey_folder}")
+                except Exception as e:
+                    logger.warn(f"Cannot remove folder {h_survey_folder} {e}")
 
                 logger.info("surveys copied")
 
