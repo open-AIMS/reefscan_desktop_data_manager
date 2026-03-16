@@ -133,6 +133,7 @@ class LoginWorker(Thread):
 
     def run(self):
         logger.info("LoginWorker run() start")
+        state.oauth2_code = None
         self.oauth_session = OAuth2Session(client=self.client,
                                            redirect_uri=f"http://{self.host_name}:{self.port}{self.path}")
         logger.info(f"http://{self.host_name}:{self.port}{self.path}")
@@ -171,7 +172,7 @@ class UserInfo(QObject):
     @classmethod
     def _get_jwt_encryption_pub_keys(self, cognito_token_key_url):
 
-        response = requests.get(cognito_token_key_url)
+        response = requests.get(cognito_token_key_url, timeout=30)
         if response.status_code == 200 and 'application/json' in response.headers.get('Content-Type', ''):
             logger.info(response.json())
             logger.info(type(response.json()))
@@ -197,7 +198,7 @@ class UserInfo(QObject):
 
             }
 
-            response = requests.get(user_info_url, headers=headers)
+            response = requests.get(user_info_url, headers=headers, timeout=30)
             if response.status_code == 200:
                 authorized = True
                 message = 'You are a valid Reefcloud user and authorized to upload reefscan data.'

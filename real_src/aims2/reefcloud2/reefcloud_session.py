@@ -61,7 +61,7 @@ class ReefCloudSession():
             self.current_user = UserInfo.from_id_token(state.config.cognito_token_key_url, self.id_token, self.access_token)
             self.is_logged_in = True
             # Set code to none so if the user clicks the login page a second time, the web server waits for the new code
-            code = None
+            state.oauth2_code = None
             self.finished = True
         except Exception as e:
             logger.exception("Error logging on", e)
