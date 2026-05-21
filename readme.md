@@ -71,6 +71,6 @@ pip uninstall -r requirements-eod.txt
 # to run the simulator
 
 - copy fake data from here to a convenient loction
-    - \\pearl\techdev\Software\reefscan-desktop-data-manager\reefscan.zip
+    - \\pearl\techdev\Software\reefscan-desktop-data-manager\reefscan_fake_data.zip
 - run reefscan-sim.bat --fakedata="c:/location/of/fake/data"
 
