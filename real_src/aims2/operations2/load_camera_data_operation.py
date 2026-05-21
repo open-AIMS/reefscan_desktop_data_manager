@@ -38,7 +38,7 @@ class LoadCameraDataOperation(AbstractOperation):
             self.progress_queue.reset()
             self.progress_queue.set_progress_label("Setting up ...")
             state.reefscan_id = remove_control_characters(state.read_reefscan_id())
-            self.space_available = smbclient._os.stat_volume(state.model.camera_data_folder)
+            self.space_available = smbclient._os.stat_volume(state.model.camera_data_folder).actual_available_size
 
             self.success = True
         except Exception as e:

@@ -138,6 +138,10 @@ if __name__ == "__main__":
         except:
             pass
 
+        for arg in sys.argv[1:]:
+            if arg.startswith("--fakedata="):
+                state.config.fake_data = arg[len("--fakedata="):]
+
         main_ui = MainUi()
         main_ui.show()
         app.exec()

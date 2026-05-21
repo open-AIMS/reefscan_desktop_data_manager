@@ -19,7 +19,7 @@ class LoadArchiveDataOperation(AbstractOperation):
         self.finished=False
         self.success=False
         self.message = ""
-        self.model.camera_data_folder = f'{state.meipass}fake_data/camera'
+        self.model.camera_data_folder = f'{state.config}/camera'
         self.model.camera_samba = False
 
     def _run(self):

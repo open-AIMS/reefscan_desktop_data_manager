@@ -22,7 +22,7 @@ class LoadDataOperation(AbstractOperation):
         self.success=False
         self.message = ""
         self.camera_connected = camera_connected
-        self.model.data_folder = f'{state.meipass}fake_data/local'
+        self.model.data_folder = f'{state.config.fake_data}/local'
 
     def _run(self):
         self.finished=False

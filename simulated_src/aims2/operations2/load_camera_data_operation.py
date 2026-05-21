@@ -21,9 +21,9 @@ class LoadCameraDataOperation(AbstractOperation):
         self.finished=False
         self.success=False
         self.message = ""
-        self.model.camera_data_folder =  f'{state.meipass}fake_data/camera'
+        self.model.camera_data_folder =  f'{state.config.fake_data}/camera'
         self.model.camera_samba = False
-
+        self.space_available = 1000000000
     def _run(self):
         self.finished=False
         self.success = False

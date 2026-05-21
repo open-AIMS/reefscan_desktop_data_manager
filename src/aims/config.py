@@ -56,6 +56,7 @@ class Config(object):
             self.language = "eng"
 
         self.vietnemese = self.language == "vi_VN"
+        self.fake_data = ""
 
 
         logger.info(self.language)
