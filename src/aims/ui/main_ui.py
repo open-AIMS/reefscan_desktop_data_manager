@@ -427,7 +427,7 @@ class MainUi(QMainWindow):
         logger.info(f"start update camera status {process_time()}")
         if state.model.camera_data_loaded:
 
-            bytes_available = space.actual_available_size
+            bytes_available = space
             gb_available = round(bytes_available / 1000000000)
             self.status_widget.lblDevice.setText(f"{state.reefscan_id}: {gb_available}  " + self.tr("Gb Free"))
             self.status_widget.lblSequences.setText(f"{len(state.model.camera_surveys)} " + self.tr("sequences"))

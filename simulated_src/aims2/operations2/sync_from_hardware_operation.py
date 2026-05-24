@@ -11,7 +11,8 @@ logger = logging.getLogger("")
 
 class SyncFromHardwareOperation(AbstractOperation):
 
-    def __init__(self, hardware_folder, local_folder, backup_data_folder, surveys, camera_samba):
+    def __init__(self, hardware_folder, local_folder, 
+                 backup_data_folder, surveys, camera_samba, username):
         super().__init__()
         self.surveys = surveys
 
