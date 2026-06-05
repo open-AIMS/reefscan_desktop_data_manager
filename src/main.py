@@ -111,7 +111,7 @@ if __name__ == "__main__":
         state.config.set_deep(sys.argv[0].lower().endswith("reefscan-deep.exe")
                               or (len(sys.argv) > 1 and sys.argv[1].lower() == "deep")
                               )
-
+        
         state.config.v2 = (sys.argv[0].endswith("2.exe")
                               or (len(sys.argv) > 1 and sys.argv[1].lower() == "v2")
                               )
@@ -123,6 +123,8 @@ if __name__ == "__main__":
             state.config.vietnemese=True
         state.config.set_dev(dev)
         state.config.clear_reefcloud = clear_reefcloud
+
+        logger.info(f"dev: {dev}, deep: {state.config.deep}, v2: {state.config.v2}, clear_reefcloud: {clear_reefcloud}, vietnamese: {state.config.vietnemese}")
 
         try:
             import pyi_splash

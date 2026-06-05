@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=My Script Shortcut
+Comment=Runs my custom shell script
+Exec=bash -c "$REEFSCAN_HOME/reefscan-desktop-data-manager/linux_scripts/reefscan-deep.sh"
+Icon=utilities-terminal
+Terminal=true

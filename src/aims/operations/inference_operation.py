@@ -12,10 +12,16 @@ from inferencer.models import ft_ext as reefscan_feature_extractor
 from inferencer.models import classifier as reefscan_classifier
 from inferencer.reefscan_inference import inference
 from inferencer.batch_monitor import BatchMonitor
+from aims.operations.hard_coral_kml_maker import create_inference_kml
 
 import csv
+import shutil
+import tempfile
 
 logger = logging.getLogger("")
+
+# TEMPORARY: set to None to disable limit
+INFERENCE_MAX_PHOTOS = 20
 
 
 def inference_result_folder(target):
@@ -43,7 +49,8 @@ class InferenceOperation(AbstractOperation):
         os.makedirs(features_folder, exist_ok=True)
 
         self.output_results_file = os.path.join(results_folder, 'results.csv')
- 
+        self.output_kml_file = os.path.join(results_folder, 'results.kml')
+
         self.output_coverage_file = os.path.join(results_folder, 'coverage.csv')
 
         self.features_path = os.path.join(features_folder, 'features.csv')
@@ -93,12 +100,24 @@ class InferenceOperation(AbstractOperation):
 
 
     def run_inference(self):
-
+        image_dir = self.target
+        tmp_dir = None
         try:
+            if INFERENCE_MAX_PHOTOS is not None:
+                imgs = sorted([
+                    f for f in os.listdir(self.target)
+                    if f.lower().endswith(('.jpg', '.jpeg', '.bmp'))
+                ])[:INFERENCE_MAX_PHOTOS]
+                tmp_dir = tempfile.mkdtemp(prefix='reefscan_inf_test_')
+                for img in imgs:
+                    shutil.copy2(os.path.join(self.target, img), tmp_dir)
+                image_dir = tmp_dir
+                logger.info(f"INFERENCE_MAX_PHOTOS={INFERENCE_MAX_PHOTOS}: using {len(imgs)} photos from {tmp_dir}")
+
             inference(feature_extractor=self.feature_extractor_path,
                   classifier=self.classifier_path,
                   group_labels_csv_file=self.group_labels_path,
-                  local_image_dir=self.target,
+                  local_image_dir=image_dir,
                   output_results_file=self.output_results_file,
                   output_coverage_file=self.output_coverage_file,
                   intermediate_feature_outputs_path=self.features_path,
@@ -106,6 +125,7 @@ class InferenceOperation(AbstractOperation):
                   saved_state_batch_size=31,
                   batch_monitor=self.batch_monitor
                   )
+            create_inference_kml(self.output_results_file, self.target, self.output_kml_file)
         except Exception as e:
             logger.info(repr(e))
             import traceback
@@ -113,6 +133,9 @@ class InferenceOperation(AbstractOperation):
             logger.info(e.__traceback__)
             logger.info(self.batch_monitor.alt_msg)
             self.exception.emit(e)
+        finally:
+            if tmp_dir is not None:
+                shutil.rmtree(tmp_dir, ignore_errors=True)
 
     # base method overriden to change the progress max and label at the start
     def run(self):

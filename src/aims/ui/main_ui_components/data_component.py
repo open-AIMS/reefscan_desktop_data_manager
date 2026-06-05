@@ -860,24 +860,15 @@ class DataComponent(QObject):
         if self.survey() is not None:
             if not PYINSTALLER_COMPILED:
                 coverage_results_file = f"{inference_result_folder(self.survey().folder)}/coverage.csv"
+                chart_png_file = f"{inference_result_folder(self.survey().folder)}/coverage_chart.png"
                 if os.path.exists(coverage_results_file):
-                    self.show_tab_by_tab_text(self.tr('Chart'))
-
-                    self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
-                                                                 self.data_widget.chart_tab)
-                    self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
-                                                                self.data_widget.chart_tab)
-
-                    pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
-
-                    vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
-                    vlayout.addWidget(pie_browser)
-
-                    chart_operation = ChartOperation()
-                    fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
-                    pie_browser.setHtml(fig)
-                else:
-                    self.hide_tab_by_tab_text(self.tr('Chart'))
+                    try:
+                        chart_operation = ChartOperation()
+                        chart_operation.create_pie_chart_png(coverage_results_file, chart_png_file)
+                        self.inference_widget.textBrowser.append(f'Chart saved to {chart_png_file}')
+                    except Exception as e:
+                        logger.info(f'Chart generation failed: {e}')
+                        self.inference_widget.textBrowser.append(f'Chart generation failed: {e}')
 
     def inference_open_folder(self):
         utils.open_file(inference_result_folder(self.survey().folder))
