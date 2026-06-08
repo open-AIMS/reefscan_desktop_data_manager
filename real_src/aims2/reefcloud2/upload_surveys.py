@@ -3,9 +3,10 @@ import logging
 from aims.state import state
 from aims.operations.load_data import reefcloud_subsample, reefcloud_upload_survey
 from aims2.reefcloud2.reefcloud_utils import upload_file, write_reefcloud_photos_json
+from reefscanner.basic_model.survey import Survey
 
 logger = logging.getLogger("")
-def upload_surveys(surveys, aims_status_dialog):
+def upload_surveys(surveys: list[Survey], aims_status_dialog):
     for survey in surveys:
         survey_id = survey.id
         survey_folder = survey.folder

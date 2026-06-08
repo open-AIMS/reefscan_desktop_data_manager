@@ -93,6 +93,7 @@ def load_archive_data(model, aims_status_dialog: AimsStatusDialog):
 
 def read_eod_detections(aims_status_dialog: AimsStatusDialog, folder, cots_detection_list: CotsDetectionList, samba=False, use_cache=True):
 
+    logger.info(f"start read_eod_detections {folder}")
     operation = ReadEodDetectionsOperation(folder, cots_detection_list, samba, use_cache)
     operation.update_interval = 1
     aims_status_dialog.set_operation_connections(operation)

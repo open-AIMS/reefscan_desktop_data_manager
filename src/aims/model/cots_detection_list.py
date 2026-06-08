@@ -45,6 +45,9 @@ class CotsDetectionList():
         # for each image it has a list of rectangles of type ProportionalRectangle marking the location of the COTS
         self.image_rectangles_by_filename = {}
         self.folder = None
+
+        # use last_good_folder to determine if we need to re-read the data
+        self.last_good_folder = ""
         # we support showing this information for data that is not already downloaded
         # if it is coming directly from the camera samba is set to true
         self.samba = False
@@ -75,18 +78,27 @@ class CotsDetectionList():
 
         write_json_file(cache_file, dict)
 
+    def clear_cache(self, folder):
+        self.folder = folder
+        cache_file = self.cache_file()
+        if os.path.exists(cache_file):
+            os.remove(cache_file)
+            logger.info(f"Cleared cache for {folder}")
+
 # return true if successful
     def de_serialize(self):
         if self.samba:
             return False
         cache_file = self.cache_file()
         if not os.path.exists(cache_file):
+            logger.info(f"No cache file found for {self.folder}")
             return False
 
         try:
             dict = read_json_file(cache_file)
             folder_from_cache = dict.get("folder")
             if folder_from_cache is None or folder_from_cache != self.folder:
+                logger.info(f"Cache file found for {self.folder} but folder in cache is {folder_from_cache}")
                 return False
             self.cots_detections_list = de_serialize_cots_detection_list(dict["cots_detections_list"])
             self.image_rectangles_by_filename = de_serialize_proportional_rectangle_lookup(dict["image_rectangles_by_filename"])
@@ -94,6 +106,7 @@ class CotsDetectionList():
             self.cots_waypoints = dict["cots_waypoints"]
             self.has_data = dict["has_data"]
         except:
+            logger.info(f"Failed to load cache file for {self.folder}")
             return False
         return True
 
@@ -158,7 +171,8 @@ class CotsDetectionList():
         progress_queue.reset()
         progress_queue.set_progress_label(f"Reading EOD detections for {folder}")
 
-        if self.folder == folder:
+        if self.last_good_folder == folder and use_cache:
+            logger.info(f"Folder {folder} is the same as last good folder, skipping read")
             return False
 
         self.folder = folder
@@ -167,10 +181,13 @@ class CotsDetectionList():
         self.get_eod_detections_dir(folder)
         if not os.path.exists(self.eod_detections_folder):
             self.has_data = False
+            logger.info(f"No EOD detections found for {folder}")
             return False
         # try cache first
         if use_cache:
             if self.de_serialize():
+                logger.info(f"Loaded EOD detections from cache for {folder}")
+                self.last_good_folder = folder
                 return True
 
         self.cots_detections_list = []
@@ -184,6 +201,7 @@ class CotsDetectionList():
             self.read_confirmations(progress_queue, self.eod_detections_folder)
             self.has_data = True
             self.serialize()
+            logger.info(f"Finished reading EOD detections for {folder}")
         return True
 
     def sort_photos(self):

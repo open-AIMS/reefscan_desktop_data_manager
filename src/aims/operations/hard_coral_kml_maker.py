@@ -4,6 +4,12 @@ import os
 
 logger = logging.getLogger("")
 
+
+def _sanitized_csv_dict_reader(csv_path):
+    with open(csv_path, newline="", errors="replace") as csv_file:
+        sanitized_lines = (line.replace("\0", "") for line in csv_file)
+        yield from csv.DictReader(sanitized_lines)
+
 # HC point count -> (KML aabbggrr color, percentage label)
 _HC_STYLE = {
     0: ('ff808080', '0%'),     # grey
@@ -82,28 +88,32 @@ def create_inference_kml(results_csv_file, image_dir, output_kml_file):
     photo_coords = {}
     photo_log_path = os.path.join(image_dir, "photo_log.csv")
     if os.path.exists(photo_log_path):
-        with open(photo_log_path, newline="") as f:
-            for row in csv.DictReader(f):
-                try:
-                    lat = float(row["latitude"])
-                    lon = float(row["longitude"])
-                    if lat != 0 and lon != 0:
-                        photo_coords[row["filename_string"]] = (lat, lon)
-                except (ValueError, KeyError):
-                    pass
+        for row in _sanitized_csv_dict_reader(photo_log_path):
+            try:
+                filename = row.get("filename_string")
+                if not filename:
+                    continue
+                lat = float(row["latitude"])
+                lon = float(row["longitude"])
+                if lat != 0 and lon != 0:
+                    photo_coords[filename] = (lat, lon)
+            except (TypeError, ValueError, KeyError):
+                pass
     else:
         logger.warning("photo_log.csv not found at %s", photo_log_path)
 
     # Group results by image basename
     image_hc = {}  # basename -> {'total': int, 'hc': int, 'path': str}
-    with open(results_csv_file, newline="") as f:
-        for row in csv.DictReader(f):
-            basename = os.path.basename(row["image_path"])
-            if basename not in image_hc:
-                image_hc[basename] = {"total": 0, "hc": 0, "path": row["image_path"]}
-            image_hc[basename]["total"] += 1
-            if row.get("pred_group", "").strip() == "HC":
-                image_hc[basename]["hc"] += 1
+    for row in _sanitized_csv_dict_reader(results_csv_file):
+        image_path = row.get("image_path")
+        if not image_path:
+            continue
+        basename = os.path.basename(image_path)
+        if basename not in image_hc:
+            image_hc[basename] = {"total": 0, "hc": 0, "path": image_path}
+        image_hc[basename]["total"] += 1
+        if (row.get("pred_group") or "").strip() == "HC":
+            image_hc[basename]["hc"] += 1
 
     # Optionally generate legend PNG alongside the KML
     kml_dir = os.path.dirname(output_kml_file)

@@ -1,5 +1,5 @@
 #!/bin/bash
 cd
-tar xvfzp reefscan-data-manager-v2_3_2.tar
-cd reefscan-data-manager-v2_3_2
+tar xvfzp reefscan-data-manager-60eod.tar
+cd reefscan-data-manager-60eod
 bash reefscan_desktop_data_manager/linux_scripts/setup.sh

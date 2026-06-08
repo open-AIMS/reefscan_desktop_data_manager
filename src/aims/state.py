@@ -11,6 +11,15 @@ from aims2.operations2.camera_utils import read_reefscan_id_for_ip
 import logging
 logger = logging.getLogger("")
 
+
+class SafeRotatingFileHandler(RotatingFileHandler):
+
+    def shouldRollover(self, record):
+        try:
+            return super().shouldRollover(record)
+        except OSError:
+            return False
+
 class State:
 
     def __init__(self):
@@ -59,8 +68,17 @@ class State:
             os.makedirs(self.config_folder)
         path = f"{self.config_folder}/reefscan.log"
         formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
-        handler = RotatingFileHandler(path, maxBytes=1000000,
-                                      backupCount=5)
+        existing_handlers = [
+            handler for handler in logger.handlers
+            if isinstance(handler, logging.FileHandler)
+            and os.path.abspath(getattr(handler, "baseFilename", "")) == os.path.abspath(path)
+        ]
+        for handler in existing_handlers:
+            logger.removeHandler(handler)
+            handler.close()
+
+        handler = SafeRotatingFileHandler(path, maxBytes=1000000,
+                                          backupCount=5)
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 

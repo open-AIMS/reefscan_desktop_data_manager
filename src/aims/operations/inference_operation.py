@@ -21,7 +21,7 @@ import tempfile
 logger = logging.getLogger("")
 
 # TEMPORARY: set to None to disable limit
-INFERENCE_MAX_PHOTOS = 20
+INFERENCE_MAX_PHOTOS = None
 
 
 def inference_result_folder(target):
