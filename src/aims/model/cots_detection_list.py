@@ -85,6 +85,15 @@ class CotsDetectionList():
             os.remove(cache_file)
             logger.info(f"Cleared cache for {folder}")
 
+    def clear_data(self, folder=None):
+        if folder is not None:
+            self.folder = folder
+        self.cots_detections_list = []
+        self.image_rectangles_by_filename = {}
+        self.waypoint_dataframe = None
+        self.cots_waypoints = []
+        self.has_data = False
+
 # return true if successful
     def de_serialize(self):
         if self.samba:
@@ -130,6 +139,19 @@ class CotsDetectionList():
         eod_json_dir = f"{eod_json_dir}/final"
         self.eod_detections_folder = eod_json_dir
 
+    def has_enough_eod_detection_files(self):
+        if self.eod_detections_folder is None:
+            return False
+
+        ops = get_file_ops(self.samba)
+        if not ops.exists(self.eod_detections_folder):
+            return False
+
+        try:
+            return len(ops.listdir(self.eod_detections_folder)) >= 2
+        except Exception:
+            return False
+
     def get_scar_mask_file(self, photo_file):
         if self.eod_detections_folder is None:
             return None
@@ -149,13 +171,11 @@ class CotsDetectionList():
         self.samba = samba
         self.eod = False
         self.eod_detections_folder = None
+        self.clear_data(folder)
         # try cache first
         if use_cache:
             if self.de_serialize():
                 return True
-
-        self.cots_detections_list = []
-        self.image_rectangles_by_filename = {}
         
         self.load_waypoints(None)
         self.read_realtime_sequence_files()
@@ -175,11 +195,14 @@ class CotsDetectionList():
             logger.info(f"Folder {folder} is the same as last good folder, skipping read")
             return False
 
+        self.last_good_folder = ""
+
         self.folder = folder
         self.samba = samba
         self.eod = True
         self.get_eod_detections_dir(folder)
-        if not os.path.exists(self.eod_detections_folder):
+        if not self.has_enough_eod_detection_files():
+            self.clear_data(folder)
             self.has_data = False
             logger.info(f"No EOD detections found for {folder}")
             return False
@@ -190,8 +213,7 @@ class CotsDetectionList():
                 self.last_good_folder = folder
                 return True
 
-        self.cots_detections_list = []
-        self.image_rectangles_by_filename = {}
+        self.clear_data(folder)
 
         self.load_waypoints(progress_queue)
         self.read_eod_detection_files(progress_queue, operation, self.eod_detections_folder)
@@ -536,7 +558,7 @@ class CotsDetectionList():
             with file_ops.open(csv_file_name) as file:
                 df = pd.read_csv(file)
         else:
-            raise Exception("No photo log found.")
+            raise Exception(f"No photo log found. {csv_file_name} does not exist.")
 
         self.waypoint_dataframe = df[["latitude", "longitude", "filename_string"]]
         self.waypoint_dataframe.set_index (["filename_string"])

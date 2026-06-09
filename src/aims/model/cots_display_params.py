@@ -44,7 +44,7 @@ class CotsDisplayParams:
     def read_eod_data(self, aims_status_dialog, folder, samba):
         for camera, detection_list in self.eod_cots_detection_list.items():
             if samba:
-                detection_list.has_data = False
+                detection_list.clear_data(f"{folder}/{camera}")
             else:
                 load_data.read_eod_detections(aims_status_dialog, f"{folder}/{camera}",
                                               detection_list)
@@ -54,3 +54,5 @@ class CotsDisplayParams:
             camera_folder = f"{folder}/{camera}"
             if os.path.exists(camera_folder):
                 detection_list.read_realtime_files(camera_folder, samba, use_cache=True)
+            else:
+                detection_list.clear_data(camera_folder)
