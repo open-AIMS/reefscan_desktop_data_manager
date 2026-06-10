@@ -1,4 +1,6 @@
 [Desktop Entry]
+# This is copied to the desktop to allow the user to start reefscan-deep.sh
+# This should work in Ubuntu 24 but is untested
 Version=1.0
 Type=Application
 Name=My Script Shortcut
