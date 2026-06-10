@@ -59,8 +59,6 @@ class ReefcloudSubSampleOperation(AbstractOperation):
             traceback.print_exc()
             self.message = str(e)
 
-        self.success = True
-
         logger.info("finish load data")
         self.finished=True
 

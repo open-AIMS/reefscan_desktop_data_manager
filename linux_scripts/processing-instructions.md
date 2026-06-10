@@ -1,0 +1,29 @@
+- run `reefscan-deep.sh` from the desktop (home screen)
+    - if reefscan-deep.sh is not on the desktop re-run the install script
+- connect disks
+- choose "data" on the left
+    - select sequence of interest
+    - choose "End-of-day-COTS" at the top
+        - if "End-of-day-COTS" is not available at the top re-run the install script
+    - press the button "Detect COTS"
+    - Choose "COTS Photos" at the top
+        - Tick "End of Day"
+        - Choose "Show COTS"
+        - Choose "Minimum Score 0.5"
+        - Choose "Camera 1"
+        - Press "Refresh"
+        - For each detection look at the photos and confirm or deny
+        - Choose "Camera 2"
+        - Press "Refresh"
+        - For each detection look at the photos and confirm or deny
+    - Choose "Map" at the top
+        - Tick "End of Day"
+        - Tick "Only show confirmed detections"
+        - Choose "Show Cots"
+        - Choose "Both cameras"
+        - Press the button "Export KML"
+        - Choose a location for the KML
+    - Choose "Inference" at the top
+        - Press the button "Inference Photos"
+        - Press the button "Open Folder" to see the output files 
+- open all the KML files in google earth

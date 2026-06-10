@@ -18,6 +18,10 @@ from aims.tools.bmp_to_tiff import bmp_to_tiff
 
 logger = logging.getLogger("")
 
+
+def none_if_nan(value):
+    return None if pd.isna(value) else value
+
 def wp(exif):
     return exif["latitude"], exif["longitude"]
 
@@ -54,6 +58,7 @@ class SubSampler(QObject):
 
     def has_waypoints(self, folder):
         csv_file_name = folder + "/photo_log.csv"
+        self.file_infos = {}
         if os.path.exists(csv_file_name):
             with open(csv_file_name, mode="r") as file:
                 df = pd.read_csv(file)
@@ -62,12 +67,18 @@ class SubSampler(QObject):
 
         # for each row of df add an element to distances_and_waypoints
         for index, row in df.iterrows():
-            subject_distance = row["ping_depth"] / 1000
-            latitude = row["latitude"]
-            longitude = row["longitude"]
+            subject_distance = none_if_nan(row["ping_depth"])
+            if subject_distance is not None:
+                subject_distance = subject_distance / 1000
+            latitude = none_if_nan(row["latitude"])
+            longitude = none_if_nan(row["longitude"])
             filename = row["filename_string"]
-            altitude = row["pressure_depth"]
-            date_taken = datetime.datetime.fromtimestamp(row["time_secs"]).isoformat()
+            altitude = none_if_nan(row["pressure_depth"])
+            time_secs = none_if_nan(row["time_secs"])
+            if time_secs is None:
+                date_taken = None
+            else:
+                date_taken = datetime.datetime.fromtimestamp(time_secs).isoformat()
 
             self.file_infos[filename] = {"subject_distance": subject_distance,
                                            "latitude": latitude,

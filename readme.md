@@ -74,3 +74,17 @@ pip uninstall -r requirements-eod.txt
     - \\pearl\techdev\Software\reefscan-desktop-data-manager\reefscan_fake_data.zip
 - run reefscan-sim.bat --fakedata="c:/location/of/fake/data"
 
+# to run from the command line 
+`.\reefscan.bat`
+
+for reefscan deep compatible
+
+`.\reefscan.bat deep`
+
+for reefcloud DEV compatible
+
+`.\reefscan.bat dev`
+
+for gen2 compatible
+
+`.\reefscan.bat v2`

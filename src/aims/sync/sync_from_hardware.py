@@ -233,12 +233,19 @@ class SyncFromHardware(QObject):
             return survey_id
 
     def find_first_photo_after_2024(self, folder):
-        files = self.camera_os.listdir(folder)
-        files.sort()
-        for file in files:
-            if file.lower().endswith(".jpg") or file.lower().endswith(".jpeg"):
-                if file > "2024":
-                    return file
+        entries = self.camera_os.listdir(folder)
+        entries.sort()
+        for entry in entries:
+            entry_path = f"{folder}/{entry}"
+            if self.camera_os.isdir(entry_path):
+                first_good_photo = self.find_first_photo_after_2024(entry_path)
+                if first_good_photo is not None:
+                    return first_good_photo
+                continue
+
+            if entry.lower().endswith(".jpg") or entry.lower().endswith(".jpeg"):
+                if entry > "2024":
+                    return entry
         return None
 
 

@@ -67,7 +67,7 @@ otherwise if it is True then it indicates that it is
 being run as a standalone script.
 
 If the code is run through a pyinstaller we would want to 
-disable the InferenceOperation and the related ChartOperation
+disable the InferenceOperation 
 due to file size requirements, i.e. tensorflow is required for
 these operations but it is too large for the purposes
 of a pyinstaller executable
@@ -79,7 +79,6 @@ from aims.ui.main_ui_components.cots_display_component import CotsDisplayCompone
 if not PYINSTALLER_COMPILED:
     try:
         from aims.operations.inference_operation import InferenceOperation, inference_result_folder
-        from aims.operations.chart_operation import ChartOperation
 
     except Exception as e:
         logger.info("Can't load inferencer")
@@ -281,7 +280,6 @@ class DataComponent(QObject):
 
         if PYINSTALLER_COMPILED:
             self.remove_tab_by_tab_text(self.tr('Inference'))
-            self.remove_tab_by_tab_text(self.tr('Chart'))
             self.remove_tab_by_tab_text(self.tr('End-Of-Day-COTS'))
             self.remove_tab_by_tab_text(self.tr('COTS Photos'))
             self.cots_display_params = None
@@ -335,15 +333,17 @@ class DataComponent(QObject):
         try:
             for survey_info in survey_infos:
                 survey = state.model.surveys_data[survey_info["survey_id"]]
+                self.cots_display_params.eod_cots_detection_list["cam_1"].clear_cache(f"{survey.folder}/cam_1")
+                self.cots_display_params.eod_cots_detection_list["cam_2"].clear_cache(f"{survey.folder}/cam_2")
                 self.cots_detector.callProgram(survey.folder)
                 while not self.cots_detector.batch_result.finished:
                     QApplication.processEvents()
 
                 load_data.read_eod_detections(self.aims_status_dialog, f"{survey.folder}/cam_1",
-                                              self.cots_display_params.realtime_cots_detection_list["cam_1"],
+                                              self.cots_display_params.eod_cots_detection_list["cam_1"],
                                               samba=False, use_cache=False)
                 load_data.read_eod_detections(self.aims_status_dialog, f"{survey.folder}/cam_2",
-                                          self.cots_display_params.realtime_cots_detection_list["cam_2"],
+                                          self.cots_display_params.eod_cots_detection_list["cam_2"],
                                           samba=False, use_cache=False)
             if self.cots_detector.batch_result.finished:
                 self.enable_everything()
@@ -856,29 +856,6 @@ class DataComponent(QObject):
         self.disable_all_tabs(current_tab)
         self.data_widget.treesWidget.setEnabled(False)
 
-    def load_inference_charts(self):
-        if self.survey() is not None:
-            if not PYINSTALLER_COMPILED:
-                coverage_results_file = f"{inference_result_folder(self.survey().folder)}/coverage.csv"
-                if os.path.exists(coverage_results_file):
-                    self.show_tab_by_tab_text(self.tr('Chart'))
-
-                    self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
-                                                                 self.data_widget.chart_tab)
-                    self.chart_widget = self.load_sequence_frame(f'{state.meipass}resources/chart.ui',
-                                                                self.data_widget.chart_tab)
-
-                    pie_browser = QWebEngineView(self.chart_widget.pieChartWidget)
-
-                    vlayout = QtWidgets.QVBoxLayout(self.chart_widget.pieChartWidget)
-                    vlayout.addWidget(pie_browser)
-
-                    chart_operation = ChartOperation()
-                    fig = chart_operation.create_pie_chart_benthic_groups(coverage_results_file)
-                    pie_browser.setHtml(fig)
-                else:
-                    self.hide_tab_by_tab_text(self.tr('Chart'))
-
     def inference_open_folder(self):
         utils.open_file(inference_result_folder(self.survey().folder))
 
@@ -948,9 +925,6 @@ class DataComponent(QObject):
             else:
                 self.inference_widget.textBrowser.append("Inferencer finished")
 
-            coverage_file = f"{output_folder}/coverage.csv"
-            self.inference_widget.textBrowser.append(f'Pie Chart from {coverage_file}')
-            self.load_inference_charts()
             return not inference_operation.batch_monitor.cancelled
         else:
             return True
@@ -1108,7 +1082,6 @@ class DataComponent(QObject):
             self.display_cots_detections(samba=False)
             self.load_thumbnails()
             self.load_marks()
-            self.load_inference_charts()
 
         self.tab_changed(self.read_current_tab())
 
