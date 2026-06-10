@@ -1,8 +1,10 @@
-open `reefscan-deep.sh`
+run `reefscan-deep.sh` from the desktop (home screen)
+    if reefscan-deep.sh is not on the desktop re-run the install script
 connect disks
 choose "data" on the left
 select sequence of interest
 choose "End-of-day-COTS" at the top
+    if "End-of-day-COTS" is not available at the top re-run the install script
 press the button "Detect COTS"
 Choose "COTS Photos" at the top
 Tick "End of Day"
@@ -24,4 +26,4 @@ Choose a location for the KML
 Choose "Inference" at the top
 Press the button "Inference Photos"
 Press the button "Open Folder" to see the output files 
-
+open all the KML files in google earth
