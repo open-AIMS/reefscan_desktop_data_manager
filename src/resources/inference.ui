@@ -23,7 +23,7 @@
    <item row="9" column="0" colspan="2">
     <widget class="QTextBrowser" name="textBrowser"/>
    </item>
-   <item row="7" column="0" colspan="2">
+   <item row="7" column="0">
     <widget class="QPushButton" name="btnInferenceFolder">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -39,6 +39,31 @@
      </property>
      <property name="text">
       <string>Inference Folder</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton { background-color: #1565C0; color: white; border-radius: 4px; font-weight: bold; } QPushButton:hover { background-color: #1976D2; } QPushButton:pressed { background-color: #0D47A1; }</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1">
+    <widget class="QPushButton" name="btnExport">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>56</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>Export</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton { background-color: #E65100; color: white; border-radius: 4px; font-weight: bold; } QPushButton:hover { background-color: #F57C00; } QPushButton:pressed { background-color: #BF360C; }</string>
      </property>
     </widget>
    </item>

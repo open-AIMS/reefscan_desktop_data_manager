@@ -413,7 +413,7 @@ QGroupBox::title{
      </widget>
      <widget class="QWidget" name="inference_tab">
       <attribute name="title">
-       <string>Inference</string>
+       <string>Benthic Cover</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_9"/>
      </widget>
@@ -425,7 +425,7 @@ QGroupBox::title{
      </widget>
      <widget class="QWidget" name="cots_display_tab">
       <attribute name="title">
-       <string>COTS Photos</string>
+       <string>COTS Results</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_10"/>
      </widget>

@@ -5,7 +5,7 @@ from PyQt5.QtCore import QObject, QItemSelection, Qt, QRect, QByteArray
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QImage, QPixmap, QPainter, QPen, QColor, QFont, QBitmap, \
     qRgb, QKeySequence
 from PyQt5.QtWidgets import QHeaderView, QTableView, QAbstractItemView, QLabel, QCheckBox, QSizePolicy, QComboBox, \
-    QShortcut
+    QShortcut, QFileDialog
 from photoenhancer.photoenhance import processImage, EnhancerParameters
 from reefscanner.basic_model.model_utils import replace_last
 
@@ -72,6 +72,8 @@ class CotsDisplayComponent(QObject):
         self.shortcut3.activated.connect(self.toggle_highlight_scars)
         self.shortcut4= QShortcut(QKeySequence("F4"), self.cots_widget)
         self.shortcut4.activated.connect(self.toggle_enhance)
+
+        self.cots_widget.exportButton.clicked.connect(self.export)
 
     def toggle_highlight_scars(self):
         print ("toggle highlight")
@@ -141,7 +143,7 @@ class CotsDisplayComponent(QObject):
         try:
             self.cots_display_params.minimum_score = float(self.cots_widget.minimumScoreTextBox.text())
         except Exception as e:
-            logger.warn("error getting minimum score", e)
+            logger.warn(f"error getting minimum score: {e}")
             self.cots_display_params.minimum_score = 0
 
         self.item_model.clear()
@@ -391,5 +393,187 @@ class CotsDisplayComponent(QObject):
             processImage(photo, enhanced_photo, self.enhance_parameters)
 
         return enhanced_photo
+
+    def export(self):
+        import csv
+        import re
+        import simplekml
+
+        detection_list = self.cots_display_params.cots_detection_list()
+
+        # Build suggested output folder from survey folder
+        suggested_folder = ""
+        if detection_list.folder:
+            survey_folder = os.path.dirname(detection_list.folder).replace("\\", "/")
+            modified = re.sub(r'(?<=[/])reefscan(?=[/])', 'reefscan_results', survey_folder)
+            base = modified + "/cots_detections"
+            suggested_folder = base
+            if os.path.exists(suggested_folder):
+                i = 1
+                while os.path.exists(f"{suggested_folder}_{i}"):
+                    i += 1
+                suggested_folder = f"{suggested_folder}_{i}"
+
+        # Pre-create the suggested folder so the dialog opens directly inside it.
+        # QFileDialog ignores a non-existent directory parameter.
+        if suggested_folder:
+            os.makedirs(suggested_folder, exist_ok=True)
+            start_dir = suggested_folder
+        elif detection_list.folder:
+            start_dir = survey_folder
+        else:
+            start_dir = ""
+
+        output_folder = QFileDialog.getExistingDirectory(
+            self.cots_widget,
+            'Choose folder to export COTS detections to',
+            directory=start_dir
+        )
+
+        if not output_folder:
+            return
+
+        os.makedirs(output_folder, exist_ok=True)
+
+        # Build lat/lon lookup: sequence_id -> (lat, lon) from the waypoints list
+        latlon_by_sequence = {}
+        for wp in detection_list.cots_waypoints:
+            lat, lon, seq_str = wp[0], wp[1], wp[2]
+            seq_str_values = seq_str.replace("sequences: ", "")
+            seq_ids = [int(s.strip()) for s in seq_str_values.split(",") if s.strip().replace("-", "").isdigit()]
+            for sid in seq_ids:
+                latlon_by_sequence[sid] = (lat, lon)
+
+        # Build depth lookup from photo_log.csv: filename_string -> (ping_depth, pressure_depth)
+        import pandas as pd
+        import math
+        depth_by_filename = {}
+        photo_log_path = detection_list.folder + "/photo_log.csv"
+        if os.path.exists(photo_log_path):
+            try:
+                photo_log_df = pd.read_csv(photo_log_path)
+                for _, row in photo_log_df.iterrows():
+                    fname = str(row.get("filename_string", ""))
+                    def _safe(v):
+                        try:
+                            f = float(v)
+                            return None if math.isnan(f) else f
+                        except (TypeError, ValueError):
+                            return None
+                    ping_raw = _safe(row.get("ping_depth"))
+                    pressure = _safe(row.get("pressure_depth"))
+                    altitude_m = ping_raw / 1000 if ping_raw is not None else None
+                    depth_m = (altitude_m + pressure) if (altitude_m is not None and pressure is not None) else None
+                    depth_by_filename[fname] = (altitude_m, depth_m)
+            except Exception as e:
+                logger.warning(f"Could not read photo_log.csv for depth data: {e}")
+
+        # Build set of sequence_ids that pass the current filter criteria
+        included_sequence_ids = {
+            det.sequence_id
+            for det in detection_list.cots_detections_list
+            if self.include_row(det)
+        }
+
+        # Build per-detection rows with best photo resolved
+        export_rows = []
+        for det in detection_list.cots_detections_list:
+            if self.include_row(det):
+                confirmed_str = ""
+                if det.confirmed is not None:
+                    confirmed_str = "Yes" if det.confirmed else "No"
+                lat, lon = latlon_by_sequence.get(det.sequence_id, (None, None))
+                best_image = max(det.images, key=lambda img: img.score) if det.images else None
+                best_photo = best_image.path if best_image else None
+                all_rects = detection_list.image_rectangles_by_filename.get(best_photo, []) if best_photo else []
+                cots_in_photo = len([r for r in all_rects if r.sequence_id in included_sequence_ids]) if best_photo else None
+                fname_key = os.path.basename(best_photo) if best_photo else None
+                altitude, depth = depth_by_filename.get(fname_key, (None, None))
+                export_rows.append((det, lat, lon, best_photo, confirmed_str, cots_in_photo, altitude, depth))
+
+        # Export KML
+        from PIL import Image, ImageDraw
+
+        COTS_COLOR = simplekml.Color.red
+        SCAR_COLOR = "ff00a5ff"  # orange in KML AABBGGRR format
+
+        kml = simplekml.Kml()
+        cots_folder = kml.newfolder(name="cots")
+        for det, lat, lon, best_photo, confirmed_str, cots_in_photo, altitude, depth in export_rows:
+            if lat is not None and lon is not None:
+                pnt = cots_folder.newpoint(name="", coords=[(lon, lat)])
+                pnt.style.iconstyle.icon.href = 'https://maps.google.com/mapfiles/kml/paddle/wht-blank.png'
+                pnt.style.iconstyle.color = COTS_COLOR if det.best_class_id == 0 else SCAR_COLOR
+                alt_str = f"{altitude:.2f}" if altitude is not None else "N/A"
+                depth_str = f"{depth:.2f}" if depth is not None else "N/A"
+                if best_photo:
+                    rel_photo = os.path.relpath(best_photo, output_folder)
+                    rel_photo_uri = rel_photo.replace("\\", "/")
+                    pnt.description = (
+                        f"<![CDATA["
+                        f"<img src=\"{rel_photo_uri}\" width=\"400\"/><br/>"
+                        f"<b>Class:</b> {det.best_class}<br/>"
+                        f"<b>Score:</b> {det.best_score:.4f}<br/>"
+                        f"<b>COTS in photo:</b> {cots_in_photo}<br/>"
+                        f"<b>Altitude (metres):</b> {alt_str}<br/>"
+                        f"<b>Depth (metres):</b> {depth_str}<br/>"
+                        f"<b>Photo:</b> {rel_photo}"
+                        f"]]>"
+                    )
+                else:
+                    pnt.description = (
+                        f"<![CDATA["
+                        f"<b>Class:</b> {det.best_class}<br/>"
+                        f"<b>Score:</b> {det.best_score:.4f}<br/>"
+                        f"<b>Altitude (metres):</b> {alt_str}<br/>"
+                        f"<b>Depth (metres):</b> {depth_str}"
+                        f"]]>"
+                    )
+
+        # Create and save legend image
+        legend_img = Image.new("RGBA", (180, 90), (255, 255, 255, 220))
+        draw = ImageDraw.Draw(legend_img)
+        draw.text((10, 8), "Legend", fill=(0, 0, 0))
+        draw.rectangle([15, 30, 35, 50], fill=(255, 0, 0), outline=(0, 0, 0))
+        draw.text((45, 35), "COTS", fill=(0, 0, 0))
+        draw.rectangle([15, 58, 35, 78], fill=(255, 165, 0), outline=(0, 0, 0))
+        draw.text((45, 63), "Scar", fill=(0, 0, 0))
+        legend_img.save(os.path.join(output_folder, "legend.png"))
+
+        # Pin legend to top-left corner as a screen overlay
+        screen = kml.newscreenoverlay(name="Legend")
+        screen.icon.href = "legend.png"
+        screen.overlayxy = simplekml.OverlayXY(x=0, y=1, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
+        screen.screenxy = simplekml.ScreenXY(x=0.01, y=0.99, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
+        screen.size = simplekml.Size(x=0, y=0, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
+
+        kml.save(os.path.join(output_folder, "cots_detections.kml"))
+
+        # Open the output folder in file explorer
+        utils.open_file(output_folder)
+
+        # Export CSV
+        csv_path = os.path.join(output_folder, "cots_detections.csv")
+        with open(csv_path, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(["best_photo", "latitude", "longitude", "altitude_metres", "depth_metres",
+                             "sequence_id", "class", "score", "cots_in_photo", "confirmed"])
+            for det, lat, lon, best_photo, confirmed_str, cots_in_photo, altitude, depth in export_rows:
+                rel_photo = os.path.relpath(best_photo, output_folder) if best_photo else None
+                writer.writerow([rel_photo, lat, lon, altitude, depth,
+                                 det.sequence_id, det.best_class, det.best_score, cots_in_photo, confirmed_str])
+
+        # Export YAML config
+        config = {
+            "eod": bool(self.cots_display_params.eod),
+            "only_show_confirmed": bool(self.cots_display_params.only_show_confirmed),
+            "camera": self.cots_display_params.camera,
+            "minimum_score": float(self.cots_display_params.minimum_score),
+            "by_class": self.cots_widget.filter_by_class_combo_box.currentData(role=Qt.UserRole),
+        }
+        yaml_path = os.path.join(output_folder, "config.yaml")
+        with open(yaml_path, 'w') as f:
+            for key, value in config.items():
+                f.write(f"{key}: {value}\n")
 
 
