@@ -1,5 +1,10 @@
 #!/bin/bash
-version="v2.3.2"
+if [ -z "$1" ]; then
+    echo "Usage: $0 <version>"
+    echo "  version  The version to install (e.g. v2.3.2)"
+    exit 1
+fi
+version="$1"
 cd
 rm -r reefscan-data-manager-$version
 tar xvfzp reefscan-data-manager-$version.tar
