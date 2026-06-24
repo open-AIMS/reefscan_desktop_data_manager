@@ -29,6 +29,15 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>40</height>
+      </size>
+     </property>
+     <property name="styleSheet">
+      <string>background-color: #d9534f; color: white; font-size: 13px; font-weight: bold; border-radius: 4px;</string>
+     </property>
      <property name="text">
       <string>Cancel</string>
      </property>
@@ -36,6 +45,15 @@
    </item>
    <item row="0" column="0">
     <widget class="QPushButton" name="detectCotsButton">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>40</height>
+      </size>
+     </property>
+     <property name="styleSheet">
+      <string>background-color: #5cb85c; color: white; font-size: 13px; font-weight: bold; border-radius: 4px;</string>
+     </property>
      <property name="text">
       <string>Detect COTS</string>
      </property>

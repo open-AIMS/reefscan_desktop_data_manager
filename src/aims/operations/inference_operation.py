@@ -6,6 +6,7 @@ import os
 from reefscanner.basic_model.model_utils import replace_last
 
 from aims.operations.abstract_operation import AbstractOperation
+from aims.state import state
 
 import inferencer.models 
 from inferencer.models import ft_ext as reefscan_feature_extractor
@@ -113,7 +114,7 @@ class InferenceOperation(AbstractOperation):
                     shutil.copy2(os.path.join(self.target, img), tmp_dir)
                 image_dir = tmp_dir
                 logger.info(f"INFERENCE_MAX_PHOTOS={INFERENCE_MAX_PHOTOS}: using {len(imgs)} photos from {tmp_dir}")
-
+            
             inference(feature_extractor=self.feature_extractor_path,
                   classifier=self.classifier_path,
                   group_labels_csv_file=self.group_labels_path,
@@ -123,9 +124,9 @@ class InferenceOperation(AbstractOperation):
                   intermediate_feature_outputs_path=self.features_path,
                   saved_state_file=self.temp_features_path,
                   saved_state_batch_size=31,
-                  batch_monitor=self.batch_monitor
+                  batch_monitor=self.batch_monitor,
+                  **({'max_images': 5} if state.config.dev else {})
                   )
-            create_inference_kml(self.output_results_file, self.target, self.output_kml_file)
         except Exception as e:
             logger.info(repr(e))
             import traceback

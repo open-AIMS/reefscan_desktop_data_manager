@@ -277,6 +277,7 @@ class DataComponent(QObject):
 
         self.inference_widget.btnInferenceOpenFolder.clicked.connect(self.inference_open_folder)
         self.inference_widget.btnInferenceFolder.clicked.connect(self.inference)
+        self.inference_widget.btnExport.clicked.connect(self.inference_export)
 
         if PYINSTALLER_COMPILED:
             self.remove_tab_by_tab_text(self.tr('Inference'))
@@ -858,6 +859,44 @@ class DataComponent(QObject):
 
     def inference_open_folder(self):
         utils.open_file(inference_result_folder(self.survey().folder))
+
+    def inference_export(self):
+        import re
+        from aims.operations.hard_coral_kml_maker import create_inference_kml
+        survey = self.survey()
+        subsampled_image_folder = replace_last(survey.folder, "/reefscan/", "/reefscan_reefcloud/")
+        results_folder = inference_result_folder(survey.folder)
+        output_results_file = os.path.join(results_folder, 'results.csv')
+
+        # Build suggested output folder
+        survey_folder = survey.folder.replace("\\", "/").rstrip("/")
+        modified = re.sub(r'(?<=[/])reefscan(?=[/])', 'reefscan_results', survey_folder)
+        base = modified + "/benthic_cover"
+        suggested_folder = base
+
+        if suggested_folder:
+            os.makedirs(suggested_folder, exist_ok=True)
+            start_dir = suggested_folder
+        else:
+            start_dir = survey_folder
+
+        output_folder = QFileDialog.getExistingDirectory(
+            None,
+            'Choose folder to export benthic cover to',
+            directory=start_dir
+        )
+
+        if not output_folder:
+            return
+
+        os.makedirs(output_folder, exist_ok=True)
+        output_kml_file = os.path.join(output_folder, 'benthic_cover.kml')
+        csv_output_path = os.path.join(output_folder, 'benthic_points.csv')
+        create_inference_kml(output_results_file, subsampled_image_folder, output_kml_file, csv_output_path=csv_output_path)
+        coverage_src = os.path.join(results_folder, 'coverage.csv')
+        if os.path.exists(coverage_src):
+            shutil.copy2(coverage_src, os.path.join(output_folder, 'benthic_cover.csv'))
+        utils.open_file(output_folder)
 
     # inference all of the photos for the currently selected survey
     # if a folder is selected do it for all descendant surveys of that folder
