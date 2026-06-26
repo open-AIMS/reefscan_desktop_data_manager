@@ -3,8 +3,8 @@
 # This should work in Ubuntu 24 but is untested
 Version=1.0
 Type=Application
-Name=My Script Shortcut
+Name=Reefscan Deep
 Comment=Runs my custom shell script
-Exec=bash -c "$REEFSCAN_HOME/reefscan-desktop-data-manager/linux_scripts/reefscan-deep.sh"
+Exec=bash -c "~/Desktop/reefscan-deep.sh"
 Icon=utilities-terminal
 Terminal=true

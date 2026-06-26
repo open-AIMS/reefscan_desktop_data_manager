@@ -1,4 +1,4 @@
-The zip should be created for a specific tag I will use v2.3.3 as an example
+The zip should be created for a specific tag or branch I will use v2.3.3 as an example
 
 Do this in bash
 ```
@@ -23,5 +23,8 @@ cd ..
 tar cvfzp reefscan-data-manager-v2_3_3.tar reefscan-data-manager-v2_3_3
 
 ```
-modify install.sh to point to tis tar file
+to install run
 
+```
+reefscan_install.sh v2_3_3
+```

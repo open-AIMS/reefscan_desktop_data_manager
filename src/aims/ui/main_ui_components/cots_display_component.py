@@ -396,7 +396,6 @@ class CotsDisplayComponent(QObject):
 
     def export(self):
         import csv
-        import re
         import simplekml
 
         detection_list = self.cots_display_params.cots_detection_list()
@@ -405,7 +404,7 @@ class CotsDisplayComponent(QObject):
         suggested_folder = ""
         if detection_list.folder:
             survey_folder = os.path.dirname(detection_list.folder).replace("\\", "/")
-            modified = re.sub(r'(?<=[/])reefscan(?=[/])', 'reefscan_results', survey_folder)
+            modified = replace_last(survey_folder, "/reefscan/", "/reefscan_results/")
             base = modified + "/cots_detections"
             suggested_folder = base
             if os.path.exists(suggested_folder):
@@ -444,10 +443,12 @@ class CotsDisplayComponent(QObject):
             for sid in seq_ids:
                 latlon_by_sequence[sid] = (lat, lon)
 
-        # Build depth lookup from photo_log.csv: filename_string -> (ping_depth, pressure_depth)
+        # Build depth/timestamp lookup from photo_log.csv: filename_string -> (altitude_m, depth_m, timestamp)
         import pandas as pd
         import math
+        import datetime
         depth_by_filename = {}
+        timestamp_by_filename = {}
         photo_log_path = detection_list.folder + "/photo_log.csv"
         if os.path.exists(photo_log_path):
             try:
@@ -465,6 +466,11 @@ class CotsDisplayComponent(QObject):
                     altitude_m = ping_raw / 1000 if ping_raw is not None else None
                     depth_m = (altitude_m + pressure) if (altitude_m is not None and pressure is not None) else None
                     depth_by_filename[fname] = (altitude_m, depth_m)
+                    t_secs = _safe(row.get("time_secs"))
+                    t_msecs = _safe(row.get("time_msecs")) or 0
+                    if t_secs is not None:
+                        dt = datetime.datetime.fromtimestamp(t_secs + t_msecs / 1000.0).astimezone()
+                        timestamp_by_filename[fname] = dt.isoformat(timespec='milliseconds')
             except Exception as e:
                 logger.warning(f"Could not read photo_log.csv for depth data: {e}")
 
@@ -513,7 +519,7 @@ class CotsDisplayComponent(QObject):
                         f"<![CDATA["
                         f"<img src=\"{rel_photo_uri}\" width=\"400\"/><br/>"
                         f"<b>Class:</b> {det.best_class}<br/>"
-                        f"<b>Score:</b> {det.best_score:.4f}<br/>"
+                        f"<b>Confidence Score:</b> {det.best_score:.4f}<br/>"
                         f"<b>COTS in photo:</b> {cots_in_photo}<br/>"
                         f"<b>Altitude (metres):</b> {alt_str}<br/>"
                         f"<b>Depth (metres):</b> {depth_str}<br/>"
@@ -524,7 +530,7 @@ class CotsDisplayComponent(QObject):
                     pnt.description = (
                         f"<![CDATA["
                         f"<b>Class:</b> {det.best_class}<br/>"
-                        f"<b>Score:</b> {det.best_score:.4f}<br/>"
+                        f"<b>Confidence Score:</b> {det.best_score:.4f}<br/>"
                         f"<b>Altitude (metres):</b> {alt_str}<br/>"
                         f"<b>Depth (metres):</b> {depth_str}"
                         f"]]>"
@@ -556,12 +562,16 @@ class CotsDisplayComponent(QObject):
         csv_path = os.path.join(output_folder, "cots_detections.csv")
         with open(csv_path, 'w', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(["best_photo", "latitude", "longitude", "altitude_metres", "depth_metres",
-                             "sequence_id", "class", "score", "cots_in_photo", "confirmed"])
+            writer.writerow(["image_name", "timestamp", "image_path", "latitude", "longitude",
+                             "altitude_metres", "depth_metres", "sequence_id", "class",
+                             "confidence_score", "cots_in_photo", "confirmed"])
             for det, lat, lon, best_photo, confirmed_str, cots_in_photo, altitude, depth in export_rows:
+                image_name = os.path.basename(best_photo) if best_photo else None
                 rel_photo = os.path.relpath(best_photo, output_folder) if best_photo else None
-                writer.writerow([rel_photo, lat, lon, altitude, depth,
-                                 det.sequence_id, det.best_class, det.best_score, cots_in_photo, confirmed_str])
+                timestamp = timestamp_by_filename.get(image_name, "") if image_name else ""
+                confirmed_out = confirmed_str if confirmed_str else "Unassessed"
+                writer.writerow([image_name, timestamp, rel_photo, lat, lon, altitude, depth,
+                                 det.sequence_id, det.best_class, det.best_score, cots_in_photo, confirmed_out])
 
         # Export YAML config
         config = {
@@ -571,7 +581,7 @@ class CotsDisplayComponent(QObject):
             "minimum_score": float(self.cots_display_params.minimum_score),
             "by_class": self.cots_widget.filter_by_class_combo_box.currentData(role=Qt.UserRole),
         }
-        yaml_path = os.path.join(output_folder, "config.yaml")
+        yaml_path = os.path.join(output_folder, "export_parameters.yaml")
         with open(yaml_path, 'w') as f:
             for key, value in config.items():
                 f.write(f"{key}: {value}\n")
