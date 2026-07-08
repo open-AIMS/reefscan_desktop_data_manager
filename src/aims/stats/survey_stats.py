@@ -56,7 +56,11 @@ class SurveyStats:
                     df = pd.read_csv(file)
                 survey_dfs.append(df)
 
-        survey_df = pd.concat(survey_dfs)
+        try:
+            survey_df = pd.concat(survey_dfs)
+        except ValueError:
+            logger.warning(f"Survey {survey.survey_id} has no photo log data")
+            return False
 
         self.photos_from_csv = len(survey_df)
         no_lat = survey_df[pd.to_numeric(survey_df['latitude'], errors='coerce').isnull() | (pd.to_numeric(survey_df['latitude'], errors='coerce') == 0)]
