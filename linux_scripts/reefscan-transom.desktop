@@ -5,6 +5,6 @@ Version=1.0
 Type=Application
 Name=ReefScan Transom
 Comment=Runs my custom shell script
-Exec=bash -c "~/Desktop/reefscan-transom.sh"
+Exec=bash -c "~/reefscan-transom.sh"
 Icon=utilities-terminal
 Terminal=true

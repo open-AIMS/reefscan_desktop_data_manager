@@ -1,5 +1,7 @@
 REEFSCAN_HOME="$(pwd)"
 COTS_HOME="$HOME/reefscan-cots-model"
+PIXI_PATH="$HOME/.pixi/bin"
+
 
 # when you start a script by double clicking it, 
 # it doesn't have the environment variables set in .bashrc
@@ -9,6 +11,7 @@ COTS_HOME="$HOME/reefscan-cots-model"
 
 echo "REEFSCAN_HOME=\"$REEFSCAN_HOME\"" > ~/.reefscan_env
 echo "COTS_HOME=\"$COTS_HOME\"" >> ~/.reefscan_env
+echo "PATH=\"$PIXI_PATH:$PATH\"" >> ~/.reefscan_env
 
 
 if ! command -v python3.8 &> /dev/null; then
@@ -25,6 +28,6 @@ pip install -r requirements.txt
 pip install -r requirements-eod.txt 
 cp linux_scripts/reefscan-deep.desktop ~/Desktop
 cp linux_scripts/reefscan-transom.desktop ~/Desktop
-cp linux_scripts/reefscan-deep.sh ~/Desktop
-cp linux_scripts/reefscan-transom.sh ~/Desktop
+cp linux_scripts/reefscan-deep.sh ~
+cp linux_scripts/reefscan-transom.sh ~
 
