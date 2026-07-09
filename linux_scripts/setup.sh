@@ -1,4 +1,7 @@
 REEFSCAN_HOME="$(pwd)"
+COTS_HOME="$HOME/reefscan-cots-model"
+PIXI_PATH="$HOME/.pixi/bin"
+
 
 # when you start a script by double clicking it, 
 # it doesn't have the environment variables set in .bashrc
@@ -7,8 +10,9 @@ REEFSCAN_HOME="$(pwd)"
 # and contains the necessary environment variables
 
 echo "REEFSCAN_HOME=\"$REEFSCAN_HOME\"" > ~/.reefscan_env
-echo "PATH=/usr/local/cuda/bin${PATH:+:${PATH}}" >> ~/.reefscan_env
-echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/reefscan/tensorrt/TensorRT-8.6.1.6/lib" >> ~/.reefscan_env
+echo "COTS_HOME=\"$COTS_HOME\"" >> ~/.reefscan_env
+echo "PATH=\"$PIXI_PATH:$PATH\"" >> ~/.reefscan_env
+
 
 if ! command -v python3.8 &> /dev/null; then
     sudo apt update && sudo apt install software-properties-common
@@ -24,12 +28,6 @@ pip install -r requirements.txt
 pip install -r requirements-eod.txt 
 cp linux_scripts/reefscan-deep.desktop ~/Desktop
 cp linux_scripts/reefscan-transom.desktop ~/Desktop
-cp linux_scripts/reefscan-deep.sh ~/Desktop
-cp linux_scripts/reefscan-transom.sh ~/Desktop
-
-cd $REEFSCAN_HOME/ccip-cv-pipeline/cv-pipeline
-
-python3.8 configure_project.py -a
-python3.8 build_venv.py
-source cv-pipeline-env/bin/activate
+cp linux_scripts/reefscan-deep.sh ~
+cp linux_scripts/reefscan-transom.sh ~
 

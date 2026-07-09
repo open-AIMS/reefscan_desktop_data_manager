@@ -3,8 +3,8 @@
 # This should work in Ubuntu 24 but is untested
 Version=1.0
 Type=Application
-Name=My Script Shortcut
+Name=ReefScan Transom
 Comment=Runs my custom shell script
-Exec=bash -c "$REEFSCAN_HOME/reefscan-desktop-data-manager/linux_scripts/reefscan-transom.sh"
+Exec=bash -c "~/reefscan-transom.sh"
 Icon=utilities-terminal
 Terminal=true
