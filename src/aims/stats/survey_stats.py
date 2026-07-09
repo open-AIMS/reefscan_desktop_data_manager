@@ -59,7 +59,7 @@ class SurveyStats:
         try:
             survey_df = pd.concat(survey_dfs)
         except ValueError:
-            logger.warning(f"Survey {survey.survey_id} has no photo log data")
+            logger.warning(f"no photo log data")
             return False
 
         self.photos_from_csv = len(survey_df)
