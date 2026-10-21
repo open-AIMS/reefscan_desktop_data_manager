@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 
 from PyQt5.QtCore import QObject, QItemSelection, Qt, QRect, QByteArray
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QImage, QPixmap, QPainter, QPen, QColor, QFont, QBitmap, \
@@ -497,7 +498,8 @@ class CotsDisplayComponent(QObject):
                 altitude, depth = depth_by_filename.get(fname_key, (None, None))
                 export_rows.append((det, lat, lon, best_photo, confirmed_str, cots_in_photo, altitude, depth))
 
-        # Export KML
+        # Export KMZ with embedded images
+        import tempfile
         from PIL import Image, ImageDraw
 
         COTS_COLOR = simplekml.Color.red
@@ -505,6 +507,7 @@ class CotsDisplayComponent(QObject):
 
         kml = simplekml.Kml()
         cots_folder = kml.newfolder(name="cots")
+        tmpdir = tempfile.mkdtemp()
         for det, lat, lon, best_photo, confirmed_str, cots_in_photo, altitude, depth in export_rows:
             if lat is not None and lon is not None:
                 pnt = cots_folder.newpoint(name="", coords=[(lon, lat)])
@@ -512,31 +515,58 @@ class CotsDisplayComponent(QObject):
                 pnt.style.iconstyle.color = COTS_COLOR if det.best_class_id == 0 else SCAR_COLOR
                 alt_str = f"{altitude:.2f}" if altitude is not None else "N/A"
                 depth_str = f"{depth:.2f}" if depth is not None else "N/A"
-                if best_photo:
-                    rel_photo = os.path.relpath(best_photo, output_folder)
-                    rel_photo_uri = rel_photo.replace("\\", "/")
+                if best_photo and os.path.exists(best_photo):
+                    photo_basename = os.path.basename(best_photo)
+                    crop_name = f"crop_{det.sequence_id}.jpg"
+                    crop_path = os.path.join(tmpdir, crop_name)
+                    pil_img = Image.open(best_photo).convert("RGB")
+                    img_w, img_h = pil_img.size
+                    det_rects = [r for r in detection_list.image_rectangles_by_filename.get(best_photo, [])
+                                 if r.sequence_id == det.sequence_id and not r.phantom]
+                    if det_rects:
+                        rl = min(r.left for r in det_rects)
+                        rt = min(r.top for r in det_rects)
+                        rr = max(r.left + r.width for r in det_rects)
+                        rb = max(r.top + r.height for r in det_rects)
+                        buf_x = (rr - rl) * 0.5
+                        buf_y = (rb - rt) * 0.5
+                        x1 = max(0, round((rl - buf_x) * img_w))
+                        y1 = max(0, round((rt - buf_y) * img_h))
+                        x2 = min(img_w, round((rr + buf_x) * img_w))
+                        y2 = min(img_h, round((rb + buf_y) * img_h))
+                        crop = pil_img.crop((x1, y1, x2, y2))
+                    else:
+                        crop = pil_img
+                    crop.save(crop_path, quality=85)
+                    kml.addfile(crop_path)
                     pnt.description = (
                         f"<![CDATA["
-                        f"<img src=\"{rel_photo_uri}\" width=\"400\"/><br/>"
+                        f"<div id='kd' style='box-sizing:border-box'>"
+                        f"<img src=\"files/{crop_name}\" style=\"width:100%;display:block\"/><br/>"
                         f"<b>Class:</b> {det.best_class}<br/>"
                         f"<b>Confidence Score:</b> {det.best_score:.4f}<br/>"
                         f"<b>COTS in photo:</b> {cots_in_photo}<br/>"
                         f"<b>Altitude (metres):</b> {alt_str}<br/>"
                         f"<b>Depth (metres):</b> {depth_str}<br/>"
-                        f"<b>Photo:</b> {rel_photo}"
+                        f"<b>Photo:</b> {photo_basename}"
+                        f"</div>"
+                        f"<script>document.getElementById('kd').style.width=Math.round(screen.availWidth*0.5)+'px'</script>"
                         f"]]>"
                     )
                 else:
                     pnt.description = (
                         f"<![CDATA["
+                        f"<div id='kd' style='box-sizing:border-box'>"
                         f"<b>Class:</b> {det.best_class}<br/>"
                         f"<b>Confidence Score:</b> {det.best_score:.4f}<br/>"
                         f"<b>Altitude (metres):</b> {alt_str}<br/>"
                         f"<b>Depth (metres):</b> {depth_str}"
+                        f"</div>"
+                        f"<script>document.getElementById('kd').style.width=Math.round(screen.availWidth*0.5)+'px'</script>"
                         f"]]>"
                     )
 
-        # Create and save legend image
+        # Create legend image in a temp file so it gets a predictable name inside the KMZ
         legend_img = Image.new("RGBA", (180, 90), (255, 255, 255, 220))
         draw = ImageDraw.Draw(legend_img)
         draw.text((10, 8), "Legend", fill=(0, 0, 0))
@@ -544,16 +574,20 @@ class CotsDisplayComponent(QObject):
         draw.text((45, 35), "COTS", fill=(0, 0, 0))
         draw.rectangle([15, 58, 35, 78], fill=(255, 165, 0), outline=(0, 0, 0))
         draw.text((45, 63), "Scar", fill=(0, 0, 0))
-        legend_img.save(os.path.join(output_folder, "legend.png"))
+        legend_tmp_path = os.path.join(tmpdir, "legend.png")
+        legend_img.save(legend_tmp_path)
+        kml.addfile(legend_tmp_path)
 
         # Pin legend to top-left corner as a screen overlay
         screen = kml.newscreenoverlay(name="Legend")
-        screen.icon.href = "legend.png"
+        screen.icon.href = "files/legend.png"
         screen.overlayxy = simplekml.OverlayXY(x=0, y=1, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
         screen.screenxy = simplekml.ScreenXY(x=0.01, y=0.99, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
         screen.size = simplekml.Size(x=0, y=0, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
 
-        kml.save(os.path.join(output_folder, "cots_detections.kml"))
+        kmz_path = os.path.join(output_folder, "cots_detections.kmz")
+        kml.savekmz(kmz_path)
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
         # Open the output folder in file explorer
         utils.open_file(output_folder)
