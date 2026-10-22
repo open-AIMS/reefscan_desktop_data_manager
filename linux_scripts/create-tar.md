@@ -2,7 +2,6 @@ The zip should be created for a specific tag or branch I will use v2.3.3 as an e
 
 Do this in bash
 ```
-# the next two lines are for windows subsystem for linux
 export short_version=v2_3_3
 export version=v2.3.3
 

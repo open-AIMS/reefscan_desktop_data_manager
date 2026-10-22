@@ -1,5 +1,5 @@
 REEFSCAN_HOME="$(pwd)"
-COTS_HOME="$HOME/reefscan-cots-model"
+COTS_HOME="$HOME/reefscan-cots-model-trt10-upgrade"
 PIXI_PATH="$HOME/.pixi/bin"
 
 

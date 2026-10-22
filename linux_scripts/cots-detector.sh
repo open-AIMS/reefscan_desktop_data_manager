@@ -21,7 +21,7 @@ source ~/.reefscan_env
 cd $COTS_HOME
 
 rm -r "$2/final"
-pixi run run-inference -- "$1" "$2"
+pixi run run-inference -- --model cots-det-trt10 "$1" "$2"
 
 last_sub_folder=$(find "$2" -maxdepth 1 -mindepth 1 -type d | tail -n 1)
 
