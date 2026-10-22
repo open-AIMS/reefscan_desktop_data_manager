@@ -77,14 +77,26 @@ def _make_legend_png(output_path):
     return True
 
 
-def create_inference_kml(results_csv_file, image_dir, output_kml_file, csv_output_path=None):
+# Map pred_group values to column names for the per-image cover CSV
+_GROUP_COL = {
+    "Hard Coral":   "num_hard_coral",
+    "Soft Coral":   "num_soft_coral",
+    "Algae":        "num_algae",
+    "Indeterminate": "num_indeterminate",
+}
+_OTHER_COL = "num_other"
+
+
+def create_inference_kml(results_csv_file, image_dir, output_kml_file,
+                         csv_output_path=None, cover_csv_path=None):
     """Create a KML file from inference results.
 
     Places one coloured circle per photo that has exactly 5 annotation rows.
-    Circle colour reflects the number of those rows where pred_group == 'HC'.
+    Circle colour reflects the number of those rows where pred_group == 'Hard Coral'.
     Latitude/longitude are sourced from photo_log.csv in image_dir.
     """
     import math
+    import datetime
 
     def _safe_float(v):
         try:
@@ -93,9 +105,10 @@ def create_inference_kml(results_csv_file, image_dir, output_kml_file, csv_outpu
         except (TypeError, ValueError):
             return None
 
-    # Read photo_log.csv for lat/lon/depth keyed by filename
+    # Read photo_log.csv for lat/lon/depth/timestamp keyed by filename
     photo_coords = {}
-    photo_depth = {}  # basename -> (altitude_m, depth_m)
+    photo_depth = {}      # basename -> (altitude_m, depth_m)
+    photo_timestamp = {}  # basename -> ISO timestamp string
     photo_log_path = os.path.join(image_dir, "photo_log.csv")
     if os.path.exists(photo_log_path):
         for row in _sanitized_csv_dict_reader(photo_log_path):
@@ -112,22 +125,32 @@ def create_inference_kml(results_csv_file, image_dir, output_kml_file, csv_outpu
                 altitude_m = ping_raw / 1000 if ping_raw is not None else None
                 depth_m = (altitude_m + pressure) if (altitude_m is not None and pressure is not None) else None
                 photo_depth[filename] = (altitude_m, depth_m)
+                t_secs = _safe_float(row.get("time_secs"))
+                t_msecs = _safe_float(row.get("time_msecs")) or 0
+                if t_secs is not None:
+                    dt = datetime.datetime.fromtimestamp(t_secs + t_msecs / 1000.0).astimezone()
+                    photo_timestamp[filename] = dt.isoformat(timespec='milliseconds')
             except (TypeError, ValueError, KeyError):
                 pass
     else:
         logger.warning("photo_log.csv not found at %s", photo_log_path)
 
-    # Group results by image basename
-    image_hc = {}  # basename -> {'total': int, 'hc': int, 'path': str}
+    # Group results by image basename, tracking per-group counts
+    _all_group_cols = list(_GROUP_COL.values()) + [_OTHER_COL]
+    image_hc = {}  # basename -> {'total', 'hc', group counts ...}
     for row in _sanitized_csv_dict_reader(results_csv_file):
         image_path = row.get("image_path")
         if not image_path:
             continue
         basename = os.path.basename(image_path)
         if basename not in image_hc:
-            image_hc[basename] = {"total": 0, "hc": 0, "path": image_path}
+            image_hc[basename] = {"total": 0, "hc": 0, "path": image_path,
+                                   **{c: 0 for c in _all_group_cols}}
         image_hc[basename]["total"] += 1
-        if (row.get("pred_group") or "").strip() == "Hard Coral":
+        group = (row.get("pred_group") or "").strip()
+        col = _GROUP_COL.get(group, _OTHER_COL)
+        image_hc[basename][col] += 1
+        if group == "Hard Coral":
             image_hc[basename]["hc"] += 1
 
     # Optionally generate legend PNG in resources subfolder
@@ -196,15 +219,21 @@ def create_inference_kml(results_csv_file, image_dir, output_kml_file, csv_outpu
         altitude, depth = photo_depth.get(basename, (None, None))
         alt_str = f"{altitude:.2f}" if altitude is not None else "N/A"
         depth_str = f"{depth:.2f}" if depth is not None else "N/A"
-        img_path = "file:///" + os.path.join(image_dir, basename).replace("\\", "/")
+        rel_img = os.path.relpath(os.path.join(image_dir, basename), kml_dir).replace("\\", "/")
+        total = counts["total"]
+        def _pct(n): return f"{round(n / total * 100, 1)}%" if total > 0 else "0%"
         description = (
             f'<![CDATA['
-            f'<b>HC: {counts["hc"]}/5 ({pct_label})</b><br/>'
+            f'<b>Hard Coral:</b> {counts["num_hard_coral"]}/{total} ({_pct(counts["num_hard_coral"])})<br/>'
+            f'<b>Soft Coral:</b> {counts["num_soft_coral"]}/{total} ({_pct(counts["num_soft_coral"])})<br/>'
+            f'<b>Algae:</b> {counts["num_algae"]}/{total} ({_pct(counts["num_algae"])})<br/>'
+            f'<b>Indeterminate:</b> {counts["num_indeterminate"]}/{total} ({_pct(counts["num_indeterminate"])})<br/>'
+            f'<b>Other:</b> {counts["num_other"]}/{total} ({_pct(counts["num_other"])})<br/>'
             f'<b>Latitude:</b> {lat:.6f}<br/>'
             f'<b>Longitude:</b> {lon:.6f}<br/>'
             f'<b>Altitude (metres):</b> {alt_str}<br/>'
             f'<b>Depth (metres):</b> {depth_str}<br/>'
-            f'<img src="{img_path}" width="400"/>'
+            f'<img src="{rel_img}" width="400"/>'
             f']]>'
         )
 
@@ -230,19 +259,58 @@ def create_inference_kml(results_csv_file, image_dir, output_kml_file, csv_outpu
 
     if csv_output_path:
         BENTHIC_COLS = [
-            "image_path", "point_num", "point_coordinate",
+            "image_name", "timestamp", "image_path", "point_num", "point_coordinate",
             "latitude", "longitude", "altitude_metres", "depth_metres",
             "pred_class", "pred_desc", "pred_group",
         ]
+        csv_dir = os.path.dirname(csv_output_path)
         with open(csv_output_path, 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(BENTHIC_COLS)
             for row in _sanitized_csv_dict_reader(results_csv_file):
                 image_path = row.get("image_path", "")
                 basename = os.path.basename(image_path)
+                rel_path = os.path.relpath(os.path.join(image_dir, basename), csv_dir).replace("\\", "/") if basename else ""
                 lat, lon = photo_coords.get(basename, (None, None))
                 altitude, depth = photo_depth.get(basename, (None, None))
-                geo = {"latitude": lat, "longitude": lon, "altitude_metres": altitude, "depth_metres": depth}
-                merged = {**row, **geo}
+                timestamp = photo_timestamp.get(basename, "")
+                extra = {"image_path": rel_path, "image_name": basename,
+                         "timestamp": timestamp, "latitude": lat,
+                         "longitude": lon, "altitude_metres": altitude, "depth_metres": depth}
+                merged = {**row, **extra}
                 writer.writerow([merged.get(c, "") for c in BENTHIC_COLS])
-        logger.info("CSV written to %s", csv_output_path)
+        logger.info("benthic_points.csv written to %s", csv_output_path)
+
+    if cover_csv_path:
+        COVER_COLS = [
+            "image_name", "timestamp", "image_path", "latitude", "longitude",
+            "altitude_metres", "depth_metres",
+            "num_hard_coral", "num_soft_coral", "num_algae",
+            "num_indeterminate", "num_other", "num_total_points",
+            "perc_hard_coral", "perc_soft_coral", "perc_algae",
+            "perc_indeterminate", "perc_other",
+        ]
+        cover_dir = os.path.dirname(cover_csv_path)
+        with open(cover_csv_path, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(COVER_COLS)
+            for basename, counts in image_hc.items():
+                if counts["total"] != 5:
+                    continue
+                lat, lon = photo_coords.get(basename, (None, None))
+                altitude, depth = photo_depth.get(basename, (None, None))
+                timestamp = photo_timestamp.get(basename, "")
+                rel_path = os.path.relpath(os.path.join(image_dir, basename), cover_dir).replace("\\", "/")
+                total = counts["total"]
+                def _p(n): return round(n / total * 100, 1) if total > 0 else 0
+                writer.writerow([
+                    basename, timestamp, rel_path, lat, lon,
+                    altitude, depth,
+                    counts["num_hard_coral"], counts["num_soft_coral"],
+                    counts["num_algae"], counts["num_indeterminate"],
+                    counts["num_other"], total,
+                    _p(counts["num_hard_coral"]), _p(counts["num_soft_coral"]),
+                    _p(counts["num_algae"]), _p(counts["num_indeterminate"]),
+                    _p(counts["num_other"]),
+                ])
+        logger.info("benthic_cover.csv written to %s", cover_csv_path)

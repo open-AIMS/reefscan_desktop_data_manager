@@ -861,7 +861,6 @@ class DataComponent(QObject):
         utils.open_file(inference_result_folder(self.survey().folder))
 
     def inference_export(self):
-        import re
         from aims.operations.hard_coral_kml_maker import create_inference_kml
         survey = self.survey()
         subsampled_image_folder = replace_last(survey.folder, "/reefscan/", "/reefscan_reefcloud/")
@@ -870,9 +869,7 @@ class DataComponent(QObject):
 
         # Build suggested output folder
         survey_folder = survey.folder.replace("\\", "/").rstrip("/")
-        modified = re.sub(r'(?<=[/])reefscan(?=[/])', 'reefscan_results', survey_folder)
-        base = modified + "/benthic_cover"
-        suggested_folder = base
+        suggested_folder = replace_last(survey_folder, "/reefscan/", "/reefscan_results/") + "/benthic_cover"
 
         if suggested_folder:
             os.makedirs(suggested_folder, exist_ok=True)
@@ -892,10 +889,12 @@ class DataComponent(QObject):
         os.makedirs(output_folder, exist_ok=True)
         output_kml_file = os.path.join(output_folder, 'benthic_cover.kml')
         csv_output_path = os.path.join(output_folder, 'benthic_points.csv')
-        create_inference_kml(output_results_file, subsampled_image_folder, output_kml_file, csv_output_path=csv_output_path)
+        cover_csv_path = os.path.join(output_folder, 'benthic_cover.csv')
+        create_inference_kml(output_results_file, subsampled_image_folder, output_kml_file,
+                             csv_output_path=csv_output_path, cover_csv_path=cover_csv_path)
         coverage_src = os.path.join(results_folder, 'coverage.csv')
         if os.path.exists(coverage_src):
-            shutil.copy2(coverage_src, os.path.join(output_folder, 'benthic_cover.csv'))
+            shutil.copy2(coverage_src, os.path.join(output_folder, 'track_benthic_cover.csv'))
         utils.open_file(output_folder)
 
     # inference all of the photos for the currently selected survey

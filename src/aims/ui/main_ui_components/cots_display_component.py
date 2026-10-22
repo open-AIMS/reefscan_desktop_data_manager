@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 
 from PyQt5.QtCore import QObject, QItemSelection, Qt, QRect, QByteArray
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QImage, QPixmap, QPainter, QPen, QColor, QFont, QBitmap, \
@@ -396,7 +397,6 @@ class CotsDisplayComponent(QObject):
 
     def export(self):
         import csv
-        import re
         import simplekml
 
         detection_list = self.cots_display_params.cots_detection_list()
@@ -405,7 +405,7 @@ class CotsDisplayComponent(QObject):
         suggested_folder = ""
         if detection_list.folder:
             survey_folder = os.path.dirname(detection_list.folder).replace("\\", "/")
-            modified = re.sub(r'(?<=[/])reefscan(?=[/])', 'reefscan_results', survey_folder)
+            modified = replace_last(survey_folder, "/reefscan/", "/reefscan_results/")
             base = modified + "/cots_detections"
             suggested_folder = base
             if os.path.exists(suggested_folder):
@@ -444,10 +444,12 @@ class CotsDisplayComponent(QObject):
             for sid in seq_ids:
                 latlon_by_sequence[sid] = (lat, lon)
 
-        # Build depth lookup from photo_log.csv: filename_string -> (ping_depth, pressure_depth)
+        # Build depth/timestamp lookup from photo_log.csv: filename_string -> (altitude_m, depth_m, timestamp)
         import pandas as pd
         import math
+        import datetime
         depth_by_filename = {}
+        timestamp_by_filename = {}
         photo_log_path = detection_list.folder + "/photo_log.csv"
         if os.path.exists(photo_log_path):
             try:
@@ -465,6 +467,11 @@ class CotsDisplayComponent(QObject):
                     altitude_m = ping_raw / 1000 if ping_raw is not None else None
                     depth_m = (altitude_m + pressure) if (altitude_m is not None and pressure is not None) else None
                     depth_by_filename[fname] = (altitude_m, depth_m)
+                    t_secs = _safe(row.get("time_secs"))
+                    t_msecs = _safe(row.get("time_msecs")) or 0
+                    if t_secs is not None:
+                        dt = datetime.datetime.fromtimestamp(t_secs + t_msecs / 1000.0).astimezone()
+                        timestamp_by_filename[fname] = dt.isoformat(timespec='milliseconds')
             except Exception as e:
                 logger.warning(f"Could not read photo_log.csv for depth data: {e}")
 
@@ -491,7 +498,8 @@ class CotsDisplayComponent(QObject):
                 altitude, depth = depth_by_filename.get(fname_key, (None, None))
                 export_rows.append((det, lat, lon, best_photo, confirmed_str, cots_in_photo, altitude, depth))
 
-        # Export KML
+        # Export KMZ with embedded images
+        import tempfile
         from PIL import Image, ImageDraw
 
         COTS_COLOR = simplekml.Color.red
@@ -499,6 +507,7 @@ class CotsDisplayComponent(QObject):
 
         kml = simplekml.Kml()
         cots_folder = kml.newfolder(name="cots")
+        tmpdir = tempfile.mkdtemp()
         for det, lat, lon, best_photo, confirmed_str, cots_in_photo, altitude, depth in export_rows:
             if lat is not None and lon is not None:
                 pnt = cots_folder.newpoint(name="", coords=[(lon, lat)])
@@ -506,31 +515,58 @@ class CotsDisplayComponent(QObject):
                 pnt.style.iconstyle.color = COTS_COLOR if det.best_class_id == 0 else SCAR_COLOR
                 alt_str = f"{altitude:.2f}" if altitude is not None else "N/A"
                 depth_str = f"{depth:.2f}" if depth is not None else "N/A"
-                if best_photo:
-                    rel_photo = os.path.relpath(best_photo, output_folder)
-                    rel_photo_uri = rel_photo.replace("\\", "/")
+                if best_photo and os.path.exists(best_photo):
+                    photo_basename = os.path.basename(best_photo)
+                    crop_name = f"crop_{det.sequence_id}.jpg"
+                    crop_path = os.path.join(tmpdir, crop_name)
+                    pil_img = Image.open(best_photo).convert("RGB")
+                    img_w, img_h = pil_img.size
+                    det_rects = [r for r in detection_list.image_rectangles_by_filename.get(best_photo, [])
+                                 if r.sequence_id == det.sequence_id and not r.phantom]
+                    if det_rects:
+                        rl = min(r.left for r in det_rects)
+                        rt = min(r.top for r in det_rects)
+                        rr = max(r.left + r.width for r in det_rects)
+                        rb = max(r.top + r.height for r in det_rects)
+                        buf_x = (rr - rl) * 0.5
+                        buf_y = (rb - rt) * 0.5
+                        x1 = max(0, round((rl - buf_x) * img_w))
+                        y1 = max(0, round((rt - buf_y) * img_h))
+                        x2 = min(img_w, round((rr + buf_x) * img_w))
+                        y2 = min(img_h, round((rb + buf_y) * img_h))
+                        crop = pil_img.crop((x1, y1, x2, y2))
+                    else:
+                        crop = pil_img
+                    crop.save(crop_path, quality=85)
+                    kml.addfile(crop_path)
                     pnt.description = (
                         f"<![CDATA["
-                        f"<img src=\"{rel_photo_uri}\" width=\"400\"/><br/>"
+                        f"<div id='kd' style='box-sizing:border-box'>"
+                        f"<img src=\"files/{crop_name}\" style=\"width:100%;display:block\"/><br/>"
                         f"<b>Class:</b> {det.best_class}<br/>"
-                        f"<b>Score:</b> {det.best_score:.4f}<br/>"
+                        f"<b>Confidence Score:</b> {det.best_score:.4f}<br/>"
                         f"<b>COTS in photo:</b> {cots_in_photo}<br/>"
                         f"<b>Altitude (metres):</b> {alt_str}<br/>"
                         f"<b>Depth (metres):</b> {depth_str}<br/>"
-                        f"<b>Photo:</b> {rel_photo}"
+                        f"<b>Photo:</b> {photo_basename}"
+                        f"</div>"
+                        f"<script>document.getElementById('kd').style.width=Math.round(screen.availWidth*0.5)+'px'</script>"
                         f"]]>"
                     )
                 else:
                     pnt.description = (
                         f"<![CDATA["
+                        f"<div id='kd' style='box-sizing:border-box'>"
                         f"<b>Class:</b> {det.best_class}<br/>"
-                        f"<b>Score:</b> {det.best_score:.4f}<br/>"
+                        f"<b>Confidence Score:</b> {det.best_score:.4f}<br/>"
                         f"<b>Altitude (metres):</b> {alt_str}<br/>"
                         f"<b>Depth (metres):</b> {depth_str}"
+                        f"</div>"
+                        f"<script>document.getElementById('kd').style.width=Math.round(screen.availWidth*0.5)+'px'</script>"
                         f"]]>"
                     )
 
-        # Create and save legend image
+        # Create legend image in a temp file so it gets a predictable name inside the KMZ
         legend_img = Image.new("RGBA", (180, 90), (255, 255, 255, 220))
         draw = ImageDraw.Draw(legend_img)
         draw.text((10, 8), "Legend", fill=(0, 0, 0))
@@ -538,16 +574,20 @@ class CotsDisplayComponent(QObject):
         draw.text((45, 35), "COTS", fill=(0, 0, 0))
         draw.rectangle([15, 58, 35, 78], fill=(255, 165, 0), outline=(0, 0, 0))
         draw.text((45, 63), "Scar", fill=(0, 0, 0))
-        legend_img.save(os.path.join(output_folder, "legend.png"))
+        legend_tmp_path = os.path.join(tmpdir, "legend.png")
+        legend_img.save(legend_tmp_path)
+        kml.addfile(legend_tmp_path)
 
         # Pin legend to top-left corner as a screen overlay
         screen = kml.newscreenoverlay(name="Legend")
-        screen.icon.href = "legend.png"
+        screen.icon.href = "files/legend.png"
         screen.overlayxy = simplekml.OverlayXY(x=0, y=1, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
         screen.screenxy = simplekml.ScreenXY(x=0.01, y=0.99, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
         screen.size = simplekml.Size(x=0, y=0, xunits=simplekml.Units.fraction, yunits=simplekml.Units.fraction)
 
-        kml.save(os.path.join(output_folder, "cots_detections.kml"))
+        kmz_path = os.path.join(output_folder, "cots_detections.kmz")
+        kml.savekmz(kmz_path)
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
         # Open the output folder in file explorer
         utils.open_file(output_folder)
@@ -556,12 +596,16 @@ class CotsDisplayComponent(QObject):
         csv_path = os.path.join(output_folder, "cots_detections.csv")
         with open(csv_path, 'w', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(["best_photo", "latitude", "longitude", "altitude_metres", "depth_metres",
-                             "sequence_id", "class", "score", "cots_in_photo", "confirmed"])
+            writer.writerow(["image_name", "timestamp", "image_path", "latitude", "longitude",
+                             "altitude_metres", "depth_metres", "sequence_id", "class",
+                             "confidence_score", "cots_in_photo", "confirmed"])
             for det, lat, lon, best_photo, confirmed_str, cots_in_photo, altitude, depth in export_rows:
+                image_name = os.path.basename(best_photo) if best_photo else None
                 rel_photo = os.path.relpath(best_photo, output_folder) if best_photo else None
-                writer.writerow([rel_photo, lat, lon, altitude, depth,
-                                 det.sequence_id, det.best_class, det.best_score, cots_in_photo, confirmed_str])
+                timestamp = timestamp_by_filename.get(image_name, "") if image_name else ""
+                confirmed_out = confirmed_str if confirmed_str else "Unassessed"
+                writer.writerow([image_name, timestamp, rel_photo, lat, lon, altitude, depth,
+                                 det.sequence_id, det.best_class, det.best_score, cots_in_photo, confirmed_out])
 
         # Export YAML config
         config = {
@@ -571,7 +615,7 @@ class CotsDisplayComponent(QObject):
             "minimum_score": float(self.cots_display_params.minimum_score),
             "by_class": self.cots_widget.filter_by_class_combo_box.currentData(role=Qt.UserRole),
         }
-        yaml_path = os.path.join(output_folder, "config.yaml")
+        yaml_path = os.path.join(output_folder, "export_parameters.yaml")
         with open(yaml_path, 'w') as f:
             for key, value in config.items():
                 f.write(f"{key}: {value}\n")

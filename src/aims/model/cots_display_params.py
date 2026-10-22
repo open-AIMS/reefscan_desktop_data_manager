@@ -37,7 +37,10 @@ class CotsDisplayParams:
 
     def read_data(self, aims_status_dialog, folder, samba):
 
-        self.read_realtime_data(folder, samba)
+        try:
+            self.read_realtime_data(folder, samba)
+        except Exception as e:
+            print(f"Error reading realtime data: {e}")
 
         self.read_eod_data(aims_status_dialog, folder, samba)
 

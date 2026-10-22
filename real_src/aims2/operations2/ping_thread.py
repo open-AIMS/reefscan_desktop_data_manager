@@ -1,13 +1,27 @@
 import re
+import subprocess
+import sys
 import time
 from threading import Thread
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject
-from ping3 import ping
 
 from aims.state import state
 from fabric import Connection
+
+
+def ping(host, timeout=1):
+    """Ping host using the system ping command. Returns a float on success, None on failure."""
+    try:
+        if sys.platform == "win32":
+            args = ["ping", "-n", "1", "-w", str(timeout * 1000), host]
+        else:
+            args = ["ping", "-c", "1", "-W", str(timeout), host]
+        result = subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return 0.0 if result.returncode == 0 else None
+    except Exception:
+        return None
 
 
 class PingThread(QObject):
@@ -35,6 +49,7 @@ class PingThread(QObject):
                 r = ping(ping_ip, timeout=1)
             except:
                 r = None
+            print (f"pinging {ping_ip}")
             print(r)
 
         self.running = False
